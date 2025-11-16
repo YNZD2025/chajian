@@ -1,0 +1,60 @@
+# ================================================================
+# 开发/测试环境配置
+# ================================================================
+
+spring:
+  # Database Configuration - 开发环境
+  datasource:
+    url: jdbc:mysql://localhost:3306/applymind?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+  
+  # Spring AI - 开发环境（较短超时）
+  ai:
+    openai:
+      connection-timeout: 30s
+      read-timeout: 60s
+
+# Server Configuration - 开发环境
+server:
+  port: 8080
+
+# Application Base URL - 开发环境
+app:
+  base-url: http://localhost:8080
+
+# WeChat Callback URL - 开发环境（使用内网穿透）
+wechat:
+  callback:
+    url: ${WECHAT_CALLBACK_URL:http://e64d845b.natappfree.cc/auth/wechat/callback}
+
+# Logging Configuration - 开发环境（详细日志）
+logging:
+  level:
+    root: INFO
+    com:
+      nian:
+        yinianzhida: DEBUG
+        yinianzhida.controller: DEBUG
+        yinianzhida.service: DEBUG
+        yinianzhida.interceptor: DEBUG
+    org:
+      springframework:
+        web: DEBUG
+    me:
+      chanjar:
+        weixin: DEBUG
+  
+  # 开发环境可以输出到控制台
+  pattern:
+    console: '%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level) %clr(%logger{50}){cyan} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+
+# MyBatis Configuration - 开发环境（打印SQL）
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+

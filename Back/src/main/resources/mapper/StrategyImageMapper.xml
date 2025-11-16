@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nian.yinianzhida.mapper.StrategyImageMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="StrategyImageResultMap" type="com.nian.yinianzhida.entity.StrategyImage">
+        <id property="id" column="id"/>
+        <result property="strategyId" column="strategy_id"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="imageTitle" column="image_title"/>
+        <result property="isCover" column="is_cover"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="width" column="width"/>
+        <result property="height" column="height"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 插入图片记录 -->
+    <insert id="insert" parameterType="com.nian.yinianzhida.entity.StrategyImage"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO strategy_image (
+            strategy_id, image_url, image_title, is_cover, sort_order,
+            file_size, width, height, created_at
+        ) VALUES (
+            #{strategyId}, #{imageUrl}, #{imageTitle}, #{isCover}, #{sortOrder},
+            #{fileSize}, #{width}, #{height}, NOW()
+        )
+    </insert>
+
+    <!-- 批量插入图片 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO strategy_image (
+            strategy_id, image_url, image_title, is_cover, sort_order,
+            file_size, width, height, created_at
+        ) VALUES
+        <foreach collection="images" item="image" separator=",">
+            (
+                #{image.strategyId}, #{image.imageUrl}, #{image.imageTitle},
+                #{image.isCover}, #{image.sortOrder}, #{image.fileSize},
+                #{image.width}, #{image.height}, NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据攻略ID查询图片列表 -->
+    <select id="selectByStrategyId" resultMap="StrategyImageResultMap">
+        SELECT *
+        FROM strategy_image
+        WHERE strategy_id = #{strategyId}
+        ORDER BY sort_order ASC, created_at ASC
+    </select>
+
+    <!-- 根据ID查询图片 -->
+    <select id="selectById" resultMap="StrategyImageResultMap">
+        SELECT *
+        FROM strategy_image
+        WHERE id = #{id}
+    </select>
+
+    <!-- 更新图片信息 -->
+    <update id="updateById" parameterType="com.nian.yinianzhida.entity.StrategyImage">
+        UPDATE strategy_image
+        <set>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="imageTitle != null">image_title = #{imageTitle},</if>
+            <if test="isCover != null">is_cover = #{isCover},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+            <if test="width != null">width = #{width},</if>
+            <if test="height != null">height = #{height},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除图片 -->
+    <delete id="deleteById">
+        DELETE FROM strategy_image
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 根据攻略ID删除所有图片 -->
+    <delete id="deleteByStrategyId">
+        DELETE FROM strategy_image
+        WHERE strategy_id = #{strategyId}
+    </delete>
+
+    <!-- 更新攻略所有图片的封面状态 -->
+    <update id="updateIsCoverByStrategyId">
+        UPDATE strategy_image
+        SET is_cover = #{isCover}
+        WHERE strategy_id = #{strategyId}
+    </update>
+
+    <!-- 统计攻略图片数量 -->
+    <select id="countByStrategyId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM strategy_image
+        WHERE strategy_id = #{strategyId}
+    </select>
+
+    <!-- 更新图片排序 -->
+    <update id="updateSortOrder">
+        UPDATE strategy_image
+        SET sort_order = #{sortOrder}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

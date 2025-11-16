@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nian.yinianzhida.mapper.StrategyMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.nian.yinianzhida.entity.Strategy">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="category" property="category" jdbcType="VARCHAR"/>
+        <result column="summary" property="summary" jdbcType="VARCHAR"/>
+        <result column="content" property="content" jdbcType="LONGVARCHAR"/>
+        <result column="cover_image" property="coverImage" jdbcType="VARCHAR"/>
+        <result column="author" property="author" jdbcType="VARCHAR"/>
+        <result column="is_vip_only" property="isVipOnly" jdbcType="TINYINT"/>
+        <result column="read_count" property="readCount" jdbcType="INTEGER"/>
+        <result column="collect_count" property="collectCount" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="publish_time" property="publishTime" jdbcType="TIMESTAMP"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 分页查询文章列表（带筛选条件和排序） -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT * FROM strategy
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%')
+                     OR summary LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        <choose>
+            <when test="sortBy == 'read'">
+                ORDER BY read_count DESC, publish_time DESC
+            </when>
+            <when test="sortBy == 'collect'">
+                ORDER BY collect_count DESC, publish_time DESC
+            </when>
+            <otherwise>
+                ORDER BY publish_time DESC, created_at DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计文章数量（带筛选条件） -->
+    <select id="countStrategies" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM strategy
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%')
+                     OR summary LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据ID查询文章 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM strategy WHERE id = #{id}
+    </select>
+
+    <!-- 插入文章 -->
+    <insert id="insert" parameterType="com.nian.yinianzhida.entity.Strategy" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO strategy (
+            title, category, summary, content, cover_image, author,
+            is_vip_only, read_count, collect_count, status, publish_time
+        ) VALUES (
+            #{title}, #{category}, #{summary}, #{content}, #{coverImage}, #{author},
+            #{isVipOnly}, 0, 0, #{status}, #{publishTime}
+        )
+    </insert>
+
+    <!-- 更新文章 -->
+    <update id="updateById" parameterType="com.nian.yinianzhida.entity.Strategy">
+        UPDATE strategy
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
+            <if test="author != null">author = #{author},</if>
+            <if test="isVipOnly != null">is_vip_only = #{isVipOnly},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除文章 -->
+    <delete id="deleteById">
+        DELETE FROM strategy WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除文章 -->
+    <delete id="deleteBatchByIds">
+        DELETE FROM strategy WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 更新文章状态 -->
+    <update id="updateStatus">
+        UPDATE strategy SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <!-- 增加阅读量 -->
+    <update id="incrementReadCount">
+        UPDATE strategy SET read_count = read_count + 1 WHERE id = #{id}
+    </update>
+
+    <!-- 增加收藏量 -->
+    <update id="incrementCollectCount">
+        UPDATE strategy SET collect_count = collect_count + 1 WHERE id = #{id}
+    </update>
+
+    <!-- 减少收藏量 -->
+    <update id="decrementCollectCount">
+        UPDATE strategy SET collect_count = collect_count - 1 WHERE id = #{id} AND collect_count > 0
+    </update>
+
+    <!-- 查询推荐文章（基于分类） -->
+    <select id="selectRecommendStrategies" resultMap="BaseResultMap">
+        SELECT * FROM strategy
+        WHERE status = 1
+          AND id != #{strategyId}
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        ORDER BY read_count DESC, collect_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取所有分类及其文章数量 -->
+    <select id="selectCategoryStats" resultType="java.util.HashMap">
+        SELECT
+            category,
+            COUNT(*) as count,
+            SUM(read_count) as read_count
+        FROM strategy
+        WHERE status = 1
+        GROUP BY category
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计数据 -->
+    <select id="selectStatistics" resultType="java.util.HashMap">
+        SELECT
+            COUNT(*) as total_articles,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as published_articles,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as draft_articles,
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as offline_articles,
+            SUM(read_count) as total_read_count,
+            SUM(collect_count) as total_collect_count
+        FROM strategy
+    </select>
+
+    <!-- 检查用户是否收藏了某篇文章 -->
+    <select id="checkUserCollected" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM strategy_collection
+        WHERE user_id = #{userId} AND strategy_id = #{strategyId}
+    </select>
+
+    <!-- 添加收藏 -->
+    <insert id="insertCollection">
+        INSERT INTO strategy_collection (user_id, strategy_id)
+        VALUES (#{userId}, #{strategyId})
+    </insert>
+
+    <!-- 取消收藏 -->
+    <delete id="deleteCollection">
+        DELETE FROM strategy_collection
+        WHERE user_id = #{userId} AND strategy_id = #{strategyId}
+    </delete>
+
+    <!-- 查询用户收藏的文章列表 -->
+    <select id="selectUserCollections" resultMap="BaseResultMap">
+        SELECT s.* FROM strategy s
+        INNER JOIN strategy_collection sc ON s.id = sc.strategy_id
+        WHERE sc.user_id = #{userId}
+        ORDER BY sc.created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计用户收藏的文章数量 -->
+    <select id="countUserCollections" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM strategy_collection
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>

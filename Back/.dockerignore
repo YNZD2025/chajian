@@ -1,0 +1,49 @@
+# Maven构建目录（除了jar包）
+target/*
+!target/*.jar
+
+# IDE配置文件
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
+
+# 日志文件
+logs/
+*.log
+*.log.*
+
+# 临时文件
+*.tmp
+*.temp
+nul
+
+# Git文件
+.git/
+.gitignore
+.gitattributes
+
+# Docker文件
+Dockerfile
+.dockerignore
+
+# 文档文件
+*.md
+README*
+CLAUDE.md
+
+# 测试相关
+src/test/
+
+# Maven wrapper（如果使用本地Maven）
+.mvn/
+mvnw
+mvnw.cmd
+
+# 其他不需要的文件
+.DS_Store
+Thumbs.db

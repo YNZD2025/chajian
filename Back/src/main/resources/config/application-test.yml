@@ -1,0 +1,75 @@
+# ================================================================
+# 测试环境配置
+# ================================================================
+
+spring:
+  # Database Configuration - 测试环境
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/applymind_test?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  
+  # Spring AI - 测试环境
+  ai:
+    openai:
+      connection-timeout: 45s
+      read-timeout: 90s
+    retry:
+      max-attempts: 3
+
+# Server Configuration - 测试环境
+server:
+  port: ${SERVER_PORT:8080}
+
+# Application Base URL - 测试环境
+app:
+  base-url: ${APP_BASE_URL:http://test.your-domain.com}
+
+# WeChat Callback URL - 测试环境
+wechat:
+  mp:
+    appId: ${WECHAT_APP_ID}
+    appSecret: ${WECHAT_APP_SECRET}
+    token: ${WECHAT_TOKEN:applymind_token}
+  callback:
+    url: ${WECHAT_CALLBACK_URL:http://test.your-domain.com/auth/wechat/callback}
+
+# JWT Configuration - 测试环境
+jwt:
+  secret: ${JWT_SECRET:ApplyMindTestSecretKeyForJWTTokenGeneration}
+
+# Logging Configuration - 测试环境
+logging:
+  level:
+    root: INFO
+    com:
+      nian:
+        yinianzhida: INFO
+        yinianzhida.controller: DEBUG
+        yinianzhida.service: DEBUG
+    org:
+      springframework:
+        web: INFO
+    me:
+      chanjar:
+        weixin: INFO
+  
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+  
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 60
+      total-size-cap: 5GB
+
+# MyBatis Configuration - 测试环境（打印SQL）
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+

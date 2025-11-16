@@ -1,0 +1,99 @@
+# ================================================================
+# 一念职达（ApplyMind）主配置文件
+# 公共配置 - 所有环境共享
+# ================================================================
+
+spring:
+  application:
+    name: yinianzhida
+
+  # 激活的环境配置（默认：dev）
+  # 可通过启动参数覆盖：java -jar app.jar --spring.profiles.active=prod
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # Spring AI OpenAI Configuration - 公共配置
+  ai:
+    openai:
+      base-url: ${OPENAI_BASE_URL:https://g.thank.xx.kg}
+      api-key: ${OPENAI_API_KEY:sk-3qRffm9FV6T7mZYfqZMK3csWetGuWIrJd6jtMmxrJhNqFLx4}
+      connection-timeout: 30s
+      read-timeout: 60s
+      chat:
+        options:
+          model: ${OPENAI_MODEL:claude-sonnet-4-20250514}
+          temperature: 0.7
+    retry:
+      max-attempts: 3
+      backoff:
+        initial-interval: 2s
+        multiplier: 2
+        max-interval: 10s
+
+  # File Upload Configuration - 公共配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # Database Configuration - 公共配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 具体连接信息在各环境配置文件中
+
+# Server Configuration - 公共配置
+server:
+  # 具体端口在各环境配置文件中
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,application/javascript,application/json
+  http2:
+    enabled: true
+
+# Application Base URL - 公共配置
+# 具体URL在各环境配置文件中
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+
+# MyBatis Configuration - 公共配置
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.nian.yinianzhida.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    # 日志实现在各环境配置文件中
+
+# JWT Configuration - 公共配置
+jwt:
+  secret: ${JWT_SECRET:ApplyMind2024SecretKeyForJWTTokenGenerationAndValidation}
+  expiration: 604800000
+  header: Authorization
+  prefix: Bearer
+
+# WeChat MP Configuration - 公共配置
+wechat:
+  mp:
+    appId: ${WECHAT_APP_ID:wx68f8092e00a4779f}
+    appSecret: ${WECHAT_APP_SECRET:3eca7f97e99030e9c852498d61519ecd}
+    token: ${WECHAT_TOKEN:applymind_token}
+    aesKey: ${WECHAT_AES_KEY:}
+  # 回调URL在各环境配置文件中
+
+# Logging Configuration - 公共配置
+logging:
+  # Log file output path
+  file:
+    name: logs/yinianzhida.log
+  
+  # Logback rolling policy
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 1GB
+  
+  # 具体日志级别在各环境配置文件中
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'

@@ -1,0 +1,104 @@
+# ================================================================
+# 生产环境配置
+# ================================================================
+
+spring:
+  # Database Configuration - 生产环境
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:applymind}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=true&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # Spring AI - 生产环境（较长超时）
+  ai:
+    openai:
+      base-url: ${OPENAI_BASE_URL:https://g.thank.xx.kg}
+      api-key: ${OPENAI_API_KEY}
+      connection-timeout: 60s
+      read-timeout: 120s
+      chat:
+        options:
+          model: ${OPENAI_MODEL:claude-sonnet-4-20250514}
+          temperature: 0.7
+    retry:
+      max-attempts: 5
+      backoff:
+        initial-interval: 2s
+        multiplier: 2
+        max-interval: 10s
+  
+  # File Upload Configuration - 生产环境（更大限制）
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+# Server Configuration - 生产环境
+server:
+  port: ${SERVER_PORT:8080}
+  # 生产环境优化配置
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    accept-count: 100
+    max-connections: 10000
+
+# Application Base URL - 生产环境
+app:
+  base-url: ${APP_BASE_URL:http://your-domain.com}
+
+# WeChat Callback URL - 生产环境
+wechat:
+  mp:
+    appId: ${WECHAT_APP_ID}
+    appSecret: ${WECHAT_APP_SECRET}
+    token: ${WECHAT_TOKEN}
+    aesKey: ${WECHAT_AES_KEY:}
+  callback:
+    url: ${WECHAT_CALLBACK_URL:https://your-domain.com/auth/wechat/callback}
+
+# JWT Configuration - 生产环境（使用环境变量）
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 604800000
+
+# Logging Configuration - 生产环境（精简日志）
+logging:
+  level:
+    root: WARN
+    com:
+      nian:
+        yinianzhida: INFO
+        yinianzhida.controller: INFO
+        yinianzhida.service: INFO
+    org:
+      springframework:
+        web: WARN
+    me:
+      chanjar:
+        weixin: WARN
+  
+  # 生产环境只输出到文件
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+  
+  # 生产环境日志轮转策略（更大的文件和更长的保留期）
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 90
+      total-size-cap: 10GB
+
+# MyBatis Configuration - 生产环境（不打印SQL）
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+

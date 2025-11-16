@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nian.yinianzhida.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.nian.yinianzhida.entity.User">
+        <id column="id" property="id"/>
+        <result column="openid" property="openid"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="gender" property="gender"/>
+        <result column="tags" property="tags"/>
+        <result column="is_vip" property="isVip"/>
+        <result column="vip_expire_time" property="vipExpireTime"/>
+        <result column="resume_optimize_count" property="resumeOptimizeCount"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+    </resultMap>
+
+    <!-- 根据OpenID查询用户 -->
+    <select id="selectByOpenid" resultMap="BaseResultMap">
+        SELECT * FROM user WHERE openid = #{openid}
+    </select>
+
+    <!-- 根据ID查询用户 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <!-- 插入新用户 -->
+    <insert id="insert" parameterType="com.nian.yinianzhida.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (
+            openid,
+            nickname,
+            avatar,
+            phone,
+            email,
+            gender,
+            tags,
+            is_vip,
+            vip_expire_time,
+            resume_optimize_count,
+            status,
+            created_at,
+            updated_at,
+            last_login_time
+        ) VALUES (
+            #{openid},
+            #{nickname},
+            #{avatar},
+            #{phone},
+            #{email},
+            #{gender},
+            #{tags},
+            #{isVip},
+            #{vipExpireTime},
+            #{resumeOptimizeCount},
+            #{status},
+            #{createdAt},
+            #{updatedAt},
+            #{lastLoginTime}
+        )
+    </insert>
+
+    <!-- 更新用户信息 -->
+    <update id="updateById" parameterType="com.nian.yinianzhida.entity.User">
+        UPDATE user
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="isVip != null">is_vip = #{isVip},</if>
+            <if test="vipExpireTime != null">vip_expire_time = #{vipExpireTime},</if>
+            <if test="resumeOptimizeCount != null">resume_optimize_count = #{resumeOptimizeCount},</if>
+            <if test="status != null">status = #{status},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新最后登录时间 -->
+    <update id="updateLastLoginTime">
+        UPDATE user
+        SET last_login_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 分页查询用户列表 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT * FROM user
+        <where>
+            <if test="params.keyword != null and params.keyword != ''">
+                AND (
+                    nickname LIKE CONCAT('%', #{params.keyword}, '%')
+                    OR phone LIKE CONCAT('%', #{params.keyword}, '%')
+                    OR email LIKE CONCAT('%', #{params.keyword}, '%')
+                )
+            </if>
+            <if test="params.isVip != null">
+                AND is_vip = #{params.isVip}
+            </if>
+            <if test="params.status != null">
+                AND status = #{params.status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{params.offset}, #{params.limit}
+    </select>
+
+    <!-- 统计用户总数 -->
+    <select id="countByParams" resultType="int">
+        SELECT COUNT(*) FROM user
+        <where>
+            <if test="params.keyword != null and params.keyword != ''">
+                AND (
+                    nickname LIKE CONCAT('%', #{params.keyword}, '%')
+                    OR phone LIKE CONCAT('%', #{params.keyword}, '%')
+                    OR email LIKE CONCAT('%', #{params.keyword}, '%')
+                )
+            </if>
+            <if test="params.isVip != null">
+                AND is_vip = #{params.isVip}
+            </if>
+            <if test="params.status != null">
+                AND status = #{params.status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据ID删除用户 -->
+    <delete id="deleteById">
+        DELETE FROM user WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除用户 -->
+    <delete id="deleteBatchByIds">
+        DELETE FROM user WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

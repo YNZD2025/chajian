@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "一念职达助手",
+  "version": "1.0",
+  "description": "AI赋能求职,一键直达理想Offer",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:8080/*",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "一念职达助手",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "config.js",
+        "js/htmlSimplifier.js",
+        "js/popupDetector.js",
+        "js/autofill/utils/DOMUtils.js",
+        "js/autofill/utils/DOMTraverser.js",
+        "js/autofill/utils/FrameworkAdapter.js",
+        "js/autofill/utils/SelectMatcher.js",
+        "js/autofill/utils/DatePickerHandler.js",
+        "js/autofill/utils/EventSimulator.js",
+        "js/autofill/utils/SmartClicker.js",
+        "js/autofill/utils/DOMObserver.js",
+        "js/autofill/utils/Highlighter.js",
+        "js/autofill/utils/DataFormatter.js",
+        "js/autofill/core/FieldScanner.js",
+        "js/autofill/core/RepeatedSectionDetector.js",
+        "js/autofill/core/FillHistoryManager.js",
+        "js/autofill/core/ProgressiveFiller.js",
+        "js/autofill/core/FormExpander.js",
+        "js/autofill/services/AIService.js",
+        "js/autofill/core/FormFillController.js",
+        "js/autofill/AutoFillMain.js",
+        "content.js"
+      ],
+      "css": ["floating-widget.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
