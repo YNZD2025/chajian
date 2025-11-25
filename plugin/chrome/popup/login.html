@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 一念职达</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <style>
+        .login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .qr-slot { background: var(--primary); width: 200px; height: 22px; border-radius: 11px; margin-bottom: -11px; z-index: 5; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .qr-paper { background: white; width: 180px; padding: 20px 15px; border-radius: 0 0 18px 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; animation: slideOut 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+        @keyframes slideOut { 0% { transform: translateY(-100%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="plugin-container">
+        <div class="sidebar">
+            <a href="login.html" class="nav-item active">
+                <div class="nav-icon-box"><i class="fas fa-sign-in-alt"></i></div>
+                <div class="nav-label">登录</div>
+            </a>
+        </div>
+        <div class="main-area">
+            <div class="plugin-content" style="padding-top: 20px;">
+                <div class="login-container">
+                    <h2 style="color: var(--text-main); margin-bottom: 30px; font-weight: 800; font-size: 20px;">欢迎回来</h2>
+                    <div class="qr-slot"></div>
+                    <div class="qr-paper">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Login" style="border-radius: 8px; margin-bottom: 12px; width: 120px; height: 120px;">
+                        <p style="font-size: 11px; color: var(--text-gray); margin: 0;">微信扫一扫登录</p>
+                    </div>
+                    <p style="font-size: 10px; color: var(--text-gray); margin-top: 20px;">首次使用将自动注册</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/transitions.js"></script>
+</body>
+</html>

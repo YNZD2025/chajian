@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置 - 一念职达</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+</head>
+<body>
+
+    <div class="plugin-container">
+        <!-- 侧边栏导航 -->
+        <div class="sidebar">
+            <a href="fill.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-magic"></i></div>
+                <div class="nav-label">填充</div>
+            </a>
+            <a href="history.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-history"></i></div>
+                <div class="nav-label">记录</div>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <div class="sidebar-bottom">
+                <a href="profile.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-user"></i></div>
+                    <div class="nav-label">我的</div>
+                </a>
+                <a href="settings.html" class="nav-item active">
+                    <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                    <div class="nav-label">设置</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-area">
+            <!-- 悬浮标题 -->
+            <div class="liquid-title">设置</div>
+            <!-- 悬浮关闭按钮 -->
+            <a href="javascript:history.back()" class="liquid-close"><i class="fas fa-times"></i></a>
+
+            <!-- 滚动内容 -->
+            <div class="plugin-content">
+                <!-- 基础设置 -->
+                <div class="content-card">
+                    <div class="card-title">
+                        <i class="fas fa-sliders-h"></i> 基础设置
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon primary">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="settings-item-label">长篇任务</div>
+                                    <div class="settings-item-desc">适用于较长的申请表单</div>
+                                </div>
+                            </div>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon primary">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                                <div>
+                                    <div class="settings-item-label">消息通知</div>
+                                    <div class="settings-item-desc">接收填充完成通知</div>
+                                </div>
+                            </div>
+                            <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 账号设置 -->
+                <div class="content-card">
+                    <div class="card-title">
+                        <i class="fas fa-user-cog"></i> 账号设置
+                    </div>
+                    <div class="settings-group">
+                        <a href="change-password.html" class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon accent">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                                <div class="settings-item-label">修改访问密码</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </a>
+                        <a href="edit-resume.html" class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon primary">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <div class="settings-item-label">修改简历信息</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </a>
+                        <a href="privacy-settings.html" class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon gray">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="settings-item-label">隐私设置</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 其他 -->
+                <div class="content-card">
+                    <div class="card-title">
+                        <i class="fas fa-ellipsis-h"></i> 其他
+                    </div>
+                    <div class="settings-group">
+                        <a href="feedback.html" class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon primary">
+                                    <i class="fas fa-comment-dots"></i>
+                                </div>
+                                <div class="settings-item-label">我要反馈</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </a>
+                        <div class="settings-item" onclick="alert('缓存已清理')">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon gray">
+                                    <i class="fas fa-trash-alt"></i>
+                                </div>
+                                <div class="settings-item-label">清理缓存</div>
+                            </div>
+                            <div class="settings-item-right">
+                                <span>12MB</span>
+                                <i class="fas fa-chevron-right arrow-icon"></i>
+                            </div>
+                        </div>
+                        <a href="help.html" class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon primary">
+                                    <i class="fas fa-question-circle"></i>
+                                </div>
+                                <div class="settings-item-label">帮助中心</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </a>
+                        <a href="about.html" class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon gray">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="settings-item-label">关于</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 退出登录 -->
+                <button class="btn-danger" onclick="alert('已退出登录')">
+                    <i class="fas fa-sign-out-alt"></i> 退出登录
+                </button>
+
+                <!-- 页脚 -->
+                <div class="plugin-footer">
+                    <p>一念职达 v1.0.0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/transitions.js"></script>
+    <script src="scripts/security.js"></script>
+</body>
+</html>

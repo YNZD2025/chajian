@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帮助中心 - 一念职达</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+</head>
+<body>
+    <div class="plugin-container">
+        <div class="sidebar">
+            <a href="fill.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-magic"></i></div>
+                <div class="nav-label">填充</div>
+            </a>
+            <a href="history.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-history"></i></div>
+                <div class="nav-label">记录</div>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <div class="sidebar-bottom">
+                <a href="profile.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-user"></i></div>
+                    <div class="nav-label">我的</div>
+                </a>
+                <a href="settings.html" class="nav-item active">
+                    <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                    <div class="nav-label">设置</div>
+                </a>
+            </div>
+        </div>
+        <div class="main-area">
+            <div class="liquid-title">帮助中心</div>
+            <a href="settings.html" class="liquid-close"><i class="fas fa-times"></i></a>
+            <div class="plugin-content">
+                <div class="content-card">
+                    <div class="card-title"><i class="fas fa-question-circle"></i> 常见问题</div>
+                    <div class="help-item" onclick="this.classList.toggle('expanded')">
+                        <div class="help-item-title">如何使用一键填充功能？<i class="fas fa-chevron-down"></i></div>
+                        <div class="help-item-content">打开任意申请页面，点击插件图标，选择"智能填充"即可自动识别表单并填写您的信息。</div>
+                    </div>
+                    <div class="help-item" onclick="this.classList.toggle('expanded')">
+                        <div class="help-item-title">如何修改我的简历信息？<i class="fas fa-chevron-down"></i></div>
+                        <div class="help-item-content">进入设置 → 修改简历信息，可以编辑您的个人资料、教育背景、工作经历等。</div>
+                    </div>
+                    <div class="help-item" onclick="this.classList.toggle('expanded')">
+                        <div class="help-item-title">填充失败怎么办？<i class="fas fa-chevron-down"></i></div>
+                        <div class="help-item-content">1. 刷新页面后重试<br>2. 检查网络连接<br>3. 确保简历信息完整<br>4. 如问题持续，请提交反馈</div>
+                    </div>
+                    <div class="help-item" onclick="this.classList.toggle('expanded')">
+                        <div class="help-item-title">我的数据安全吗？<i class="fas fa-chevron-down"></i></div>
+                        <div class="help-item-content">您的数据使用端到端加密存储，我们不会将您的个人信息分享给第三方。</div>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="card-title"><i class="fas fa-life-ring"></i> 需要更多帮助？</div>
+                    <a href="feedback.html"><button class="btn-primary"><i class="fas fa-comment-dots"></i> 提交反馈</button></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/transitions.js"></script>
+</body>
+</html>

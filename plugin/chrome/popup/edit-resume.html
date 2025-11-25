@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修改简历 - 一念职达</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+</head>
+<body>
+    <div class="plugin-container">
+        <div class="sidebar">
+            <a href="fill.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-magic"></i></div>
+                <div class="nav-label">填充</div>
+            </a>
+            <a href="history.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-history"></i></div>
+                <div class="nav-label">记录</div>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <div class="sidebar-bottom">
+                <a href="profile.html" class="nav-item active">
+                    <div class="nav-icon-box"><i class="fas fa-user"></i></div>
+                    <div class="nav-label">我的</div>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                    <div class="nav-label">设置</div>
+                </a>
+            </div>
+        </div>
+        <div class="main-area">
+            <div class="liquid-title">修改简历</div>
+            <a href="settings.html" class="liquid-close"><i class="fas fa-times"></i></a>
+            <div class="plugin-content">
+                <div class="content-card">
+                    <div class="user-card">
+                        <img src="https://i.pravatar.cc/150?img=47" class="user-avatar">
+                        <div class="user-info">
+                            <h3>李艺伟</h3>
+                            <span class="user-status">求职中</span>
+                        </div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">学校</div>
+                            <div class="info-value">清华大学</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">专业</div>
+                            <div class="info-value">计算机科学</div>
+                        </div>
+                        <div class="info-item full">
+                            <div class="info-label">手机</div>
+                            <div class="info-value">+86 138****9876</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="card-title"><i class="fas fa-edit"></i> 编辑信息</div>
+                    <div class="form-group">
+                        <label class="form-label">姓名</label>
+                        <input type="text" class="form-input" value="李艺伟">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" class="form-input" value="liyiwei@tsinghua.edu.cn">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">意向岗位</label>
+                        <input type="text" class="form-input" value="数据分析">
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="alert('保存成功！')"><i class="fas fa-save"></i> 保存修改</button>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/transitions.js"></script>
+</body>
+</html>

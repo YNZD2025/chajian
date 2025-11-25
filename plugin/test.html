@@ -1,0 +1,113 @@
+<!-- chrome/popup/test-autofill.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动填充测试</title>
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .form-card { background: white; border-radius: 16px; padding: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); }
+        .btns { display:flex; gap:10px; margin:12px 0; }
+        .btn { padding:8px 14px; border-radius: 14px; font-size:12px; border:1px solid var(--primary); color:var(--primary); background:white; cursor:pointer; }
+        .btn.primary { background: var(--primary); color:white; border-color: var(--primary); }
+        .grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+        .full { grid-column: span 2; }
+    </style>
+</head>
+<body>
+    <div class="plugin-container">
+        <div class="sidebar">
+            <a href="test-autofill.html" class="nav-item active">
+                <div class="nav-icon-box"><i class="fas fa-vial"></i></div>
+                <div class="nav-label">测试</div>
+            </a>
+        </div>
+        <div class="main-area">
+            <div class="liquid-title">自动填充测试</div>
+            <div class="plugin-content">
+                <div class="form-card">
+                    <div class="btns">
+                        <button id="fill-sample" class="btn primary"><i class="fas fa-bolt"></i> 填充示例数据</button>
+                        <button id="clear" class="btn"><i class="fas fa-eraser"></i> 清空</button>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label class="form-label">姓名</label>
+                            <input class="form-input" name="name" placeholder="姓名">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">手机</label>
+                            <input class="form-input" type="tel" name="phone" placeholder="手机">
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">邮箱</label>
+                            <input class="form-input" type="email" name="email" placeholder="邮箱">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">学校</label>
+                            <input class="form-input" name="school" placeholder="学校">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">专业</label>
+                            <input class="form-input" name="major" placeholder="专业">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">学历</label>
+                            <input class="form-input" name="degree" placeholder="学历">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">毕业年份</label>
+                            <input class="form-input" name="grad_year" placeholder="毕业年份">
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">意向岗位</label>
+                            <input class="form-input" name="position" placeholder="岗位">
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">期望城市</label>
+                            <input class="form-input" name="cities" placeholder="城市">
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">核心技能</label>
+                            <textarea class="form-textarea" name="skills" placeholder="技能"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    const { sampleData } = chrome.runtime.getManifest();
+    function setValue(sel, val) {
+        const el = document.querySelector(sel);
+        if (!el || val == null) return;
+        el.value = Array.isArray(val) ? val.join(', ') : String(val);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    function clearAll() {
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.value = '';
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    }
+    document.getElementById('fill-sample').addEventListener('click', () => {
+        const r = sampleData && sampleData.resume ? sampleData.resume : {};
+        setValue('input[name="name"]', r.name);
+        setValue('input[name="phone"]', r.phone);
+        setValue('input[type="email"][name="email"]', r.email);
+        setValue('input[name="school"]', r.school);
+        setValue('input[name="major"]', r.major);
+        setValue('input[name="degree"]', r.degree);
+        setValue('input[name="grad_year"]', r.grad_year);
+        setValue('input[name="position"]', r.target_position);
+        setValue('input[name="cities"]', r.preferred_cities);
+        setValue('textarea[name="skills"]', r.skills);
+    });
+    document.getElementById('clear').addEventListener('click', clearAll);
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投递记录 - 一念职达</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <style>
+        .job-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 14px; margin-bottom: 10px; }
+        .status-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-right: 12px; box-shadow: 0 0 8px var(--accent); }
+        .status-dot.inactive { background: #ccc; box-shadow: none; }
+        .view-btn { background: #f7f9fa; padding: 5px 12px; border-radius: 12px; font-size: 11px; color: var(--text-gray); border: none; font-weight: 600; cursor: pointer; }
+        .view-btn:hover { background: #edf1f3; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="plugin-container">
+        <div class="sidebar">
+            <a href="fill.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-magic"></i></div>
+                <div class="nav-label">填充</div>
+            </a>
+            <a href="history.html" class="nav-item active">
+                <div class="nav-icon-box"><i class="fas fa-history"></i></div>
+                <div class="nav-label">记录</div>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <div class="sidebar-bottom">
+                <a href="profile.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-user"></i></div>
+                    <div class="nav-label">我的</div>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                    <div class="nav-label">设置</div>
+                </a>
+            </div>
+        </div>
+        <div class="main-area">
+            <div class="liquid-title">投递记录</div>
+            <a href="settings.html" class="liquid-close"><i class="fas fa-cog"></i></a>
+            <div class="plugin-content">
+                <div class="job-item">
+                    <div style="display:flex;align-items:center;">
+                        <div class="status-dot"></div>
+                        <div><div style="font-weight:600;font-size:13px;">阿里前端专家</div><div style="font-size:10px;color:#999;">2025/11/2 11:12</div></div>
+                    </div>
+                    <button class="view-btn">查看</button>
+                </div>
+                <div class="job-item">
+                    <div style="display:flex;align-items:center;">
+                        <div class="status-dot inactive"></div>
+                        <div><div style="font-weight:600;font-size:13px;">腾讯交互设计</div><div style="font-size:10px;color:#999;">2025/11/1 15:30</div></div>
+                    </div>
+                    <button class="view-btn">查看</button>
+                </div>
+                <div class="job-item">
+                    <div style="display:flex;align-items:center;">
+                        <div class="status-dot inactive"></div>
+                        <div><div style="font-weight:600;font-size:13px;">字节数据分析</div><div style="font-size:10px;color:#999;">2025/10/28 09:45</div></div>
+                    </div>
+                    <button class="view-btn">查看</button>
+                </div>
+                <div class="job-item">
+                    <div style="display:flex;align-items:center;">
+                        <div class="status-dot inactive"></div>
+                        <div><div style="font-weight:600;font-size:13px;">美团产品经理</div><div style="font-size:10px;color:#999;">2025/10/25 14:20</div></div>
+                    </div>
+                    <button class="view-btn">查看</button>
+                </div>
+                <div class="job-item">
+                    <div style="display:flex;align-items:center;">
+                        <div class="status-dot inactive"></div>
+                        <div><div style="font-weight:600;font-size:13px;">京东算法工程师</div><div style="font-size:10px;color:#999;">2025/10/22 10:00</div></div>
+                    </div>
+                    <button class="view-btn">查看</button>
+                </div>
+                <div class="job-item">
+                    <div style="display:flex;align-items:center;">
+                        <div class="status-dot inactive"></div>
+                        <div><div style="font-weight:600;font-size:13px;">网易游戏开发</div><div style="font-size:10px;color:#999;">2025/10/20 18:30</div></div>
+                    </div>
+                    <button class="view-btn">查看</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/transitions.js"></script>
+    <script src="scripts/security.js"></script>
+</body>
+</html>

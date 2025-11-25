@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能填充 - 一念职达</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/fill.css">
+</head>
+<body>
+    <!-- 悬浮按钮 -->
+    <div id="float-status-button" class="float-status-button">
+        <i class="fas fa-rocket"></i>
+    </div>
+
+    <!-- 状态弹窗 -->
+    <div id="status-popup" class="status-popup">
+        <div class="status-popup-header">
+            <span class="status-popup-title">
+                <i class="fas fa-info-circle"></i>
+                一念状态
+            </span>
+            <button class="status-popup-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="status-popup-content">
+            <div class="status-message" id="status-message">准备就绪</div>
+        </div>
+    </div>
+
+    <div class="plugin-container">
+        <div class="sidebar">
+            <a href="fill.html" class="nav-item active">
+                <div class="nav-icon-box"><i class="fas fa-magic"></i></div>
+                <div class="nav-label">填充</div>
+            </a>
+            <a href="history.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-history"></i></div>
+                <div class="nav-label">记录</div>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <div class="sidebar-bottom">
+                <a href="profile.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-user"></i></div>
+                    <div class="nav-label">我的</div>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                    <div class="nav-label">设置</div>
+                </a>
+            </div>
+        </div>
+        <div class="main-area">
+            <div class="liquid-title">智能填充</div>
+            <a href="settings.html" class="liquid-close"><i class="fas fa-cog"></i></a>
+
+            <div class="liquid-cta-container">
+                <div class="liquid-cta-btn"><i class="fas fa-bolt"></i> 一键智能填充</div>
+            </div>
+
+            <div class="plugin-content">
+                <div class="book-wrapper">
+                    <div class="switch-tooltip">切换简历源</div>
+                    <div class="resume-page-next">
+                        <div style="text-align:right; font-size:8px; color:var(--primary); font-weight:bold; margin-bottom:6px;">简历 B (英文版)</div>
+                        <div style="font-size:10px; font-weight:bold; color:#ccc;">Li Yiwei</div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-block"></div>
+                    </div>
+
+                    <div class="resume-page-current">
+                        <div class="resume-header">
+                            <img src="https://i.pravatar.cc/150?img=47" class="resume-avatar">
+                            <div class="resume-meta">
+                                <div class="resume-name">李艺伟</div>
+                                <div class="resume-type">中文简历 (默认)</div>
+                            </div>
+                        </div>
+
+                        <div class="info-grid-compact">
+                            <div class="info-cell">
+                                <div class="info-cell-label">学校</div>
+                                <div class="info-cell-value">清华大学</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">学历</div>
+                                <div class="info-cell-value">硕士</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">专业</div>
+                                <div class="info-cell-value">计算机科学</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">毕业年份</div>
+                                <div class="info-cell-value">2026</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">手机</div>
+                                <div class="info-cell-value">138****9876</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">邮箱</div>
+                                <div class="info-cell-value">li***@thu.edu</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">意向岗位</div>
+                                <div class="info-cell-value">数据分析</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">期望城市</div>
+                                <div class="info-cell-value">北京/上海</div>
+                            </div>
+                            <div class="info-cell" style="grid-column: span 2;">
+                                <div class="info-cell-label">核心技能</div>
+                                <div class="info-cell-value">Python, SQL, Tableau, Hadoop</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="task-card">
+                    <h4><i class="fas fa-edit"></i> 本次任务背景</h4>
+                    <textarea class="task-input" placeholder="例如：我要应聘阿里巴巴数据分析师岗位，请针对JD要求润色我的简历，突出数据处理和业务分析能力..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/transitions.js"></script>
+    <script src="scripts/statusPopup.js"></script>
+</body>

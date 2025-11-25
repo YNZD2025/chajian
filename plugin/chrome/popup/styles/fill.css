@@ -1,0 +1,234 @@
+.book-wrapper { position: relative; width: 96%; height: 280px; perspective: 1000px; cursor: pointer; margin-bottom: 12px; }
+.resume-page-next { position: absolute; top: 8px; right: -16px; width: 98%; height: 100%; background: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.5); border-radius: 18px; padding: 14px; transform: rotate(3deg) translateZ(-10px); box-shadow: 2px 2px 10px rgba(0,0,0,0.05); z-index: 1; transition: transform 0.4s ease; filter: blur(1px); opacity: 0.8; overflow: hidden; }
+.resume-page-current { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; border-radius: 18px; padding: 14px; border: 1px solid rgba(0,0,0,0.05); box-shadow: -5px 10px 30px rgba(0,0,0,0.1); z-index: 2; transition: transform 0.4s ease; display: flex; flex-direction: column; }
+.book-wrapper:hover .resume-page-current { transform: translateX(-20px) rotateY(-5deg); }
+.book-wrapper:hover .resume-page-next { transform: rotate(1deg) translateZ(0); filter: blur(0); opacity: 1; }
+.switch-tooltip { position: absolute; right: -5px; top: 25px; background: var(--accent); color: white; font-size: 13px; padding: 2px 20px; border-radius: 5px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 10; white-space: nowrap; }
+.book-wrapper:hover .switch-tooltip { opacity: 1; right: 0px; }
+.skeleton-block { height: 30px; background: #f0f0f0; border-radius: 8px; margin-bottom: 6px; }
+.skeleton-text { height: 6px; width: 60%; background: #eee; margin-bottom: 5px; border-radius: 3px; }
+.liquid-cta-container { position: absolute; bottom: 40px; left: 34px; right: 0; width: calc(100% - 70px); display: flex; justify-content: center; pointer-events: none; z-index: 40; }
+.liquid-cta-btn { pointer-events: auto; cursor: pointer; background: var(--glass-clear-bg); backdrop-filter: var(--glass-clear-blur); -webkit-backdrop-filter: var(--glass-clear-blur); box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25); border: 1px solid var(--accent); padding: 12px 25px; border-radius: 25px; color: var(--accent); font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+.liquid-cta-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.35); }
+.task-card { background: white; border-radius: 16px; padding: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); }
+.task-card h4 { margin-bottom: 8px; font-size: 12px; color: var(--text-main); display: flex; align-items: center; gap: 5px; }
+.task-card h4 i { color: var(--primary); font-size: 10px; }
+.task-input { width: 100%; padding: 10px; border: 1px solid #e8e8e8; border-radius: 10px; font-size: 11px; color: var(--text-main); background: #fafafa; min-height: 60px; resize: none; line-height: 1.5; }
+.task-input:focus { outline: none; border-color: var(--primary); background: white; }
+.task-input::placeholder { color: #bbb; }
+.resume-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f5f5f5; }
+.resume-avatar { width: 32px; height: 32px; border-radius: 10px; }
+.resume-meta { flex: 1; }
+.resume-name { font-size: 13px; font-weight: 700; color: var(--text-main); }
+.resume-type { font-size: 9px; color: var(--primary); }
+.info-grid-compact { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; font-size: 10px; flex: 1; overflow-y: auto; }
+.info-cell { background: #f9f9f9; padding: 5px 6px; border-radius: 6px; }
+.info-cell-label { font-size: 8px; color: #999; margin-bottom: 2px; }
+.info-cell-value { color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 悬浮按钮样式 */
+.float-status-button {
+  position: fixed;
+  bottom: 30px;
+  right: 100px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 9998;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.float-status-button i {
+  color: white;
+  font-size: 22px;
+  transition: transform 0.3s ease;
+}
+
+.float-status-button:hover {
+  transform: scale(1.1) rotate(10deg);
+  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+}
+
+.float-status-button:hover i {
+  transform: scale(1.1);
+}
+
+.float-status-button:active {
+  transform: scale(0.95);
+}
+
+/* 悬浮按钮脉动动画 */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(102, 126, 234, 0.7);
+  }
+}
+
+/* 状态弹窗样式 */
+.status-popup {
+  position: fixed;
+  bottom: 95px;
+  right: 90px;
+  width: 320px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.status-popup.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* 弹窗头部 */
+.status-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.status-popup-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-popup-title i {
+  font-size: 16px;
+}
+
+.status-popup-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-popup-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.status-popup-close i {
+  color: white;
+  font-size: 12px;
+}
+
+/* 弹窗内容 */
+.status-popup-content {
+  padding: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.status-message {
+  font-size: 13px;
+  color: #2c3e50;
+  line-height: 1.6;
+  padding: 10px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+  animation: messageSlideIn 0.4s ease;
+  position: relative;
+}
+
+.status-message::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px 0 0 10px;
+  animation: progressBar 2s ease-in-out infinite;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes progressBar {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 滚动条样式 */
+.status-popup-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.status-popup-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.status-popup-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+}
+
+.status-popup-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .float-status-button {
+    right: 20px;
+    bottom: 20px;
+    width: 45px;
+    height: 45px;
+  }
+
+  .float-status-button i {
+    font-size: 20px;
+  }
+
+  .status-popup {
+    right: 15px;
+    bottom: 75px;
+    width: calc(100vw - 30px);
+    max-width: 320px;
+  }
+}

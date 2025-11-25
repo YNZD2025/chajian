@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隐私设置 - 一念职达</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+</head>
+<body>
+    <div class="plugin-container">
+        <div class="sidebar">
+            <a href="fill.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-magic"></i></div>
+                <div class="nav-label">填充</div>
+            </a>
+            <a href="history.html" class="nav-item">
+                <div class="nav-icon-box"><i class="fas fa-history"></i></div>
+                <div class="nav-label">记录</div>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <div class="sidebar-bottom">
+                <a href="profile.html" class="nav-item">
+                    <div class="nav-icon-box"><i class="fas fa-user"></i></div>
+                    <div class="nav-label">我的</div>
+                </a>
+                <a href="settings.html" class="nav-item active">
+                    <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                    <div class="nav-label">设置</div>
+                </a>
+            </div>
+        </div>
+        <div class="main-area">
+            <div class="liquid-title">隐私设置</div>
+            <a href="settings.html" class="liquid-close"><i class="fas fa-times"></i></a>
+            <div class="plugin-content-centered">
+                <div class="content-card">
+                    <div class="card-title"><i class="fas fa-shield-alt"></i> 数据管理</div>
+                    <div class="settings-group">
+                        <div class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon primary"><i class="fas fa-database"></i></div>
+                                <div>
+                                    <div class="settings-item-label">数据同步</div>
+                                    <div class="settings-item-desc">在多设备间同步数据</div>
+                                </div>
+                            </div>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon primary"><i class="fas fa-chart-line"></i></div>
+                                <div>
+                                    <div class="settings-item-label">使用统计</div>
+                                    <div class="settings-item-desc">帮助我们改进产品</div>
+                                </div>
+                            </div>
+                            <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="card-title"><i class="fas fa-trash-alt"></i> 数据清除</div>
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="alert('填充记录已清除')">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon gray"><i class="fas fa-history"></i></div>
+                                <div class="settings-item-label">清除填充记录</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </div>
+                        <div class="settings-item" onclick="if(confirm('确定要删除所有数据吗？'))alert('数据已删除')">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon accent"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div class="settings-item-label">删除所有数据</div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/transitions.js"></script>
+    <script src="scripts/security.js"></script>
+</body>
+</html>
