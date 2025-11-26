@@ -200,8 +200,10 @@
       await clickAllAddButtons();
 
       // 步骤2: 获取服务器需要填写的字段
-      await getNeedFieldsFromServer(generateSimplifiedHTML());
+      console.log("步骤2: 获取服务器需要填写的字段");
+      await getNeedFieldsFromServer(generateSimplifiedHTML(),company,position);
 
+      
       // 步骤3: 如果启用美化，生成专岗简历
       // if (enableBeautify) {
       //   await beautifyResumeForPosition(company, position, resumeMd);
@@ -259,6 +261,7 @@
       console.log("步骤9: 获取填写值");
       await getFillingValues(enableBeautify, resumeMd);
 
+      /*
       // 步骤10: 执行填写
       console.log("步骤10: 执行填写");
       window.setStateText("尝试为你填写简历...", "min");
@@ -296,6 +299,7 @@
       // 关闭高亮
       console.log("步骤15: 关闭高亮");
       window.closeHighlight();
+      */
 
     } catch (error) {
       handleError(error, startTime, company, resumeId, callback);
@@ -2126,8 +2130,8 @@
   /**
    * 从服务器获取需要填写的字段
    */
-  async function getNeedFieldsFromServer(html) {
-    const labels = [];
+  async function getNeedFieldsFromServer(html,company,position) {
+    /*const labels = [];
     const regex = /<label>([^<]+)<\/label>/gi;
     let m;
     while ((m = regex.exec(html)) !== null) {
@@ -2141,31 +2145,86 @@
     sessionId = `mock-session-${Date.now()}`;
 
     console.log("serverFields", serverFields);
-
-    /*
+*/
+    
     try {
+      console.log("📋 准备发送请求获取字段...");
+      
+      // 🔍 检查 window.config 是否已加载
+      if (!window.config) {
+        console.error('❌ window.config 未加载，尝试重新获取...');
+        const storage = await chrome.storage.local.get(["config"]);
+        window.config = storage.config;
+        
+        if (!window.config) {
+          throw new Error('配置加载失败，请刷新页面重试');
+        }
+        console.log('✅ 配置已重新加载:', window.config);
+      }
+      
+      if (!window.config.API_BASE_URL) {
+        console.error('❌ API_BASE_URL 不存在:', window.config);
+        throw new Error('API_BASE_URL 配置缺失');
+      }
+      
+      const requestUrl = `${window.config.API_BASE_URL}analyze-page`;
+      const requestBody = {
+        url: window.location.href,
+        html: html,
+        company: company,
+        position: position
+      };
+      
+      console.log('📤 发送请求到:', requestUrl);
+      console.log('📦 请求参数:', {
+        url: requestBody.url,
+        company: requestBody.company,
+        position: requestBody.position,
+        htmlLength: html ? html.length : 0
+      });
+      
       const response = await fetchWithJwt(
-        `${window.config.API_BASE_URL}getNeedField`,
+        requestUrl,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: window.location.href,
-            version: chrome.runtime.getManifest().version,
-            html: html
-          })
+          body: JSON.stringify(requestBody)
         }
       );
-
-      serverFields = response.fields;
+      
+      console.log('📥 收到原始响应:', response);
+      
+      // 检查响应是否有效
+      if (!response) {
+        throw new Error('响应为空');
+      }
+      
+      if (response.error) {
+        throw new Error(`服务器返回错误: ${response.error}`);
+      }
+      
+      if (!response.sections) {
+        console.warn('⚠️ 响应中没有 sections 字段:', response);
+      }
+      
+      serverFields = response.sections;
       sessionId = response.sessionId;
+      
+      console.log('✅ serverFields 解析成功，共', serverFields ? serverFields.length : 0, '个区域');
+      console.log('🆔 sessionId:', sessionId);
+      console.log('📋 详细字段:', serverFields);
 
     } catch (error) {
+      console.error('❌ getNeedFieldsFromServer 失败');
+      console.error('错误类型:', error.name);
+      console.error('错误信息:', error.message);
+      console.error('错误堆栈:', error.stack);
+      
       hasNetworkError = true;
       errorFunctionName = "getNeedField";
       throw error;
     }
-    */
+    
   }
 
   /**
@@ -2201,29 +2260,7 @@
   async function getFillingValues(enableBeautify, resumeMd) {
     console.log("进入步骤9");
     // console.log("serverFields===>", serverFields);
-    // console.log("company===>", company);
-    // console.log("position===>", position);
-    // console.log("resumeMd===>", resumeMd);
     await callFillResumeValueAPI(serverFields, "", "", resumeMd, "resume-default");
-    // if (!fillValues.length) {
-    //   fillValues = [
-    //     {
-    //       name: "基本信息",
-    //       fields: [
-    //         { name: "姓名", value: "李艺伟" },
-    //         { name: "手机", value: "13800001111" },
-    //         { name: "邮箱", value: "liyiwei@example.com" },
-    //         { name: "学校", value: "清华大学" },
-    //         { name: "专业", value: "计算机科学" },
-    //         { name: "学历", value: "硕士" },
-    //         { name: "毕业年份", value: "2026" },
-    //         { name: "意向岗位", value: "数据分析" },
-    //         { name: "期望城市", value: "北京/上海" },
-    //         { name: "核心技能", value: "Python, SQL, Tableau, Hadoop" }
-    //       ]
-    //     }
-    //   ];
-    // }
     console.log("fillValues===>", fillValues);
     console.log("window.isRunning()===>", window.isRunning());
     let waitCounter = 0;
@@ -2246,54 +2283,52 @@
    * 获取填写值的实际API调用
    */
   async function callFillResumeValueAPI(fields, company, position, resumeMd, resumeId) {
-    // try {
-      // const response = await fetchWithJwt(
-      //   `${window.config.API_BASE_URL}fillResumeValue`,
-      //   {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify({
-      //       sessionId: sessionId,
-      //       url: window.location.href,
-      //       version: chrome.runtime.getManifest().version,
-      //       fields: fields,
-      //       company: company,
-      //       position: position,
-      //       resumeMd: resumeMd,
-      //       resumeId: resumeId
-      //     })
-      //   }
-      // );
+    try {
+      const response = await fetchWithJwt(
+        `${window.config.API_BASE_URL}fill-values`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: sessionId,
+            url: window.location.href,
+            version: chrome.runtime.getManifest().version,
+            fields: fields,
+            company: company,
+            position: position,
+            resumeMd: resumeMd,
+            resumeId: resumeId
+          })
+        }
+      );
 
-      
+      fillValues = response.values;
 
-    //   fillValues = response.values;
-
-    // } catch (error) {
-    //   hasNetworkError = true;
-    //   errorFunctionName = "fillResumeValue";
-    //   throw error;
-    // }
-    console.log("fillValues===>", fillValues);
-    await sleep(300);
-    fillValues = [
-      {
-        name: "基本信息",
-        fields: [
-          { name: "姓名", value: "李艺伟" },
-          { name: "手机", value: "13800001111" },
-          { name: "邮箱", value: "liyiwei@example.com" },
-          { name: "学校", value: "清华大学" },
-          { name: "专业", value: "计算机科学" },
-          { name: "学历", value: "硕士" },
-          { name: "毕业年份", value: "2026" },
-          { name: "意向岗位", value: position || "数据分析" },
-          { name: "期望城市", value: "北京/上海" },
-          { name: "核心技能", value: "Python, SQL, Tableau, Hadoop" }
-        ]
-      }
-    ];
-    return null;
+    } catch (error) {
+      hasNetworkError = true;
+      errorFunctionName = "fillResumeValue";
+      throw error;
+    }
+    // console.log("fillValues===>", fillValues);
+    // await sleep(300);
+    // fillValues = [
+    //   {
+    //     name: "基本信息",
+    //     fields: [
+    //       { name: "姓名", value: "李艺伟" },
+    //       { name: "手机", value: "13800001111" },
+    //       { name: "邮箱", value: "liyiwei@example.com" },
+    //       { name: "学校", value: "清华大学" },
+    //       { name: "专业", value: "计算机科学" },
+    //       { name: "学历", value: "硕士" },
+    //       { name: "毕业年份", value: "2026" },
+    //       { name: "意向岗位", value: position || "数据分析" },
+    //       { name: "期望城市", value: "北京/上海" },
+    //       { name: "核心技能", value: "Python, SQL, Tableau, Hadoop" }
+    //     ]
+    //   }
+    // ];
+    // return null;
   }
 
   // ==================== 高亮显示 ====================
@@ -3616,19 +3651,37 @@
    */
   async function fetchWithJwt(url, options = {}) {
     try {
-      const response = await chrome.runtime.sendMessage({
+      console.log('🔐 fetchWithJwt 开始请求:', url);
+      console.log('📋 请求选项:', options);
+      
+      const message = {
         type: "fetchWithJwt",
         url: url,
         options: options
-      });
+      };
+      
+      console.log('📨 发送消息给 background:', message);
+      
+      const response = await chrome.runtime.sendMessage(message);
+      
+      console.log('📬 收到 background 响应:', response);
 
       if (response.error) {
+        console.error('❌ Background 返回错误:', response.error);
         throw new Error(response.error);
       }
 
+      console.log('✅ fetchWithJwt 请求成功');
       return response;
 
     } catch (error) {
+      console.error('❌ fetchWithJwt 失败:', error);
+      console.error('错误详情:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
       hasNetworkError = true;
       errorFunctionName = "fetchWithJwt";
       throw error;
@@ -3657,3 +3710,74 @@
   })();
 
 })();
+
+// ==================== 监听网站的 postMessage（用于登录通信） ====================
+
+window.addEventListener('message', (event) => {
+  // 安全检查：验证消息来源
+  const allowedOrigins = [
+    'http://192.168.1.144:3000',
+    'http://192.168.1.144:8080',
+    'http://z6467e53.natappfree.cc',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://www.yinian.com'
+  ];
+  
+  // 检查来源是否在白名单中
+  const isAllowedOrigin = allowedOrigins.some(origin => event.origin.startsWith(origin));
+  
+  if (!isAllowedOrigin) {
+    return; // 忽略不信任的来源
+  }
+  
+  // 检查消息格式
+  if (event.data && event.data.source === 'YINIAN_WEB') {
+    console.log('📨 Content Script 收到网站消息:', event.data);
+    
+    // 处理登录成功消息
+    if (event.data.type === 'PLUGIN_LOGIN_SUCCESS' && event.data.auth) {
+      console.log('🔐 转发登录消息给 background.js');
+      
+      // 转发给 background.js（使用内部消息机制）
+      chrome.runtime.sendMessage({
+        type: 'externalLogin',
+        auth: event.data.auth
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('❌ 转发登录消息失败:', chrome.runtime.lastError);
+        } else {
+          console.log('✅ Background 响应:', response);
+          // 可选：通知网站登录成功
+          window.postMessage({
+            source: 'YINIAN_PLUGIN',
+            type: 'LOGIN_ACK',
+            success: true
+          }, '*');
+        }
+      });
+    }
+    
+    // 处理退出登录消息
+    if (event.data.type === 'PLUGIN_LOGOUT') {
+      console.log('🚪 转发退出登录消息给 background.js');
+      
+      // 转发给 background.js
+      chrome.runtime.sendMessage({
+        type: 'externalLogout'
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('❌ 转发退出登录消息失败:', chrome.runtime.lastError);
+        } else {
+          console.log('✅ 退出登录成功:', response);
+          // 可选：通知网站退出成功
+          window.postMessage({
+            source: 'YINIAN_PLUGIN',
+            type: 'LOGOUT_ACK',
+            success: true
+          }, '*');
+        }
+      });
+    }
+  }
+});

@@ -24,7 +24,7 @@ const buildUrl = (path, kind) => {
 };
 
 // API 端点（与原始导出保持一致）
-export const API_BASE_URL = buildUrl("/api/chrome/", "API");
+export const API_BASE_URL = buildUrl("/api/autofill/", "API");
 export const API_AUTH_URL = buildUrl("/api/plugin/", "API");
 export const API_HISTORY_URL = buildUrl("/api/history/", "API");
 

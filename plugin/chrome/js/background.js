@@ -19,98 +19,33 @@ import {
   ALL_WEB_URLS
 } from "./config.js";
 
-// 安装/启动：初始化配置到 storage
-chrome.runtime.onInstalled.addListener((details) => {
-  ConfigModule.init();
-  if (details.reason === "install") {
-    chrome.tabs.create({ url: WELCOME_URL });
-  }
-});
-
-chrome.runtime.onStartup.addListener(() => {
-  ConfigModule.init();
-});
-
-// 与内容脚本的消息路由：统一分发到各模块
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const handlers = {
-    fetchWithJwt: () => AuthModule.handleMessage(message, sender, sendResponse),
-    learnField: () => LearningFieldModule.handleMessage(message, sender, sendResponse),
-    stopLearnField: () => LearningFieldModule.handleMessage(message, sender, sendResponse),
-    addHistory: () => HistoryModule.handleMessage(message, sender, sendResponse),
-    clickSource: () => TabSourceModule.handleMessage(message, sender, sendResponse),
-    getSource: () => TabSourceModule.handleMessage(message, sender, sendResponse),
-    getHistoryUrls: () => NavigationHistoryModule.handleMessage(message, sender, sendResponse),
-    logError: () => ErrorModule.handleMessage(message, sender, sendResponse)
-  };
-  const handler = handlers[message.type];
-  if (handler) {
-    handler();
-    return true; // 异步响应
-  }
-});
-
-// 与官网的外部消息通信：登录/登出/心跳
-chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-  alert("收到消息message");
-  console.log("message===>",message);
-  if (message.type === "login") {
-    AuthModule.handleExternalLogin(message, sendResponse).catch((err) => sendResponse({ error: err.message }));
-  } else if (message.type === "logout") {
-    AuthModule.handleExternalLogout(sendResponse).catch((err) => sendResponse({ error: err.message }));
-  } else if (message.type === "ping") {
-    sendResponse({ status: "pong", version: chrome.runtime.getManifest().version });
-  }
-  return true;
-});
-
-// 标签页事件与导航事件：来源追踪与学习/历史模块的钩子
-chrome.tabs.onCreated.addListener((tab) => {
-  TabSourceModule.handleTabCreate(tab);
-});
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // 预留：可根据需要处理更新态
-});
-
-chrome.tabs.onRemoved.addListener((tabId) => {
-  LearningFieldModule.handleTabRemove(tabId);
-  HistoryModule.handleTabRemove(tabId);
-  TabSourceModule.handleTabRemove(tabId);
-  NavigationHistoryModule.handleTabRemove(tabId);
-});
-
-chrome.webNavigation.onCompleted.addListener((details) => {
-  LearningFieldModule.handleNavigation(details);
-  NavigationHistoryModule.handleNavigation(details);
-  HistoryModule.handleNavigation(details);
-});
-
-chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
-  LearningFieldModule.handleNavigation(details);
-  NavigationHistoryModule.handleNavigation(details);
-  HistoryModule.handleNavigation(details);
-});
-
-// ---------------- 模块实现（简化可读版） ----------------
+// ==================== 模块定义 ====================
 
 const ConfigModule = {
   // 初始化：把必要的 URL 与配置写入 storage，内容脚本读取使用
   init() {
-    chrome.storage.local.set({
-      config: {
-        API_BASE_URL,
-        API_AUTH_URL,
-        API_HISTORY_URL,
-        WEB_URL,
-        LOGIN_URL,
-        CAMPUS_URL,
-        HISTORY_URL,
-        AUTOFILL_URL,
-        VERSION_URL,
-        WELCOME_URL,
-        PRICING_URL,
-        ALL_WEB_URLS
+    const configData = {
+      API_BASE_URL,
+      API_AUTH_URL,
+      API_HISTORY_URL,
+      WEB_URL,
+      LOGIN_URL,
+      CAMPUS_URL,
+      HISTORY_URL,
+      AUTOFILL_URL,
+      VERSION_URL,
+      WELCOME_URL,
+      PRICING_URL,
+      ALL_WEB_URLS
+    };
+    
+    console.log('⚙️ 初始化配置:', configData);
+    
+    chrome.storage.local.set({ config: configData }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('❌ 配置存储失败:', chrome.runtime.lastError);
+      } else {
+        console.log('✅ 配置已成功存储到 chrome.storage.local');
       }
     });
   }
@@ -133,15 +68,24 @@ const AuthModule = {
 
   // 外部登录：来自官网的消息，存储 auth（access/refresh/userInfo）
   async handleExternalLogin(message, sendResponse) {
+    console.log('🔐 Background 处理登录消息:', message);
     const { auth } = message;
-    await chrome.storage.local.set({ auth });
-    sendResponse({ status: "ok" });
+    if (auth) {
+      await chrome.storage.local.set({ auth });
+      console.log('✅ Auth 已存储到 chrome.storage:', auth);
+      sendResponse({ status: "ok", message: "登录成功" });
+    } else {
+      console.error('❌ Auth 数据缺失');
+      sendResponse({ status: "error", message: "Auth 数据缺失" });
+    }
   },
 
   // 外部登出：清理本地认证信息
   async handleExternalLogout(sendResponse) {
+    console.log('🚪 Background 处理退出登录');
     await chrome.storage.local.remove(["auth"]);
-    sendResponse({ status: "ok" });
+    console.log('✅ Auth 已清除');
+    sendResponse({ status: "ok", message: "退出登录成功" });
   },
 
   // 核心：带自动刷新逻辑的 fetch
@@ -236,3 +180,83 @@ const ErrorModule = {
   }
 };
 
+// ==================== 事件监听器注册 ====================
+
+// 安装/启动：初始化配置到 storage
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('🚀 插件已安装/更新，初始化配置...');
+  ConfigModule.init();
+  if (details.reason === "install") {
+    console.log('🎉 首次安装，打开欢迎页面');
+    chrome.tabs.create({ url: WELCOME_URL });
+  }
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  console.log('🔄 浏览器启动，重新初始化配置...');
+  ConfigModule.init();
+});
+
+// 与内容脚本的消息路由：统一分发到各模块
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const handlers = {
+    fetchWithJwt: () => AuthModule.handleMessage(message, sender, sendResponse),
+    learnField: () => LearningFieldModule.handleMessage(message, sender, sendResponse),
+    stopLearnField: () => LearningFieldModule.handleMessage(message, sender, sendResponse),
+    addHistory: () => HistoryModule.handleMessage(message, sender, sendResponse),
+    clickSource: () => TabSourceModule.handleMessage(message, sender, sendResponse),
+    getSource: () => TabSourceModule.handleMessage(message, sender, sendResponse),
+    getHistoryUrls: () => NavigationHistoryModule.handleMessage(message, sender, sendResponse),
+    logError: () => ErrorModule.handleMessage(message, sender, sendResponse),
+    externalLogin: () => AuthModule.handleExternalLogin(message, sendResponse).catch((err) => sendResponse({ error: err.message })),
+    externalLogout: () => AuthModule.handleExternalLogout(sendResponse).catch((err) => sendResponse({ error: err.message }))
+  };
+  const handler = handlers[message.type];
+  if (handler) {
+    handler();
+    return true; // 异步响应
+  }
+});
+
+// 与官网的外部消息通信：登录/登出/心跳（保留用于未来可能的直接通信）
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  console.log("📨 收到外部消息:", message);
+  if (message.type === "login") {
+    AuthModule.handleExternalLogin(message, sendResponse).catch((err) => sendResponse({ error: err.message }));
+  } else if (message.type === "logout") {
+    AuthModule.handleExternalLogout(sendResponse).catch((err) => sendResponse({ error: err.message }));
+  } else if (message.type === "ping") {
+    sendResponse({ status: "pong", version: chrome.runtime.getManifest().version });
+  }
+  return true;
+});
+
+// 标签页事件与导航事件：来源追踪与学习/历史模块的钩子
+chrome.tabs.onCreated.addListener((tab) => {
+  TabSourceModule.handleTabCreate(tab);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // 预留：可根据需要处理更新态
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  LearningFieldModule.handleTabRemove(tabId);
+  HistoryModule.handleTabRemove(tabId);
+  TabSourceModule.handleTabRemove(tabId);
+  NavigationHistoryModule.handleTabRemove(tabId);
+});
+
+chrome.webNavigation.onCompleted.addListener((details) => {
+  LearningFieldModule.handleNavigation(details);
+  NavigationHistoryModule.handleNavigation(details);
+  HistoryModule.handleNavigation(details);
+});
+
+chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
+  LearningFieldModule.handleNavigation(details);
+  NavigationHistoryModule.handleNavigation(details);
+  HistoryModule.handleNavigation(details);
+});
+
+console.log('✅ Background Service Worker 已加载完成');
