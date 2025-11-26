@@ -5,7 +5,6 @@
   "description": "智能求职助手 - 一键填写申请表单、优化简历、匹配岗位",
   "icons": {
     "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
@@ -13,57 +12,57 @@
     "default_popup": "popup/fill.html",
     "default_icon": {
       "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
     "default_title": "一念职达"
   },
   "permissions": [
-    "activeTab",
-    "storage"
+    "tabs",
+    "storage",
+    "webNavigation"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "web_accessible_resources": [
     {
+      "matches": [
+        "<all_urls>"
+      ],
       "resources": [
         "popup/fill.html",
         "popup/styles/common.css",
-        "popup/styles/fill.css"
-      ],
-      "matches": [
-        "<all_urls>"
+        "popup/styles/fill.css",
+        "icons/icon128.png"
       ]
     }
   ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"] ,
-      "js": ["/js/content.js", "/js/resumeInterface.js"], 
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "js/content.js",
+        "js/resumeInterface.js"
+      ],
       "run_at": "document_idle"
     }
   ],
-  "sampleData": {
-    "resume": {
-      "name": "李艺伟123",
-      "phone": "13800001111",
-      "email": "liyiwei@example.com",
-      "school": "清华大学",
-      "major": "计算机科学与技术",
-      "degree": "硕士",
-      "grad_year": 2026,
-      "skills": ["Python", "SQL", "Tableau", "Hadoop"],
-      "target_position": "数据分析",
-      "preferred_cities": ["北京", "上海"]
-    },
-    "experiences": [
-      { "company": "微软亚洲研究院", "role": "算法实习生", "start": "2024-06", "end": "2024-09" }
-    ],
-    "jobHistory": [
-      { "title": "阿里前端专家", "time": "2025-11-02 11:12", "status": "active" },
-      { "title": "腾讯交互设计", "time": "2025-11-01 15:30", "status": "done" }
+  "background": {
+    "service_worker": "js/background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "externally_connectable": {
+    "matches": [
+      "http://192.168.1.144:*/*",
+      "http://z6467e53.natappfree.cc/*",
+      "http://localhost:*/*",
+      "https://www.yinian.com/*"
     ]
   }
 }

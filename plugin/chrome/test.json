@@ -1,0 +1,72 @@
+{
+          "update_url": "https://clients2.google.com/service/update2/crx",
+          
+            "manifest_version": 3,
+            "name": "求职方舟 - 大厂招聘官网AI自动填简历",
+            "description": "自动识别网页的简历表单，用DeepSeek自动录入你的简历信息，简化你在各大企业招聘网站投简历的流程。AI驱动方舟，载你冲破求职暗夜。",
+            "version": "2025.9.22",
+            "icons": {
+              "16": "image/icon16.png",
+              "48": "image/icon48.png",
+              "128": "image/icon128.png"
+            },
+            "action": {
+              "default_popup": "html/popup.html",
+              "default_icon": {
+                "16": "image/icon16.png",
+                "48": "image/icon48.png",
+                "128": "image/icon128.png"
+              }
+            },
+            "permissions": [
+              "tabs",
+              "storage",
+              "webNavigation"
+            ],
+            "web_accessible_resources": [
+              {
+                "matches": [
+                  "<all_urls>"
+                ],
+                "resources": [
+                  "html/resumeWindow.html",
+                  "css/lib/simplemde.min.css",
+                  "css/lib/font-awesome.all.min.css",
+                  "css/resumeInterface.css",
+                  "webfonts/*",
+                  "image/icon128.png"
+                ]
+              }
+            ],
+            "content_scripts": [
+              {
+                "matches": [
+                  "<all_urls>"
+                ],
+                "js": [
+                  "js/lib/simplemde.min.js",
+                  "js/arkContent.js",
+                  "js/resumeInterface.js"
+                ],
+                "css": [
+                  "css/web.css"
+                ],
+                "run_at": "document_end"
+              }
+            ],
+            "background": {
+              "service_worker": "js/background.js",
+              "type": "module"
+            },
+            "content_security_policy": {
+              "extension_pages": "script-src 'self'; object-src 'self'"
+            },
+            "host_permissions": [
+              "https://api.qiuzhifangzhou.com/*"
+            ],
+            "externally_connectable": {
+              "matches": [
+                "https://www.qiuzhifangzhou.com/*"
+              ]
+            }
+          }

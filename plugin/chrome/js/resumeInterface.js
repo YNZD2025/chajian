@@ -8,6 +8,7 @@
   let floatButton = null; // 右下角悬浮按钮（触发显示主界面的入口）
   let mainPanel = null; // 主界面容器（包含简历展示和填充功能）
   let currentResumeIndex = 0; // 当前显示的简历索引
+  let config = null; // 全局配置（从 background.js 加载）
 
   let resumeList = [
     {
@@ -397,10 +398,23 @@
     try {
       // 从Chrome存储中获取数据
       const data = await chrome.storage.local.get([
+        "config", // 全局配置（由 background.js 初始化）
         "resumeList", // 简历列表
         "currentResumeIndex", // 当前简历索引
         "taskBackground" // 任务背景
       ]);
+
+      // 加载配置到全局变量
+      if (data.config) {
+        config = data.config;
+        // 同时设置到 window.config 以兼容其他模块
+        if (!window.config) {
+          window.config = data.config;
+        }
+        console.log("配置加载成功:", config);
+      } else {
+        console.warn("未找到配置信息，background.js 可能未初始化");
+      }
 
       // 设置简历列表数据
       if (data.resumeList && data.resumeList.length > 0) {
@@ -476,11 +490,29 @@
           toggleMainPanel(true);
         } else {
           const go = confirm("尚未登录到一念求职，是否立即前往登录？");
-          if (go && window.config && window.config.LOGIN_URL) {
-            window.open(`${window.config.LOGIN_URL}`, "_blank");
+          if (go) {
+            // 确保配置已加载
+            if (!config) {
+              const { config: loadedConfig } = await chrome.storage.local.get(["config"]);
+              config = loadedConfig;
+            }
+            
+            if (config && config.LOGIN_URL) {
+              // 使用 chrome.tabs.create 打开登录页面
+              try {
+                await chrome.tabs.create({ url: config.LOGIN_URL });
+              } catch (e) {
+                // 如果 content script 没有权限，回退到 window.open
+                window.open(config.LOGIN_URL, "_blank");
+              }
+            } else {
+              console.error("配置未加载或 LOGIN_URL 不存在");
+              alert("配置加载失败，请刷新页面重试");
+            }
           }
         }
-      } catch (_) {
+      } catch (error) {
+        console.error("打开登录页面时出错:", error);
         toggleMainPanel();
       }
     });
