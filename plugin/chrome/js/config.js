@@ -3,17 +3,17 @@
 
 const ENV_CONFIG = {
   development: {
-    WEB: { HOST: "http://localhost", PORT: "5173" },
-    API: { HOST: "http://localhost", PORT: "8080" }
+    WEB: { HOST: "http://192.168.1.144", PORT: "3000" },
+    API: { HOST: "http://192.168.1.144", PORT: "8080" }
   },
   production: {
-    WEB: { HOST: "https://www.yinian.com", PORT: "443" },
-    API: { HOST: "https://api.yinian.com", PORT: "443" }
+    WEB: { HOST: "http://192.168.1.144", PORT: "8080" },
+    API: { HOST: "http://z6467e53.natappfree.cc", PORT: "80" }
   }
 };
 
 // 默认生产环境
-const ENV = "production";
+const ENV = "development";
 const CURRENT = ENV_CONFIG[ENV];
 
 // 构建完整 URL：根据端口拼接
@@ -25,13 +25,13 @@ const buildUrl = (path, kind) => {
 
 // API 端点（与原始导出保持一致）
 export const API_BASE_URL = buildUrl("/api/chrome/", "API");
-export const API_AUTH_URL = buildUrl("/api/auth/", "API");
+export const API_AUTH_URL = buildUrl("/api/plugin/", "API");
 export const API_HISTORY_URL = buildUrl("/api/history/", "API");
 
 // Web 端路由
 export const WEB_DOMAIN = CURRENT.WEB.HOST;
 export const WEB_URL = buildUrl("/resume", "WEB");
-export const LOGIN_URL = buildUrl("/resume?login=true", "WEB");
+export const LOGIN_URL = buildUrl("/login?from=plugin", "WEB");
 export const CAMPUS_URL = buildUrl("/campus", "WEB");
 export const HISTORY_URL = buildUrl("/history", "WEB");
 export const AUTOFILL_URL = buildUrl("/autofill", "WEB");

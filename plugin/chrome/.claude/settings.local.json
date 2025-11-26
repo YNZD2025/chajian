@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"\n$content = @''\n// 打印 \"\"你好，世界 world\"\"\nconsole.log(\"\"你好，世界 world\"\");\n\n// 如果在浏览器环境中，也可以使用 alert\n// alert(\"\"你好，世界 world\"\");\n\n// 如果是在网页中显示\nif (typeof document !== ''undefined'') {\n    document.addEventListener(''DOMContentLoaded'', function() {\n        const element = document.createElement(''div'');\n        element.textContent = \"\"你好，世界 world\"\";\n        element.style.fontSize = ''24px'';\n        element.style.fontWeight = ''bold'';\n        element.style.textAlign = ''center'';\n        element.style.marginTop = ''50px'';\n        document.body.appendChild(element);\n    });\n}\n''@\n[System.IO.File]::WriteAllText(''D:\\1.code\\1.code\\1.ProjectManagement\\dev-projects\\new\\plugin\\chrome\\js\\hello.js'', $content, [System.Text.Encoding]::UTF8)\n\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

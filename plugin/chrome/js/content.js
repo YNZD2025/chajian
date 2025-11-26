@@ -234,15 +234,6 @@
         throw new Error("服务器返回错误");
       }
 
-      // 步骤6: 匹配字段和输入框
-      console.log("步骤6: 匹配字段和输入框");
-      window.setStateText("正在标记简历字段...", "min");
-      serverGroups = parseServerFieldsToGroups(serverFields);
-
-      if (serverGroups.length === 0) {
-        throw new Error("服务器返回错误");
-      }
-
       // 查找字段对应的DOM元素
       console.log("步骤6.1: 查找字段对应的DOM元素");
       findFieldDomElements(serverGroups);

@@ -8,6 +8,7 @@
   let floatButton = null; // 右下角悬浮按钮（触发显示主界面的入口）
   let mainPanel = null; // 主界面容器（包含简历展示和填充功能）
   let currentResumeIndex = 0; // 当前显示的简历索引
+
   let resumeList = [
     {
       id: "resume-cn-001",
@@ -468,9 +469,20 @@
 
   // ===== 事件绑定相关函数 =====
   async function bindEvents() {
-    // 绑定悬浮按钮点击事件
-    floatButton.addEventListener("click", () => {
-      toggleMainPanel(); // 切换主界面显示状态
+    floatButton.addEventListener("click", async () => {
+      try {
+        const { auth } = await chrome.storage.local.get(["auth"]);
+        if (auth) {
+          toggleMainPanel(true);
+        } else {
+          const go = confirm("尚未登录到一念求职，是否立即前往登录？");
+          if (go && window.config && window.config.LOGIN_URL) {
+            window.open(`${window.config.LOGIN_URL}`, "_blank");
+          }
+        }
+      } catch (_) {
+        toggleMainPanel();
+      }
     });
 
     // 绑定关闭按钮点击事件
@@ -708,7 +720,22 @@
   };
   window.isRunning = function () { return true; };
   window.changeStartButtonState = function () {};
-  window.closeHighlight = async function () {};
+  window.closeHighlight = async function () {
+    try {
+      const classes = [
+        "ark-color-yellow",
+        "ark-color-green",
+        "ark-color-red",
+        "ark-color-blue",
+        "ark-color-purple"
+      ];
+      for (const cls of classes) {
+        const nodes = document.querySelectorAll(`.${cls}`);
+        nodes.forEach((el) => el.classList.remove(cls));
+      }
+      document.documentElement.style.setProperty("--highlight-enabled", "0");
+    } catch (_) {}
+  };
   
   // 暴露更新简历数据函数
   window.updateYinianResumeData = (data) => {
