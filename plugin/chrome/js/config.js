@@ -41,8 +41,10 @@ export const PRICING_URL = buildUrl("/pricing", "WEB");
 
 // 站点范围（内容脚本按此判断是否启用 UI）
 export const ALL_WEB_URLS = [
-  "http://localhost:5173",
-  "https://www.yinian.com"
+  "http://192.168.1.144:*/*",
+  "http://z6467e53.natappfree.cc/*",
+  "http://localhost:*/*",
+  "https://www.yinian.com/*"
 ];
 
 // 环境辅助（保持与原始行为一致）

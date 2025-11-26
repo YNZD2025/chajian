@@ -52,6 +52,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // 与官网的外部消息通信：登录/登出/心跳
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  alert("收到消息message");
+  console.log("message===>",message);
   if (message.type === "login") {
     AuthModule.handleExternalLogin(message, sendResponse).catch((err) => sendResponse({ error: err.message }));
   } else if (message.type === "logout") {

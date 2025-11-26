@@ -484,36 +484,12 @@
   // ===== 事件绑定相关函数 =====
   async function bindEvents() {
     floatButton.addEventListener("click", async () => {
-      try {
-        const { auth } = await chrome.storage.local.get(["auth"]);
-        if (auth) {
-          toggleMainPanel(true);
-        } else {
-          const go = confirm("尚未登录到一念求职，是否立即前往登录？");
-          if (go) {
-            // 确保配置已加载
-            if (!config) {
-              const { config: loadedConfig } = await chrome.storage.local.get(["config"]);
-              config = loadedConfig;
-            }
-            
-            if (config && config.LOGIN_URL) {
-              // 使用 chrome.tabs.create 打开登录页面
-              try {
-                await chrome.tabs.create({ url: config.LOGIN_URL });
-              } catch (e) {
-                // 如果 content script 没有权限，回退到 window.open
-                window.open(config.LOGIN_URL, "_blank");
-              }
-            } else {
-              console.error("配置未加载或 LOGIN_URL 不存在");
-              alert("配置加载失败，请刷新页面重试");
-            }
-          }
-        }
-      } catch (error) {
-        console.error("打开登录页面时出错:", error);
-        toggleMainPanel();
+      const { auth } = await chrome.storage.local.get(["auth"]);
+      if (auth) {
+        toggleWindow(true);
+      } else {
+        const go = confirm("尚未登录到一念职达，是否立即前往登录？");
+        if (go) window.open(`${window.config.LOGIN_URL}`, "_blank");
       }
     });
 
