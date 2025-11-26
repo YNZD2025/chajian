@@ -231,6 +231,7 @@
       console.log("步骤6: 匹配字段和输入框");
       window.setStateText("正在标记简历字段...", "min");
       serverGroups = parseServerFieldsToGroups(serverFields);
+      console.log("serverGroups===>", serverGroups);
 
       if (serverGroups.length === 0) {
         throw new Error("服务器返回错误");
@@ -261,7 +262,7 @@
       console.log("步骤9: 获取填写值");
       await getFillingValues(enableBeautify, resumeMd);
 
-      /*
+      
       // 步骤10: 执行填写
       console.log("步骤10: 执行填写");
       window.setStateText("尝试为你填写简历...", "min");
@@ -285,8 +286,8 @@
       callback({ status: "success" });
 
       // 更新统计数据
-      console.log("步骤12: 更新统计数据");
-      await updateStatistics();
+      //console.log("步骤12: 更新统计数据");
+      //await updateStatistics();
 
       // 启动学习模式
       //console.log("步骤13: 启动学习模式");
@@ -299,7 +300,7 @@
       // 关闭高亮
       console.log("步骤15: 关闭高亮");
       window.closeHighlight();
-      */
+      
 
     } catch (error) {
       handleError(error, startTime, company, resumeId, callback);
@@ -847,16 +848,16 @@
       // 确保输入框在可见区域
       input.scrollIntoViewIfNeeded();
 
-      await sleep(200);
+      await sleep(20);
 
       // 点击输入框，触发下拉选项
       startMonitoringDomChanges();
       await clickElement(input);
-      await sleep(100);
+      await sleep(10);
 
       // 检查是否有日期/时间选择器
       if (newlyAddedElements.length > 0) {
-        await sleep(500);
+        await sleep(50);
       }
 
       stopMonitoringDomChanges();
@@ -871,14 +872,14 @@
       await blurElement(input);
 
       if (options.length) {
-        await sleep(200);
+        await sleep(20);
       }
 
       inputOptionsData.push(options);
 
       // 检查是否被用户暂停
       while (!window.isRunning()) {
-        await sleep(500);
+        await sleep(50);
       }
     }
 
@@ -1719,9 +1720,15 @@
    */
   function findFieldDomElements(groups) {
     try {
+      console.log("🔍 开始查找字段对应的DOM元素...");
+      console.log("  总共有", groups.length, "个分组");
+
       // 获取所有组的名称
       const groupNames = groups.map(g => g.name);
+      console.log("  分组名称:", groupNames);
+
       const allElements = getAllVisibleElements();
+      console.log("  页面可见元素总数:", allElements.length);
 
       // 查找包含所有分组名称的容器
       let containerElement = null;
@@ -1742,25 +1749,52 @@
 
         if (matchCount >= 5) {
           containerElement = element;
+          console.log("  ✅ 找到容器元素，包含", matchCount, "个分组标签");
           break;
         }
       }
 
+      if (!containerElement) {
+        console.log("  ⚠️  未找到包含所有分组的容器，将在整个页面搜索");
+      }
+
       // 为每个组和字段查找DOM元素
       let lastFoundElement = null;
+      let groupsFoundCount = 0;
+      let fieldsFoundCount = 0;
 
       for (const group of groups) {
+        console.log(`\n  📦 查找分组: "${group.name}"`);
         group.dom = findElementByText(group.name, lastFoundElement, containerElement);
-        lastFoundElement = group.dom;
+
+        if (group.dom) {
+          console.log(`    ✅ 找到分组 DOM`);
+          groupsFoundCount++;
+          lastFoundElement = group.dom;
+        } else {
+          console.log(`    ❌ 未找到分组 DOM`);
+        }
 
         for (const field of group.fields) {
+          console.log(`    📝 查找字段: "${field.name}"`);
           field.field.dom = findElementByText(field.name, lastFoundElement, containerElement);
-          lastFoundElement = field.field.dom;
+
+          if (field.field.dom) {
+            console.log(`      ✅ 找到字段 DOM`);
+            fieldsFoundCount++;
+            lastFoundElement = field.field.dom;
+          } else {
+            console.log(`      ❌ 未找到字段 DOM`);
+          }
         }
       }
 
+      console.log(`\n📊 DOM 查找统计:`);
+      console.log(`  分组: ${groupsFoundCount}/${groups.length}`);
+      console.log(`  字段: ${fieldsFoundCount}/${groups.reduce((sum, g) => sum + g.fields.length, 0)}`);
+
     } catch (error) {
-      // 忽略错误
+      console.error("❌ findFieldDomElements 错误:", error);
     }
   }
 
@@ -1769,12 +1803,28 @@
    */
   function findElementByText(text, startAfter, container) {
     try {
+      // 如果 text 不是字符串，尝试转换
+      if (typeof text !== "string") {
+        console.warn("findElementByText 收到非字符串参数:", text);
+        if (text && typeof text === "object") {
+          // 如果是对象，尝试提取 fieldName
+          text = text.fieldName || text.name || "";
+        } else {
+          text = String(text || "");
+        }
+      }
+
+      if (!text || !text.trim()) {
+        console.warn("findElementByText: 字段名为空");
+        return null;
+      }
+
       const allElements = getAllVisibleElements();
       let shouldSearch = !startAfter;
 
       for (const element of allElements) {
-        // 跳过容器外的元素
-        if (container && container.contains(element)) {
+        // 跳过容器外的元素（修复：应该是 !container.contains）
+        if (container && !container.contains(element)) {
           continue;
         }
 
@@ -1799,7 +1849,7 @@
         }
       }
     } catch (error) {
-      // 忽略错误
+      console.error("findElementByText 错误:", error);
     }
 
     return null;
@@ -1829,6 +1879,7 @@
    */
   function findBlankInputsForFields(groups) {
     try {
+      console.log("🔍 开始查找字段对应的输入框...");
       const fieldDoms = [];
       const blanksList = [];
       const isLastFieldFlags = [];
@@ -1845,6 +1896,8 @@
           }
         }
       }
+
+      console.log(`  找到 ${fieldDoms.length} 个有DOM的字段需要查找输入框`);
 
       const allElements = getAllVisibleElements();
       let currentFieldDom = null;
@@ -1964,12 +2017,17 @@
       }
 
       // 将输入框分配给字段
+      let totalBlanksFound = 0;
+      let fieldsWithBlanksCount = 0;
+
       for (let fieldIndex = 0; fieldIndex < finalBlanks.length; fieldIndex++) {
         if (finalBlanks[fieldIndex].length === 0) continue;
 
         for (const group of groups) {
           for (const field of group.fields) {
             if (field.field.dom === fieldDoms[fieldIndex]) {
+              const fieldName = typeof field.name === 'string' ? field.name : field.name?.fieldName || '未知字段';
+
               if (finalBlanks[fieldIndex].length === 1) {
                 const blank = finalBlanks[fieldIndex][0];
                 field.blanks.push({
@@ -1978,6 +2036,9 @@
                   type: radioDomList.includes(blank) ? "radio" :
                         selectDomList.includes(blank) ? "select" : "input"
                 });
+                console.log(`  ✅ 字段 "${fieldName}" 找到 1 个输入框`);
+                totalBlanksFound++;
+                fieldsWithBlanksCount++;
               } else {
                 for (const blank of finalBlanks[fieldIndex]) {
                   field.blanks.push({
@@ -1987,14 +2048,21 @@
                           selectDomList.includes(blank) ? "select" : "input"
                   });
                 }
+                console.log(`  ✅ 字段 "${fieldName}" 找到 ${finalBlanks[fieldIndex].length} 个输入框`);
+                totalBlanksFound += finalBlanks[fieldIndex].length;
+                fieldsWithBlanksCount++;
               }
             }
           }
         }
       }
 
+      console.log(`\n📊 输入框查找统计:`);
+      console.log(`  有输入框的字段: ${fieldsWithBlanksCount}/${fieldDoms.length}`);
+      console.log(`  总输入框数量: ${totalBlanksFound}`);
+
     } catch (error) {
-      // 忽略错误
+      console.error("❌ 查找输入框时出错:", error);
     }
   }
 
@@ -2112,15 +2180,51 @@
 
   function parseServerFieldsToGroups(fields) {
     const groups = [];
+
+    /**
+     * 提取字段名称（兼容多种数据结构）
+     */
+    const getFieldName = (field) => {
+      if (!field) return "";
+
+      // 如果是字符串，直接返回
+      if (typeof field === "string") return field;
+
+      // 如果有 fieldName 属性（标准格式）
+      if (field.fieldName) return field.fieldName;
+
+      // 如果有 name 属性
+      if (field.name) return field.name;
+
+      // 如果是对象但没有明确的名称字段，返回空字符串
+      console.warn("无法提取字段名:", field);
+      return "";
+    };
+
     for (const fieldGroup of fields) {
-      const group = { name: fieldGroup.name, dom: null, fields: [] };
+      const group = {
+        name: fieldGroup.sectionName || fieldGroup.name || "未命名",
+        dom: null,
+        fields: []
+      };
+
       if (fieldGroup.fields) {
         for (const field of fieldGroup.fields) {
-          group.fields.push({ name: field.name || field, field: { dom: null }, blanks: [] });
+          const fieldName = getFieldName(field);
+
+          group.fields.push({
+            name: fieldName,                  // 直接存储字符串名称
+            originalField: field,              // 保留原始字段对象（包含 fieldType 等信息）
+            field: { dom: null },
+            blanks: []
+          });
         }
       }
+
       groups.push(group);
     }
+
+    console.log("📊 parseServerFieldsToGroups 结果:", groups);
     return groups;
   }
 
@@ -2131,23 +2235,24 @@
    * 从服务器获取需要填写的字段
    */
   async function getNeedFieldsFromServer(html,company,position) {
-    /*const labels = [];
-    const regex = /<label>([^<]+)<\/label>/gi;
-    let m;
-    while ((m = regex.exec(html)) !== null) {
-      const text = (m[1] || "").trim();
-      if (text) labels.push(text);
-    }
-    const uniqueLabels = Array.from(new Set(labels));
-    serverFields = [
-      { name: "基本信息", fields: uniqueLabels.map((t) => ({ name: t })) }
-    ];
-    sessionId = `mock-session-${Date.now()}`;
+    // const labels = [];
+    // const regex = /<label>([^<]+)<\/label>/gi;
+    // let m;
+    // while ((m = regex.exec(html)) !== null) {
+    //   const text = (m[1] || "").trim();
+    //   if (text) labels.push(text);
+    // }
+    // const uniqueLabels = Array.from(new Set(labels));
+    // serverFields = [
+    //   { name: "基本信息", fields: uniqueLabels.map((t) => ({ name: t })) }
+    // ];
+    // sessionId = `mock-session-${Date.now()}`;
 
-    console.log("serverFields", serverFields);
-*/
+    // console.log("serverFields", serverFields);
+
     
     try {
+      console.log("html==>",html)
       console.log("📋 准备发送请求获取字段...");
       
       // 🔍 检查 window.config 是否已加载
@@ -2283,7 +2388,7 @@
    * 获取填写值的实际API调用
    */
   async function callFillResumeValueAPI(fields, company, position, resumeMd, resumeId) {
-    try {
+    /*try {
       const response = await fetchWithJwt(
         `${window.config.API_BASE_URL}fill-values`,
         {
@@ -2308,27 +2413,53 @@
       hasNetworkError = true;
       errorFunctionName = "fillResumeValue";
       throw error;
-    }
-    // console.log("fillValues===>", fillValues);
-    // await sleep(300);
-    // fillValues = [
-    //   {
-    //     name: "基本信息",
-    //     fields: [
-    //       { name: "姓名", value: "李艺伟" },
-    //       { name: "手机", value: "13800001111" },
-    //       { name: "邮箱", value: "liyiwei@example.com" },
-    //       { name: "学校", value: "清华大学" },
-    //       { name: "专业", value: "计算机科学" },
-    //       { name: "学历", value: "硕士" },
-    //       { name: "毕业年份", value: "2026" },
-    //       { name: "意向岗位", value: position || "数据分析" },
-    //       { name: "期望城市", value: "北京/上海" },
-    //       { name: "核心技能", value: "Python, SQL, Tableau, Hadoop" }
-    //     ]
-    //   }
-    // ];
-    // return null;
+    }*/
+
+
+    console.log("fillValues===>", fillValues);
+    await sleep(300);
+    const getMd = (key) => {
+      try {
+        const r = new RegExp(`^${key}:\\s*(.*)$`, "mi");
+        const m = (resumeMd || "").match(r);
+        return m && m[1] ? m[1].trim() : "";
+      } catch (_) { return ""; }
+    };
+    const valueByType = (t) => {
+      switch ((t || "").toLowerCase()) {
+        case "name": return getMd("Name") || "李艺伟";
+        case "phone": return getMd("Phone") || "13800001111";
+        case "email": return getMd("Email") || "liyiwei@example.com";
+        case "desiredcity": return "北京/上海";
+        case "school": return getMd("School") || "清华大学";
+        case "education": return "硕士";
+        case "major": return getMd("Major") || "计算机科学";
+        case "educationstartdate": return "2023-09";
+        case "company": return company || "一念科技";
+        case "position": return position || "数据分析";
+        case "workstartdate": return "2024-06";
+        case "workdescription": return "负责数据分析与报表开发";
+        case "projectname": return "智能填表系统";
+        case "projectrole": return "开发工程师";
+        case "projectstartdate": return "2024-09";
+        case "projectdescription": return "https://github.com/liyiwei/auto-fill";
+        case "attachment": return "https://example.com/attachment";
+        case "certificate": return "国家奖学金";
+        case "language": return "英语";
+        case "selfevaluation": return "积极主动，学习能力强";
+        default: return getMd("Skills") || "";
+      }
+    };
+    fillValues = (fields || []).map((sec) => {
+      const secName = sec.sectionName || sec.name || "";
+      const fs = (sec.fields || []).map((f) => {
+        const fname = f.fieldName || f.name || String(f || "");
+        const ftype = f.fieldType || f.type || "";
+        return { name: fname, value: valueByType(ftype) };
+      });
+      return { name: secName || "未命名", fields: fs };
+    });
+    return null;
   }
 
   // ==================== 高亮显示 ====================
@@ -3169,143 +3300,461 @@
    */
   async function performFilling(localGroups, fillValues) {
     try {
-      console.log("开始执行填充，localGroups:", localGroups);
-      console.log("填充值 fillValues:", fillValues);
+      console.log("==================== 开始执行填充 ====================");
+      console.log("📊 localGroups:", localGroups);
+      console.log("📊 fillValues:", fillValues);
 
-      // 遍历每个填充值分组
+      // ========== 工具函数 ==========
+
+      /**
+       * 提取字段显示名称（支持多种数据结构）
+       */
+      const getFieldDisplayName = (fieldObj) => {
+        if (!fieldObj) return "";
+
+        // 处理字符串
+        if (typeof fieldObj === "string") return fieldObj.trim();
+
+        // 处理 { name: "xxx" } 结构
+        if (fieldObj.name) {
+          // name 是字符串
+          if (typeof fieldObj.name === "string") {
+            return fieldObj.name.trim();
+          }
+          // name 是对象：{ fieldName: "xxx", fieldType: "xxx" }
+          if (typeof fieldObj.name === "object" && fieldObj.name.fieldName) {
+            return fieldObj.name.fieldName.trim();
+          }
+        }
+
+        // 处理直接包含 fieldName
+        if (typeof fieldObj.fieldName === "string") {
+          return fieldObj.fieldName.trim();
+        }
+
+        return "";
+      };
+
+      /**
+       * 匹配本地分组
+       */
+      const pickLocalGroup = (groups, fillGroup) => {
+        const targetName = (fillGroup?.name || "").trim();
+
+        // 1. 尝试精确匹配 group.name
+        const exact = (groups || []).find((g) => {
+          const gName = (g.name || "").trim();
+          return gName && gName === targetName;
+        });
+
+        if (exact) {
+          console.log(`  ✅ 精确匹配分组: "${targetName}"`);
+          return exact;
+        }
+
+        // 2. 模糊匹配：计算字段名重合度
+        let best = null;
+        let bestScore = 0;
+
+        for (let i = 0; i < (groups || []).length; i++) {
+          const g = groups[i];
+          const localFieldNames = (g.fields || []).map((f) => getFieldDisplayName(f));
+          let score = 0;
+
+          // 计算有多少字段匹配
+          for (const fillField of (fillGroup.fields || [])) {
+            const fillFieldName = (fillField?.name || "").trim();
+            if (fillFieldName && localFieldNames.includes(fillFieldName)) {
+              score++;
+            }
+          }
+
+          if (score > bestScore) {
+            best = g;
+            bestScore = score;
+          }
+        }
+
+        if (best) {
+          console.log(`  ✅ 模糊匹配分组: "${targetName}" (匹配 ${bestScore} 个字段)`);
+        } else {
+          console.log(`  ⚠️  未找到匹配分组: "${targetName}"`);
+        }
+
+        return best;
+      };
+
+      /**
+       * 规范化字符串（用于模糊匹配）
+       */
+      const normalize = (s) => {
+        return (s || "").toString().replace(/\s+/g, "").toLowerCase();
+      };
+
+      /**
+       * 检查元素是否可见
+       */
+      const isVisible = (el) => {
+        if (!el) return false;
+        const style = window.getComputedStyle(el);
+        return (
+          el.offsetWidth > 0 &&
+          el.offsetHeight > 0 &&
+          style.visibility !== "hidden" &&
+          style.display !== "none"
+        );
+      };
+
+      /**
+       * 自动查找候选的表单元素
+       */
+      const collectCandidates = (fieldName) => {
+        const name = (fieldName || "").trim();
+        const normalizedName = normalize(name);
+        const candidates = []; // { element, score, matchType }
+        const seenElements = new WeakSet(); // 去重
+
+        console.log(`    🔍 自动查找字段: "${name}"`);
+
+        const addCandidate = (el, score, matchType) => {
+          if (!el || seenElements.has(el)) return;
+          if (!isVisible(el)) return;
+          if (!["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) return;
+
+          seenElements.add(el);
+          candidates.push({ element: el, score, matchType });
+        };
+
+        // 1. 通过 label 查找（最高优先级）
+        document.querySelectorAll("label").forEach((label) => {
+          const text = (label.textContent || "").trim();
+          if (!text) return;
+
+          const normalizedText = normalize(text);
+
+          // 精确匹配（分数最高）
+          if (normalizedText === normalizedName) {
+            const forId = label.getAttribute("for");
+            if (forId) {
+              const el = document.getElementById(forId);
+              addCandidate(el, 100, "label-exact");
+            } else {
+              let input = label.querySelector("input, textarea, select");
+              if (!input) {
+                input = label.nextElementSibling;
+                if (input && !["INPUT", "TEXTAREA", "SELECT"].includes(input.tagName)) {
+                  input = null;
+                }
+              }
+              addCandidate(input, 100, "label-exact");
+            }
+          }
+          // 包含匹配（分数次之）
+          else if (normalizedText.includes(normalizedName)) {
+            const forId = label.getAttribute("for");
+            if (forId) {
+              const el = document.getElementById(forId);
+              addCandidate(el, 80, "label-contains");
+            } else {
+              let input = label.querySelector("input, textarea, select");
+              if (!input) {
+                input = label.nextElementSibling;
+                if (input && !["INPUT", "TEXTAREA", "SELECT"].includes(input.tagName)) {
+                  input = null;
+                }
+              }
+              addCandidate(input, 80, "label-contains");
+            }
+          }
+          // 反向包含（分数更低）
+          else if (normalizedName.includes(normalizedText) && normalizedText.length >= 2) {
+            const forId = label.getAttribute("for");
+            if (forId) {
+              const el = document.getElementById(forId);
+              addCandidate(el, 60, "label-partial");
+            }
+          }
+        });
+
+        // 2. 通过元素属性查找
+        document.querySelectorAll("input, textarea, select").forEach((el) => {
+          if (seenElements.has(el)) return; // 已经通过 label 找到
+
+          const placeholder = normalize(el.getAttribute("placeholder") || "");
+          const ariaLabel = normalize(el.getAttribute("aria-label") || "");
+          const elName = normalize(el.getAttribute("name") || "");
+          const elId = normalize(el.getAttribute("id") || "");
+          const title = normalize(el.getAttribute("title") || "");
+
+          // 精确匹配
+          if (placeholder === normalizedName) {
+            addCandidate(el, 90, "placeholder-exact");
+          } else if (ariaLabel === normalizedName) {
+            addCandidate(el, 90, "aria-exact");
+          } else if (elName === normalizedName) {
+            addCandidate(el, 85, "name-exact");
+          } else if (elId === normalizedName) {
+            addCandidate(el, 85, "id-exact");
+          }
+          // 包含匹配
+          else if (placeholder.includes(normalizedName)) {
+            addCandidate(el, 70, "placeholder-contains");
+          } else if (ariaLabel.includes(normalizedName)) {
+            addCandidate(el, 70, "aria-contains");
+          } else if (elName.includes(normalizedName)) {
+            addCandidate(el, 65, "name-contains");
+          } else if (elId.includes(normalizedName)) {
+            addCandidate(el, 65, "id-contains");
+          } else if (title.includes(normalizedName)) {
+            addCandidate(el, 50, "title-contains");
+          }
+        });
+
+        // 3. 特殊处理：单选框（radio）
+        const radioGroups = new Map();
+        document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+          if (seenElements.has(radio)) return;
+
+          const radioName = radio.name;
+          if (!radioName) return;
+
+          const label = findRadioLabel(radio);
+          const normalizedLabel = normalize(label);
+
+          if (normalizedLabel === normalizedName) {
+            if (!radioGroups.has(radioName)) {
+              radioGroups.set(radioName, { radio, score: 95, matchType: "radio-exact" });
+            }
+          } else if (normalizedLabel.includes(normalizedName)) {
+            if (!radioGroups.has(radioName)) {
+              radioGroups.set(radioName, { radio, score: 75, matchType: "radio-contains" });
+            }
+          }
+        });
+
+        radioGroups.forEach((data) => {
+          addCandidate(data.radio, data.score, data.matchType);
+        });
+
+        // 按分数排序，取前3个
+        candidates.sort((a, b) => b.score - a.score);
+        const topCandidates = candidates.slice(0, 3);
+
+        console.log(`    ✅ 找到 ${candidates.length} 个候选，筛选后保留 ${topCandidates.length} 个`);
+        if (topCandidates.length > 0) {
+          topCandidates.forEach((c, i) => {
+            console.log(`      ${i + 1}. [${c.score}分] ${c.matchType} - ${c.element.tagName}`);
+          });
+        }
+
+        // 转换为 blanks 格式
+        return topCandidates.map(c => ({
+          name: "",
+          dom: c.element,
+          type: c.element.tagName === "SELECT" ? "select" :
+                c.element.tagName === "INPUT" && c.element.type === "radio" ? "radio" :
+                "input"
+        }));
+      };
+
+      /**
+       * 填充输入框
+       */
+      const fillInput = async (element, value) => {
+        if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
+          element.focus();
+          element.value = value;
+
+          // 触发事件
+          element.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
+          element.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+          element.dispatchEvent(new InputEvent("input", { bubbles: true, data: value }));
+
+          console.log(`        ✅ INPUT 填充成功: "${value}"`);
+        } else if (element.isContentEditable) {
+          element.focus();
+          element.textContent = value;
+          element.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
+          console.log(`        ✅ ContentEditable 填充成功: "${value}"`);
+        }
+      };
+
+      /**
+       * 填充下拉框
+       */
+      const fillSelect = async (element, value) => {
+        if (element.tagName !== "SELECT") return false;
+
+        // 精确匹配
+        for (const option of element.options) {
+          if (option.value === value || option.textContent.trim() === value) {
+            element.value = option.value;
+            element.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+            console.log(`        ✅ SELECT 精确匹配成功: "${value}"`);
+            return true;
+          }
+        }
+
+        // 模糊匹配
+        for (const option of element.options) {
+          const optText = option.textContent.trim();
+          if (optText.includes(value) || value.includes(optText)) {
+            element.value = option.value;
+            element.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+            console.log(`        ✅ SELECT 模糊匹配成功: "${value}" ≈ "${optText}"`);
+            return true;
+          }
+        }
+
+        console.log(`        ⚠️  SELECT 匹配失败: "${value}"`);
+        return false;
+      };
+
+      /**
+       * 填充单选框
+       */
+      const fillRadio = async (element, value) => {
+        let matched = false;
+
+        if (element.tagName === "INPUT" && element.type === "radio") {
+          // 单个 radio
+          const label = findRadioLabel(element);
+          if (label === value || label.includes(value) || value.includes(label)) {
+            element.checked = true;
+            element.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+            element.dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
+            console.log(`        ✅ RADIO 填充成功: "${value}"`);
+            matched = true;
+          }
+        } else {
+          // radio 组
+          const radios = element.querySelectorAll('input[type="radio"]');
+          for (const radio of radios) {
+            const label = findRadioLabel(radio);
+            if (label === value || label.includes(value) || value.includes(label)) {
+              radio.checked = true;
+              radio.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+              radio.dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
+              console.log(`        ✅ RADIO 填充成功: "${value}"`);
+              matched = true;
+              break;
+            }
+          }
+        }
+
+        if (!matched) {
+          console.log(`        ⚠️  RADIO 匹配失败: "${value}"`);
+        }
+
+        return matched;
+      };
+
+      // ========== 主填充逻辑 ==========
+
+      // 全局已填充元素集合（避免重复填充）
+      const filledElements = new WeakSet();
+
       for (const fillGroup of fillValues) {
-        console.log(`处理分组: ${fillGroup.name}`);
-        
-        // 查找对应的本地分组
-        const localGroup = localGroups.find(g => g.name === fillGroup.name);
+        const groupName = fillGroup?.name || "未命名分组";
+        console.log(`\n📦 处理分组: "${groupName}"`);
+
+        // 匹配本地分组
+        const localGroup = pickLocalGroup(localGroups, fillGroup);
         if (!localGroup) {
-          console.log(`未找到本地分组: ${fillGroup.name}`);
+          console.log(`  ❌ 未找到本地分组，跳过`);
           continue;
         }
 
-        // 遍历分组中的每个字段
+        console.log(`  📋 本地分组包含 ${localGroup.fields.length} 个字段`);
+
+        // 遍历填充字段
         for (const fillField of fillGroup.fields) {
-          console.log(`  处理字段: ${fillField.name}`);
-          
-          // 查找对应的本地字段
-          const localField = localGroup.fields.find(f => f.name === fillField.name);
-          if (!localField || !localField.blanks || localField.blanks.length === 0) {
-            console.log(`  未找到本地字段或无输入框: ${fillField.name}`);
+          const fillFieldName = (fillField?.name || "").trim();
+          console.log(`\n  📝 处理字段: "${fillFieldName}"`);
+
+          // 查找匹配的本地字段
+          let localField = (localGroup.fields || []).find((f) => {
+            const localName = getFieldDisplayName(f);
+            return localName === fillFieldName;
+          });
+
+          // 获取或查找输入框
+          let blanks = [];
+          if (localField && localField.blanks && localField.blanks.length > 0) {
+            blanks = localField.blanks;
+            console.log(`    ✅ 使用已有的 ${blanks.length} 个输入框`);
+          } else {
+            console.log(`    ⚠️  没有预定义的输入框，尝试自动查找`);
+            const allCandidates = collectCandidates(fillFieldName);
+
+            // 过滤掉已经填充过的元素
+            blanks = allCandidates.filter(b => !filledElements.has(b.dom));
+
+            if (blanks.length < allCandidates.length) {
+              console.log(`    🔄 过滤掉 ${allCandidates.length - blanks.length} 个已填充元素`);
+            }
+          }
+
+          if (blanks.length === 0) {
+            console.log(`    ❌ 未找到输入框，跳过字段: "${fillFieldName}"`);
             continue;
           }
 
-          // 遍历字段中的每个输入框
-          for (let i = 0; i < localField.blanks.length; i++) {
-            const blank = localField.blanks[i];
+          // 遍历填充每个输入框
+          for (let i = 0; i < blanks.length && i < fillField.blanks.length; i++) {
+            const blank = blanks[i];
             const fillBlank = fillField.blanks[i];
+            const value = (fillBlank?.value || "").toString().trim();
 
-            if (!blank.dom || !fillBlank || !fillBlank.value) {
-              console.log(`    跳过空白框 ${i}：DOM不存在或无填充值`);
+            if (!blank.dom || !value) {
+              console.log(`      ⏭️  跳过输入框 ${i}: 无 DOM 或无值`);
+              continue;
+            }
+
+            // 检查是否已经填充过
+            if (filledElements.has(blank.dom)) {
+              console.log(`      ⏭️  跳过输入框 ${i}: 已经填充过`);
               continue;
             }
 
             try {
-              console.log(`    填充输入框 ${i}: ${fillBlank.value}`);
-              
-              // 确保元素可见
+              console.log(`      📌 填充输入框 ${i}: "${value}"`);
+
+              // 滚动到可见区域
               blank.dom.scrollIntoView({ block: "center", behavior: "smooth" });
               await sleep(100);
 
-              // 点击元素以激活
+              // 点击激活
               await clickElement(blank.dom);
               await sleep(100);
 
-              // 根据元素类型填充值
+              // 根据类型填充
               if (blank.type === "input") {
-                // 处理普通输入框和文本域
-                if (blank.dom.tagName === "INPUT" || blank.dom.tagName === "TEXTAREA") {
-                  blank.dom.focus();
-                  blank.dom.value = fillBlank.value;
-                  
-                  // 触发输入事件
-                  blank.dom.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
-                  blank.dom.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
-                  
-                  // 对于某些框架（如React），可能需要额外的事件
-                  blank.dom.dispatchEvent(new InputEvent("input", { bubbles: true, cancelable: true, data: fillBlank.value }));
-                  
-                  console.log(`      成功填充INPUT: ${fillBlank.value}`);
-                } else if (blank.dom.isContentEditable) {
-                  // 处理可编辑的div
-                  blank.dom.focus();
-                  blank.dom.textContent = fillBlank.value;
-                  blank.dom.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
-                  console.log(`      成功填充ContentEditable: ${fillBlank.value}`);
-                }
+                await fillInput(blank.dom, value);
               } else if (blank.type === "select") {
-                // 处理下拉框
-                if (blank.dom.tagName === "SELECT") {
-                  // 尝试精确匹配
-                  let matched = false;
-                  for (const option of blank.dom.options) {
-                    if (option.value === fillBlank.value || option.textContent.trim() === fillBlank.value) {
-                      blank.dom.value = option.value;
-                      matched = true;
-                      break;
-                    }
-                  }
-                  
-                  // 如果精确匹配失败，尝试模糊匹配
-                  if (!matched) {
-                    for (const option of blank.dom.options) {
-                      if (option.textContent.includes(fillBlank.value) || fillBlank.value.includes(option.textContent.trim())) {
-                        blank.dom.value = option.value;
-                        matched = true;
-                        break;
-                      }
-                    }
-                  }
-                  
-                  if (matched) {
-                    blank.dom.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
-                    console.log(`      成功填充SELECT: ${fillBlank.value}`);
-                  } else {
-                    console.log(`      SELECT匹配失败: ${fillBlank.value}`);
-                  }
-                }
+                await fillSelect(blank.dom, value);
               } else if (blank.type === "radio") {
-                // 处理单选框
-                const radios = blank.dom.querySelectorAll('input[type="radio"]');
-                let matched = false;
-                
-                for (const radio of radios) {
-                  const label = findRadioLabel(radio);
-                  if (label === fillBlank.value || label.includes(fillBlank.value) || fillBlank.value.includes(label)) {
-                    radio.checked = true;
-                    radio.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
-                    radio.dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
-                    matched = true;
-                    console.log(`      成功填充RADIO: ${fillBlank.value}`);
-                    break;
-                  }
-                }
-                
-                if (!matched) {
-                  console.log(`      RADIO匹配失败: ${fillBlank.value}`);
-                }
+                await fillRadio(blank.dom, value);
               }
+
+              // 标记为已填充
+              filledElements.add(blank.dom);
 
               // 失焦触发验证
               await blurElement(blank.dom);
               await sleep(150);
 
-            } catch (e) {
-              console.error(`    填充出错:`, e);
-              // 继续处理下一个字段
+            } catch (error) {
+              console.error(`      ❌ 填充失败:`, error);
             }
           }
         }
       }
 
-      console.log("填充完成");
+      console.log("\n==================== 填充完成 ====================");
 
     } catch (error) {
-      console.error("填充过程出错:", error);
+      console.error("❌ performFilling 执行出错:", error);
       throw error;
     }
   }
