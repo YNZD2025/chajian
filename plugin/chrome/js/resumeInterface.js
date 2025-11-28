@@ -487,7 +487,7 @@
       try {
         const { auth } = await chrome.storage.local.get(["auth"]);
         console.log('🔐 检查登录状态:', auth ? '已登录' : '未登录');
-        
+
         if (auth) {
           console.log('✅ 已登录，打开主面板');
           toggleMainPanel(true);
@@ -496,15 +496,40 @@
           if (go) {
             // 确保配置已加载
             if (!config) {
+              console.log('⚠️ 配置未加载，尝试从存储中读取...');
               const { config: loadedConfig } = await chrome.storage.local.get(["config"]);
               config = loadedConfig;
             }
-            
+
+            // 如果仍然没有配置，请求 background.js 重新初始化
+            if (!config || !config.LOGIN_URL) {
+              console.log('⚠️ 配置不存在或不完整，请求 background.js 重新初始化...');
+
+              try {
+                // 向 background.js 发送消息请求重新初始化配置
+                await chrome.runtime.sendMessage({ type: "reinitConfig" });
+                console.log('✅ 已请求重新初始化配置');
+
+                // 等待一下，然后重新读取配置
+                await sleep(500);
+                const { config: reloadedConfig } = await chrome.storage.local.get(["config"]);
+                config = reloadedConfig;
+
+                // 同步到 window.config
+                if (config) {
+                  window.config = config;
+                  console.log('✅ 配置重新加载成功:', config);
+                }
+              } catch (msgError) {
+                console.error('❌ 请求配置初始化失败:', msgError);
+              }
+            }
+
             if (config && config.LOGIN_URL) {
               console.log('🔗 打开登录页面:', config.LOGIN_URL);
               window.open(config.LOGIN_URL, "_blank");
             } else {
-              console.error('❌ 配置未加载或 LOGIN_URL 不存在');
+              console.error('❌ 配置加载失败，LOGIN_URL 不存在');
               alert('配置加载失败，请刷新页面重试');
             }
           }

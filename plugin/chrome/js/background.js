@@ -17,7 +17,7 @@ import {
   WELCOME_URL,
   PRICING_URL,
   ALL_WEB_URLS
-} from "./config.js";
+} from "./config.module.js";
 
 // ==================== 模块定义 ====================
 
@@ -209,7 +209,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getHistoryUrls: () => NavigationHistoryModule.handleMessage(message, sender, sendResponse),
     logError: () => ErrorModule.handleMessage(message, sender, sendResponse),
     externalLogin: () => AuthModule.handleExternalLogin(message, sendResponse).catch((err) => sendResponse({ error: err.message })),
-    externalLogout: () => AuthModule.handleExternalLogout(sendResponse).catch((err) => sendResponse({ error: err.message }))
+    externalLogout: () => AuthModule.handleExternalLogout(sendResponse).catch((err) => sendResponse({ error: err.message })),
+    reinitConfig: () => {
+      console.log('🔄 收到重新初始化配置的请求');
+      ConfigModule.init();
+      sendResponse({ success: true, message: '配置已重新初始化' });
+    }
   };
   const handler = handlers[message.type];
   if (handler) {

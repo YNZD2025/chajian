@@ -5,9 +5,20 @@
 (async () => {
   // ==================== 全局变量定义 ====================
 
-  // 配置和API相关
-  window.config = null;
-  window.runFillResume = null;
+  // 配置和API相关（使用命名空间避免污染全局对象）
+  window.YinianAI = window.YinianAI || {};
+  window.YinianAI.config = null;
+  window.YinianAI.runFillResume = null;
+
+  // 向后兼容：保持旧的引用方式
+  Object.defineProperty(window, 'config', {
+    get: () => window.YinianAI.config,
+    set: (value) => { window.YinianAI.config = value; }
+  });
+  Object.defineProperty(window, 'runFillResume', {
+    get: () => window.YinianAI.runFillResume,
+    set: (value) => { window.YinianAI.runFillResume = value; }
+  });
 
   // 服务器返回的数据
   let beautifiedResume = null;        // 美化后的简历
@@ -31,6 +42,7 @@
   let isScanning = false;             // 是否正在扫描
   let isHighlighting = false;         // 是否正在高亮显示
   let mutationObserver = null;        // DOM变化观察器
+  let scanningComplete = false;       // 是否扫描完成
 
   // DOM监听相关
   let newlyAddedElements = [];        // 新增的DOM元素
@@ -73,7 +85,13 @@
     deleteButtons = [];
     isScanning = false;
     isHighlighting = false;
-    mutationObserver = null;
+
+    // 正确清理 MutationObserver 避免内存泄漏
+    if (mutationObserver) {
+      mutationObserver.disconnect();
+      mutationObserver = null;
+    }
+
     newlyAddedElements = [];
     elementStylesMap = new WeakMap();
     cancelButtons = [];
@@ -216,16 +234,34 @@
       // 步骤5: 等待扫描和服务器响应完成
       console.log("步骤5: 等待扫描和服务器响应完成");
       window.setStateText("正在扫描网站...", "min");
-      while (!scanningComplete || !window.isRunning()) {
-        checkNetworkError();
-        await sleep(500);
-      }
+
+      // 使用超时机制等待扫描完成（最多等待30秒）
+      await waitWithTimeout(
+        () => {
+          checkNetworkError();
+          return scanningComplete && window.isRunning();
+        },
+        {
+          timeout: 30000,
+          interval: 500,
+          errorMessage: '扫描网站超时，请刷新页面重试'
+        }
+      );
 
       window.setStateText("尝试理解网站，请稍候...", "min");
-      while (!serverFields.length || !window.isRunning()) {
-        checkNetworkError();
-        await sleep(500);
-      }
+
+      // 使用超时机制等待服务器响应（最多等待30秒）
+      await waitWithTimeout(
+        () => {
+          checkNetworkError();
+          return serverFields.length > 0 && window.isRunning();
+        },
+        {
+          timeout: 30000,
+          interval: 500,
+          errorMessage: '服务器响应超时，请刷新页面重试'
+        }
+      );
 
       // 步骤6: 匹配字段和输入框
       console.log("步骤6: 匹配字段和输入框");
@@ -803,7 +839,7 @@
 
   // ==================== 表单扫描函数 ====================
 
-  let scanningComplete = false;
+  
 
   /**
    * 步骤4: 扫描本地表单元素
@@ -897,7 +933,10 @@
     // 收集select的选项
     selectOptionsData = [];
     for (const select of selectDomList) {
+      // selectDomList 现在只包含标准 SELECT 元素
       const options = getAllSelectOptions(select);
+
+      // 处理"请选择"占位符
       if (options.length >= 2) {
         if (/^[-\s]*请选择/.test(options[0])) {
           selectOptionsData.push(options.slice(1));
@@ -906,6 +945,11 @@
         }
       } else {
         selectOptionsData.push([]);
+      }
+
+      // 检查是否被用户暂停
+      while (!window.isRunning()) {
+        await sleep(50);
       }
     }
 
@@ -944,8 +988,14 @@
       const placeholder = element.getAttribute("placeholder");
       const title = element.getAttribute("title");
 
-      // 判断是否是输入框
-      if (
+      // ========== 判断是否是下拉框 ==========
+      // 只识别标准的 SELECT 元素
+      // INPUT 伪装的下拉框会在填充阶段通过 detectElementType() 动态识别
+      if (element.tagName === "SELECT") {
+        isSelect = true;
+      }
+      // ========== 判断是否是输入框 ==========
+      else if (
         (placeholder &&
          element.tagName !== "TEXTAREA" &&
          !/^\s*(搜索|查找)/.test(placeholder) &&
@@ -960,9 +1010,9 @@
         ["text", "search"].includes(element.type)
       ) {
         isInput = true;
-      } else if (element.tagName === "SELECT") {
-        isSelect = true;
-      } else if (isRadioGroup(element)) {
+      }
+      // ========== 判断是否是单选框 ==========
+      else if (isRadioGroup(element)) {
         isRadio = true;
       }
 
@@ -2259,17 +2309,20 @@
       if (!window.config) {
         console.error('❌ window.config 未加载，尝试重新获取...');
         const storage = await chrome.storage.local.get(["config"]);
-        window.config = storage.config;
-        
-        if (!window.config) {
-          throw new Error('配置加载失败，请刷新页面重试');
+
+        // 验证从 storage 获取的配置是否有效
+        if (!storage || !storage.config) {
+          throw new Error('无法从 storage 获取配置，请检查扩展安装状态');
         }
+
+        window.config = storage.config;
         console.log('✅ 配置已重新加载:', window.config);
       }
-      
+
+      // 验证必要的配置项
       if (!window.config.API_BASE_URL) {
         console.error('❌ API_BASE_URL 不存在:', window.config);
-        throw new Error('API_BASE_URL 配置缺失');
+        throw new Error('API_BASE_URL 配置缺失，请检查扩展配置');
       }
       
       const requestUrl = `${window.config.API_BASE_URL}analyze-page`;
@@ -2364,16 +2417,13 @@
    */
   async function getFillingValues(enableBeautify, resumeMd) {
     console.log("进入步骤9");
-    // console.log("serverFields===>", serverFields);
     await callFillResumeValueAPI(serverFields, "", "", resumeMd, "resume-default");
     console.log("fillValues===>", fillValues);
-    console.log("window.isRunning()===>", window.isRunning());
     let waitCounter = 0;
     while (!fillValues.length || !window.isRunning()) {
       checkNetworkError();
       await sleep(500);
       waitCounter++;
-      console.log("waitCounter===>", waitCounter);
       if (waitCounter === 22) {
         window.setStateText("开始思考网站填写策略...");
       } else if (waitCounter === 60) {
@@ -2427,27 +2477,27 @@
     };
     const valueByType = (t) => {
       switch ((t || "").toLowerCase()) {
-        case "name": return getMd("Name") || "李艺伟";
-        case "phone": return getMd("Phone") || "13800001111";
-        case "email": return getMd("Email") || "liyiwei@example.com";
-        case "desiredcity": return "北京/上海";
-        case "school": return getMd("School") || "清华大学";
-        case "education": return "硕士";
-        case "major": return getMd("Major") || "计算机科学";
-        case "educationstartdate": return "2023-09";
-        case "company": return company || "一念科技";
-        case "position": return position || "数据分析";
-        case "workstartdate": return "2024-06";
-        case "workdescription": return "负责数据分析与报表开发";
-        case "projectname": return "智能填表系统";
-        case "projectrole": return "开发工程师";
-        case "projectstartdate": return "2024-09";
-        case "projectdescription": return "https://github.com/liyiwei/auto-fill";
-        case "attachment": return "https://example.com/attachment";
-        case "certificate": return "国家奖学金";
+        case "name": return getMd("Name") || "fly";
+        case "phone": return getMd("Phone") || "16673570000";
+        case "email": return getMd("Email") || "2477980000@qq.com";
+        case "desiredcity": return "深圳";
+        case "school": return getMd("School") || "湖南软件职业技术大学";
+        case "education": return "本科";
+        case "major": return getMd("Major") || "软件技术";
+        case "educationstartdate": return "2024-2026";
+        case "company": return company || "北京人人众包科技有限公司";
+        case "position": return position || "Java开发";
+        case "workstartdate": return "2023.12-2024.06";
+        case "workdescription": return "1. 负责项目整体架构设计与优化。\n2. 独立完成后端逻辑开发，确保代码质量与性能。\n3. 参与前端界面开发，提升用户交互体验。\n4. 与团队紧密协作，确保前后端接口的高效对接。\n5. 定期进行代码审查，维护项目代码的整洁与一致性。\n6. 针对项目需求，提出并实施技术解决方案。\n7. 主动跟踪最新技术动态，为项目引入创新思路。\n实习成果：河北工业大学资产管理平台项目、卡友新能源项目前端开发、河北工信厅-工业绿色低碳项目前后端独立开发。";
+        case "projectname": return "河北工信厅 - 工业绿色低碳项目";
+        case "projectrole": return "全栈工程师";
+        case "projectstartdate": return "2024.04-2024.06";
+        case "projectdescription": return "项目核心开发：独立负责项目的全栈开发，采用SpringBoot与Vue技术栈，确保系统的稳定性和可维护性。数据集成与分析：成功对接并处理了大量企业能源消耗数据，支持能耗趋势的分析和可视化展示。系统安全与整合：负责整合与优化用户认证流程，包括设计和实现单点登录（SSO）接口对接。业绩：技术突破：独立完成前后端全链路开发，零依赖外部支援实现核心功能上线，缩短项目开发周期20%。接口对接：成功攻克第三方系统集成难点，高效完成河北工信厅单点登录接口对接。业务价值：通过能源数据动态统计功能，助力客户单位能源管理效率提升15%。";
+        case "attachment": return "";
+        case "certificate": return "软件设计师证书";
         case "language": return "英语";
-        case "selfevaluation": return "积极主动，学习能力强";
-        default: return getMd("Skills") || "";
+        case "selfevaluation": return "技术优势：熟悉掌握LangChain4J、SpringAi等大模型技术框架，熟悉JavaWeb技术，熟练使用SpringBoot、Cloud、Cloudibaba等开源框架，熟悉JUC、JVM等技术，熟练使用MySQL、Redis数据库，熟练掌握Python语言。\n\n项目优势：参与企业后台、政企对接、AI应用等多类型项目，覆盖全流程开发，曾单人独立负责一个项目的前后端开发，担任前端、全栈等角色，适应能力强，团队协作佳。\n\n学习优势：在校考取软件设计师证书，自主学习能力出色，能快速掌握新技术，适应技术环境变化。";
+        default: return getMd("Skills") || "Java、SpringBoot、MyBatis、MySQL、Vue3、Redis";
       }
     };
     fillValues = (fields || []).map((sec) => {
@@ -2550,6 +2600,87 @@
   }
 
   // ==================== 工具函数 ====================
+
+  /**
+   * 检测元素的真实类型（增强版）
+   * @param {HTMLElement} element - DOM 元素
+   * @param {string} fieldType - 字段类型（如 desiredCity, education 等）
+   * @returns {Object} { type: 'input' | 'select-single' | 'select-multi' | 'radio' | 'textarea', isMultiSelect: boolean }
+   */
+  function detectElementType(element, fieldType = '') {
+    if (!element) {
+      return { type: 'input', isMultiSelect: false };
+    }
+
+    const tagName = element.tagName;
+    const className = element.className || '';
+    const role = element.getAttribute('role') || '';
+    const ariaMultiSelectable = element.getAttribute('aria-multiselectable');
+    const hasMultiple = element.hasAttribute('multiple');
+
+    // 1. 标准 SELECT 元素
+    if (tagName === 'SELECT') {
+      return {
+        type: hasMultiple ? 'select-multi' : 'select-single',
+        isMultiSelect: hasMultiple
+      };
+    }
+
+    // 2. TEXTAREA 元素
+    if (tagName === 'TEXTAREA') {
+      return { type: 'textarea', isMultiSelect: false };
+    }
+
+    // 3. INPUT 元素需要进一步判断
+    if (tagName === 'INPUT') {
+      const inputType = element.type;
+
+      // 3.1 单选按钮
+      if (inputType === 'radio') {
+        return { type: 'radio', isMultiSelect: false };
+      }
+
+      // 3.2 复选框
+      if (inputType === 'checkbox') {
+        return { type: 'checkbox', isMultiSelect: true };
+      }
+
+      // 3.3 检测伪装成 INPUT 的下拉框
+      const isSelectLike =
+        role === 'combobox' ||
+        (element.hasAttribute('readonly') && inputType === 'search') ||
+        /select.*search|search.*input|selector.*input/i.test(className);
+
+      if (isSelectLike) {
+        // 判断是单选还是多选
+        let isMulti = false;
+
+        // 通过属性判断
+        if (ariaMultiSelectable === 'true' || hasMultiple) {
+          isMulti = true;
+        }
+        // 通过 class 判断（包含 multi 关键词）
+        else if (/multi/i.test(className)) {
+          isMulti = true;
+        }
+        // 通过字段类型判断（地区字段通常是多选）
+        else if (/city|region|area|location/i.test(fieldType)) {
+          isMulti = true;
+        }
+
+        return {
+          type: isMulti ? 'select-multi' : 'select-single',
+          isMultiSelect: isMulti
+        };
+      }
+
+      // 3.4 普通输入框
+      return { type: 'input', isMultiSelect: false };
+    }
+
+    // 4. 其他元素默认当作输入框
+    return { type: 'input', isMultiSelect: false };
+  }
 
   /**
    * 点击元素
@@ -3302,6 +3433,302 @@
     try {
       console.log("==================== 开始执行填充 ====================");
       console.log("📊 localGroups:", localGroups);
+      fillValues = [
+          {
+              "name": "简历",
+              "fields": [
+                  {
+                      "name": "简历文件",
+                      "blanks": []
+                  }
+              ]
+          },
+          {
+              "name": "基本信息",
+              "fields": [
+                  {
+                      "name": "姓名",
+                      "blanks": [
+                          {
+                              "value": "fly"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "手机号码",
+                      "blanks": [
+                          {
+                              "value": "+86"
+                          },
+                          {
+                              "value": "16673570000"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "邮箱",
+                      "blanks": [
+                          {
+                              "value": "2477980000@qq.com"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "期望工作地点",
+                      "blanks": [
+                          {
+                              "value": "深圳"
+                          },
+                          {
+                              "value": "广州"
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "工作经历",
+              "fields": []
+          },
+          {
+              "name": "教育经历",
+              "fields": [
+                  {
+                      "name": "学校名称",
+                      "blanks": [
+                          {
+                              "value": "湖南软件职业技术大学"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "学历",
+                      "blanks": [
+                          {
+                              "value": "本科"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "专业",
+                      "blanks": [
+                          {
+                              "value": "软件技术"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "起止时间",
+                      "blanks": [
+                          {
+                              "value": "2024-06"
+                          },
+                          {
+                              "value": "2026-09"
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "实习经历",
+              "fields": [
+                  {
+                      "name": "公司名称",
+                      "blanks": [
+                          {
+                              "value": "北京人人众包科技有限公司"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "职位名称",
+                      "blanks": [
+                          {
+                              "value": "Java开发"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "起止时间",
+                      "blanks": [
+                          {
+                              "value": "2023-12"
+                          },
+                          {
+                              "value": "2024-06"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "描述",
+                      "blanks": [
+                          {
+                              "value": "1. 负责项目整体架构设计与优化。\n2. 独立完成后端逻辑开发，确保代码质量与性能。\n3. 参与前端界面开发，提升用户交互体验。\n4. 与团队紧密协作，确保前后端接口的高效对接。\n5. 定期进行代码审查，维护项目代码的整洁与一致性。\n6. 针对项目需求，提出并实施技术解决方案。\n7. 主动跟踪最新技术动态，为项目引入创新思路。\n实习成果：河北工业大学资产管理平台项目、卡友新能源项目前端开发、河北工信厅-工业绿色低碳项目前后端独立开发。"
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "项目经历",
+              "fields": [
+                  {
+                      "name": "项目名称",
+                      "blanks": [
+                          {
+                              "value": "河北工信厅 - 工业绿色低碳项目"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "项目角色",
+                      "blanks": [
+                          {
+                              "value": "全栈工程师"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "起止时间",
+                      "blanks": [
+                          {
+                              "value": "2024-04"
+                          },
+                          {
+                              "value": "2024-06"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "项目链接",
+                      "blanks": [
+                          {
+                              "value": ""
+                          }
+                      ]
+                  },
+                  {
+                      "name": "描述",
+                      "blanks": [
+                          {
+                              "value": "项目核心开发：独立负责项目的全栈开发，采用SpringBoot与Vue技术栈，确保系统的稳定性和可维护性。数据集成与分析：成功对接并处理了大量企业能源消耗数据，支持能耗趋势的分析和可视化展示。系统安全与整合：负责整合与优化用户认证流程，包括设计和实现单点登录（SSO）接口对接。业绩：技术突破：独立完成前后端全链路开发，零依赖外部支援实现核心功能上线，缩短项目开发周期20%。接口对接：成功攻克第三方系统集成难点，高效完成河北工信厅单点登录接口对接。业务价值：通过能源数据动态统计功能，助力客户单位能源管理效率提升15%。"
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "作品",
+              "fields": [
+                  {
+                      "name": "作品链接",
+                      "blanks": [
+                          {
+                              "value": ""
+                          }
+                      ]
+                  },
+                  {
+                      "name": "作品附件",
+                      "blanks": []
+                  },
+                  {
+                      "name": "描述",
+                      "blanks": [
+                          {
+                              "value": ""
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "获奖",
+              "fields": [
+                  {
+                      "name": "获奖名称",
+                      "blanks": [
+                          {
+                              "value": "软件设计师证书"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "获奖时间",
+                      "blanks": [
+                          {
+                              "value": "2022"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "描述",
+                      "blanks": [
+                          {
+                              "value": "在校考取软件设计师证书，自主学习能力出色，能快速掌握新技术，适应技术环境变化。"
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "语言能力",
+              "fields": [
+                  {
+                      "name": "语言",
+                      "blanks": [
+                          {
+                              "value": "英语"
+                          }
+                      ]
+                  },
+                  {
+                      "name": "精通程度",
+                      "blanks": [
+                          {
+                              "value": "良好"
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "自我评价",
+              "fields": [
+                  {
+                      "name": "自我评价",
+                      "blanks": [
+                          {
+                              "value": "技术优势：熟悉掌握LangChain4J、SpringAi等大模型技术框架，熟悉JavaWeb技术，熟练使用SpringBoot、Cloud、Cloudibaba等开源框架，熟悉JUC、JVM等技术，熟练使用MySQL、Redis数据库，熟练掌握Python语言。\n\n项目优势：参与企业后台、政企对接、AI应用等多类型项目，覆盖全流程开发，曾单人独立负责一个项目的前后端开发，担任前端、全栈等角色，适应能力强，团队协作佳。\n\n学习优势：在校考取软件设计师证书，自主学习能力出色，能快速掌握新技术，适应技术环境变化。"
+                          }
+                      ]
+                  }
+              ]
+          },
+          {
+              "name": "社交账号",
+              "fields": [
+                  {
+                      "name": "社交平台",
+                      "blanks": [
+                          {
+                              "value": ""
+                          }
+                      ]
+                  },
+                  {
+                      "name": "URL / ID",
+                      "blanks": [
+                          {
+                              "value": ""
+                          }
+                      ]
+                  }
+              ]
+          }
+      ];
+
       console.log("📊 fillValues:", fillValues);
 
       // ========== 工具函数 ==========
@@ -3558,56 +3985,747 @@
       };
 
       /**
-       * 填充输入框
+       * 查找新弹出的选项元素（匹配值）- 增强版
+       * @param {string} value - 要匹配的值
+       * @param {boolean} isRegionField - 是否是地区字段
+       * @param {boolean} selectLastInTree - 是否选择树形结构中最后一个（用于地区多级选择）
+       * @returns {Element|null} 匹配的选项元素
        */
-      const fillInput = async (element, value) => {
+      /**
+       * 向上查找树节点或选项的父容器
+       * @param {Element} element - 起始元素
+       * @returns {Element} 树节点父元素
+       */
+      const findTreeNodeParent = (element) => {
+        if (!element) return null;
+
+        // 如果已经是树节点或选项，直接返回
+        if (element.classList.contains('ud__tree__node') ||
+            element.getAttribute('role') === 'option' ||
+            element.classList.contains('select-item') ||
+            element.classList.contains('option-item') ||
+            element.tagName === 'LI') {
+          return element;
+        }
+
+        // 向上查找父元素
+        let parent = element.parentElement;
+        let maxDepth = 5; // 最多向上查找5层
+        while (parent && parent !== document.body && maxDepth > 0) {
+          if (parent.classList.contains('ud__tree__node') ||
+              parent.getAttribute('role') === 'option' ||
+              parent.classList.contains('select-item') ||
+              parent.classList.contains('option-item') ||
+              parent.tagName === 'LI') {
+            return parent;
+          }
+          parent = parent.parentElement;
+          maxDepth--;
+        }
+
+        // 没找到父节点，返回原元素
+        return element;
+      };
+
+      const findMatchingOption = (value, isRegionField = false, selectLastInTree = false) => {
+        const normalizedValue = normalize(value);
+        let bestMatch = null;
+        let bestScore = 0;
+        let allOptions = [];
+        let allMatches = []; // 记录所有匹配的选项，用于树形结构选择
+
+        // 查找所有可见的树节点或选项（不依赖 newlyAddedElements）
+        let containers = [];
+
+        // 优先查找树节点和选项元素
+        const treeNodes = document.querySelectorAll('.ud__tree__node, li[role="option"], div[role="option"], .select-item, .option-item, .ant-select-item, .el-select-dropdown__item');
+        if (treeNodes.length > 0) {
+          containers = Array.from(treeNodes);
+        } else {
+          // 降级：查找下拉框容器
+          const dropdowns = document.querySelectorAll('.ud__select__dropdown, .ant-select-dropdown, .el-select-dropdown, [class*="dropdown"], [class*="menu"], [class*="popup"]');
+          containers = Array.from(dropdowns);
+        }
+
+        // 遍历所有可能的容器
+        for (const container of containers) {
+          if (!isElementVisible(container)) continue;
+
+          // 如果容器本身就是选项，直接处理
+          const isOptionItself = container.classList.contains('ud__tree__node') ||
+                                container.getAttribute('role') === 'option' ||
+                                container.tagName === 'LI';
+
+          const elementsToCheck = isOptionItself ? [container] : Array.from(container.querySelectorAll('*'));
+
+          for (const option of elementsToCheck) {
+            // 跳过有很多子元素的容器（保留少量子元素的，可能是带图标的选项）
+            if (option.children.length > 5) continue;
+
+            const text = option.textContent.trim();
+            if (!text || text.length > 100) continue; // 跳过空文本或超长文本（可能是容器）
+
+            const normalizedText = normalize(text);
+
+            // 保存所有选项用于调试
+            if (option.children.length === 0 && text.length < 50) {
+              allOptions.push(text);
+            }
+
+            // 精确匹配（最高优先级）
+            if (normalizedText === normalizedValue) {
+              console.log(`        🎯 精确匹配: "${text}"`);
+              return findTreeNodeParent(option);
+            }
+
+            // 地区字段的特殊匹配逻辑
+            if (isRegionField) {
+              // 支持多地区匹配，如 "北京/上海" 或 "北京"
+              const regions = value.split(/[\/、,，]/);
+              for (const region of regions) {
+                const normalizedRegion = normalize(region.trim());
+                if (normalizedText.includes(normalizedRegion) || normalizedRegion.includes(normalizedText)) {
+                  // 计算路径深度（通过 / 分隔符数量）
+                  const pathDepth = (text.match(/[\/]/g) || []).length;
+
+                  // 评分：相似度 * (路径深度 + 1)，优先选择更深的路径
+                  const similarity = Math.min(normalizedRegion.length, normalizedText.length) /
+                                   Math.max(normalizedRegion.length, normalizedText.length);
+                  const score = selectLastInTree ? similarity * (pathDepth + 1) : similarity;
+
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = option;
+                  }
+
+                  // 记录所有匹配项（用于树形选择）
+                  if (selectLastInTree && similarity > 0.5) {
+                    allMatches.push({ option, score, pathDepth, text });
+                  }
+                }
+              }
+            }
+
+            // 模糊匹配（选项包含值）
+            if (normalizedText.includes(normalizedValue)) {
+              const score = normalizedValue.length / normalizedText.length;
+              if (score > bestScore) {
+                bestScore = score;
+                bestMatch = option;
+              }
+            }
+            // 反向模糊匹配（值包含选项）
+            else if (normalizedValue.includes(normalizedText) && normalizedText.length >= 2) {
+              const score = normalizedText.length / normalizedValue.length * 0.8;
+              if (score > bestScore) {
+                bestScore = score;
+                bestMatch = option;
+              }
+            }
+          }
+        }
+
+        // 树形结构选择：选择路径最深的选项（最精确的匹配）
+        if (selectLastInTree && allMatches.length > 0) {
+          // 按路径深度降序排序，选择最深的
+          allMatches.sort((a, b) => b.pathDepth - a.pathDepth);
+          const deepestMatch = allMatches[0];
+          console.log(`        🌲 树形选择 (深度: ${deepestMatch.pathDepth}): "${deepestMatch.text}"`);
+          return findTreeNodeParent(deepestMatch.option);
+        }
+
+        if (bestMatch) {
+          console.log(`        🎯 模糊匹配 (得分: ${bestScore.toFixed(2)}): "${bestMatch.textContent.trim()}"`);
+        } else if (allOptions.length > 0) {
+          console.log(`        ⚠️  未找到匹配，可用选项前10个:`, allOptions.slice(0, 10));
+        }
+
+        return bestScore > 0.3 ? findTreeNodeParent(bestMatch) : null;
+      };
+
+      /**
+       * 检测是否弹出了日期选择器
+       */
+      const hasDatePicker = () => {
+        // 直接搜索文档中的日期选择器（不依赖 newlyAddedElements）
+        const datePickers = document.querySelectorAll(
+          '.ant-picker-dropdown, ' +
+          '.el-date-picker, ' +
+          '.ud__date-picker, ' +
+          '[class*="date-picker"], ' +
+          '[class*="calendar"], ' +
+          '[class*="datepicker"]'
+        );
+
+        for (const element of datePickers) {
+          if (!isElementVisible(element)) continue;
+
+          // 检测日期选择器的特征
+          const text = element.textContent || "";
+
+          // 包含日期特征：年月日、周一到周日、1-31的数字网格
+          const hasDateGrid = /[一二三四五六日]/.test(text) &&
+                             /\b([1-9]|[12]\d|3[01])\b/.test(text);
+
+          if (hasDateGrid) return true;
+        }
+
+        return false;
+      };
+
+      /**
+       * 在日期选择器中选择日期（增强版）
+       */
+      const selectDateInPicker = async (dateStr) => {
+        // 解析日期字符串 (支持 YYYY-MM-DD, YYYY/MM/DD, YYYY-MM 等格式)
+        const dateMatch = dateStr.match(/(\d{4})[-/](\d{1,2})(?:[-/](\d{1,2}))?/);
+        if (!dateMatch) {
+          console.log(`        ⚠️  无法解析日期: "${dateStr}"`);
+          return false;
+        }
+
+        const year = dateMatch[1];
+        const month = dateMatch[2];
+        const day = dateMatch[3]; // 可能为 undefined（年月选择器）
+
+        console.log(`        📅 尝试选择日期: ${year}-${month}${day ? '-' + day : ''}`);
+
+        // 辅助函数：查找并点击元素
+        const findAndClick = async (container, patterns, name) => {
+          const elements = Array.from(container.querySelectorAll('*'))
+            .filter(el => {
+              if (el.children.length > 3) return false; // 跳过容器元素
+              const text = el.textContent.trim();
+              return patterns.some(pattern => {
+                if (typeof pattern === 'string') {
+                  return text === pattern;
+                } else if (pattern instanceof RegExp) {
+                  return pattern.test(text);
+                }
+                return false;
+              });
+            });
+
+          if (elements.length > 0) {
+            console.log(`        ✓ 找到${name}: "${elements[0].textContent.trim()}"`);
+            await clickElement(elements[0]);
+            await sleep(400);
+            return true;
+          }
+          return false;
+        };
+
+        try {
+          // 第一步：尝试查找年份选择器
+          for (const container of newlyAddedElements) {
+            if (!isElementVisible(container)) continue;
+
+            // 查找年份头部按钮（可能需要点击才能显示年份列表）
+            const yearHeaderPatterns = [
+              new RegExp(`${year}年`),
+              new RegExp(`^${year}$`),
+              new RegExp(`${year}\\s*年`)
+            ];
+
+            // 先尝试直接选择年份
+            let yearSelected = await findAndClick(container, yearHeaderPatterns, '年份');
+
+            // 如果没有找到，尝试查找年份选择按钮（通常在日期选择器头部）
+            if (!yearSelected) {
+              const headerElements = Array.from(container.querySelectorAll('*'))
+                .filter(el => {
+                  const text = el.textContent.trim();
+                  // 匹配类似 "2024年" 或 "2024" 的头部元素
+                  return /\d{4}\s*年?/.test(text) && text.length < 15;
+                });
+
+              if (headerElements.length > 0) {
+                console.log(`        ✓ 找到年份头部，点击展开年份列表`);
+                await clickElement(headerElements[0]);
+                await sleep(500);
+
+                // 重新监控 DOM 变化，查找弹出的年份列表
+                startMonitoringDomChanges();
+                await sleep(300);
+                stopMonitoringDomChanges();
+
+                // 在新弹出的元素中查找目标年份
+                for (const newContainer of newlyAddedElements) {
+                  if (!isElementVisible(newContainer)) continue;
+                  yearSelected = await findAndClick(newContainer, yearHeaderPatterns, '年份');
+                  if (yearSelected) break;
+                }
+              }
+            }
+
+            // 第二步：选择月份
+            await sleep(300);
+            const monthPatterns = [
+              `${parseInt(month)}月`,
+              `${month}月`,
+              month
+            ];
+
+            // 重新获取可见容器（可能年份选择后界面已变化）
+            startMonitoringDomChanges();
+            await sleep(200);
+            stopMonitoringDomChanges();
+
+            const visibleContainers = newlyAddedElements.length > 0 ?
+                                     newlyAddedElements : [container];
+
+            let monthSelected = false;
+            for (const c of visibleContainers) {
+              if (!isElementVisible(c)) continue;
+              monthSelected = await findAndClick(c, monthPatterns, '月份');
+              if (monthSelected) break;
+            }
+
+            // 第三步：如果有日期，选择日期
+            if (day && monthSelected) {
+              await sleep(300);
+              const dayPatterns = [
+                day,
+                parseInt(day).toString()
+              ];
+
+              // 重新获取容器
+              startMonitoringDomChanges();
+              await sleep(200);
+              stopMonitoringDomChanges();
+
+              const dayContainers = newlyAddedElements.length > 0 ?
+                                   newlyAddedElements : visibleContainers;
+
+              for (const c of dayContainers) {
+                if (!isElementVisible(c)) continue;
+
+                // 查找日期元素（通常在一个网格中）
+                const dayElements = Array.from(c.querySelectorAll('*'))
+                  .filter(el => {
+                    if (el.children.length > 0) return false; // 叶子节点
+                    const text = el.textContent.trim();
+                    return dayPatterns.includes(text);
+                  });
+
+                if (dayElements.length > 0) {
+                  // 选择最后一个匹配的（避免选到前后月份的日期）
+                  const targetDay = dayElements[dayElements.length - 1];
+                  console.log(`        ✓ 找到日期: "${targetDay.textContent.trim()}"`);
+                  await clickElement(targetDay);
+                  await sleep(300);
+                  return true;
+                }
+              }
+            } else if (!day) {
+              // 年月选择器，月份选择后可能需要确认
+              console.log(`        ✅ 年月选择完成`);
+              await sleep(200);
+              return true;
+            }
+
+            if (yearSelected || monthSelected) {
+              return true; // 至少选择了年份或月份
+            }
+          }
+
+          return false;
+        } catch (error) {
+          console.log(`        ⚠️  日期选择异常: ${error.message}`);
+          return false;
+        }
+      };
+
+      /**
+       * 填充输入框（增强版）
+       */
+      const fillInput = async (element, value, fieldName = "") => {
+        const isDateField = /时间|日期|年月/.test(fieldName);
+
         if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
           element.focus();
-          element.value = value;
+
+          // 先点击元素，触发可能的下拉列表或日期选择器
+          await clickElement(element);
+          await sleep(isDateField ? 300 : 100);
+
+          // 检查是否弹出了日期选择器
+          if (isDateField && hasDatePicker()) {
+            console.log(`        📅 检测到日期选择器`);
+            const success = await selectDateInPicker(value);
+
+            if (success) {
+              console.log(`        ✅ 日期选择成功: "${value}"`);
+              await closePopupWindow(element);
+              return true;
+            } else {
+              console.log(`        ⚠️  日期选择失败，尝试直接输入`);
+              await closePopupWindow(element);
+            }
+          }
+
+          // 设置值
+          if (element.type === "number") {
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+              element.value = numValue;
+            }
+          } else {
+            element.value = value;
+          }
 
           // 触发事件
           element.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
           element.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
           element.dispatchEvent(new InputEvent("input", { bubbles: true, data: value }));
 
+          // 等待可能的下拉列表渲染
+          await sleep(650); // 等待下拉框完全渲染
+
+          // 检查是否弹出了选项列表（某些自动完成输入框）
+          const matchingOption = findMatchingOption(value);
+
+          if (matchingOption) {
+            console.log(`        🔍 检测到弹出的下拉选项`);
+            console.log(`        🎯 找到匹配选项，点击: "${matchingOption.textContent.trim()}"`);
+            await clickElement(matchingOption);
+            await sleep(300); // 等待选项被选中
+            console.log(`        ✅ INPUT 填充成功（通过选项）: "${value}"`);
+            return true;
+          } else {
+            // 没有弹出选项或未找到匹配，直接失焦保留输入值
+            console.log(`        ⚠️  未找到匹配选项，保留输入值`);
+            element.blur();
+            await sleep(100);
+          }
+
           console.log(`        ✅ INPUT 填充成功: "${value}"`);
+
         } else if (element.isContentEditable) {
           element.focus();
           element.textContent = value;
           element.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
           console.log(`        ✅ ContentEditable 填充成功: "${value}"`);
         }
+
+        return true;
       };
 
       /**
-       * 填充下拉框
+       * 填充下拉框（增强版）
        */
       const fillSelect = async (element, value) => {
-        if (element.tagName !== "SELECT") return false;
+        if (element.tagName !== "SELECT") {
+          console.log(`        ⚠️  不是 SELECT 元素，尝试作为自定义下拉框处理`);
 
-        // 精确匹配
+          // 可能是自定义下拉框（如 Ant Design、Element UI 等）
+          // 点击打开下拉框
+          await clickElement(element);
+          await sleep(600); // 等待下拉选项完全渲染
+
+          // 查找弹出的选项（不依赖 DOM 监控）
+          const matchingOption = findMatchingOption(value);
+
+          if (matchingOption) {
+            console.log(`        🎯 找到自定义下拉选项，点击: "${matchingOption.textContent.trim()}"`);
+            await clickElement(matchingOption);
+            await sleep(400); // 等待选项被完全选中
+
+            // 验证选择是否成功
+            await sleep(200);
+            const currentValue = element.value || element.textContent.trim();
+            console.log(`        🔍 验证选择结果，当前值: "${currentValue}"`);
+
+            console.log(`        ✅ 自定义下拉框填充成功: "${value}"`);
+            return true;
+          } else {
+            console.log(`        ⚠️  未找到匹配的选项: "${value}"`);
+
+            // 尝试关闭弹窗
+            await sleep(100);
+            const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+            document.body.dispatchEvent(event);
+            await sleep(100);
+            return false;
+          }
+        }
+
+        // 原生 SELECT 元素 - 辅助函数：触发完整的事件序列
+        const triggerSelectEvents = (selectElement, optionValue) => {
+          selectElement.value = optionValue;
+          selectElement.focus();
+
+          // 触发所有必要的事件，确保各种框架都能捕获
+          selectElement.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
+          selectElement.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+          selectElement.dispatchEvent(new Event("blur", { bubbles: true, cancelable: true }));
+
+          // 某些框架可能需要这些事件
+          const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+          selectElement.dispatchEvent(clickEvent);
+        };
+
+        const normalizedValue = normalize(value);
+
+        // 1. 精确匹配 value 属性
         for (const option of element.options) {
-          if (option.value === value || option.textContent.trim() === value) {
-            element.value = option.value;
-            element.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
-            console.log(`        ✅ SELECT 精确匹配成功: "${value}"`);
+          if (normalize(option.value) === normalizedValue) {
+            triggerSelectEvents(element, option.value);
+            console.log(`        ✅ SELECT 精确匹配(value): "${value}"`);
             return true;
           }
         }
 
-        // 模糊匹配
+        // 2. 精确匹配文本
         for (const option of element.options) {
-          const optText = option.textContent.trim();
-          if (optText.includes(value) || value.includes(optText)) {
-            element.value = option.value;
-            element.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
-            console.log(`        ✅ SELECT 模糊匹配成功: "${value}" ≈ "${optText}"`);
+          if (normalize(option.textContent.trim()) === normalizedValue) {
+            triggerSelectEvents(element, option.value);
+            console.log(`        ✅ SELECT 精确匹配(text): "${value}"`);
             return true;
+          }
+        }
+
+        // 3. 模糊匹配：选项包含值
+        for (const option of element.options) {
+          const optText = normalize(option.textContent.trim());
+          if (optText.includes(normalizedValue) && normalizedValue.length >= 2) {
+            triggerSelectEvents(element, option.value);
+            console.log(`        ✅ SELECT 模糊匹配(contains): "${value}" ≈ "${option.textContent.trim()}"`);
+            return true;
+          }
+        }
+
+        // 4. 反向模糊匹配：值包含选项
+        for (const option of element.options) {
+          const optText = normalize(option.textContent.trim());
+          if (normalizedValue.includes(optText) && optText.length >= 2) {
+            triggerSelectEvents(element, option.value);
+            console.log(`        ✅ SELECT 反向匹配: "${value}" ⊃ "${option.textContent.trim()}"`);
+            return true;
+          }
+        }
+
+        // 5. 特殊处理：数字匹配（如月份、年份）
+        const numValue = value.match(/\d+/);
+        if (numValue) {
+          for (const option of element.options) {
+            const optNum = option.textContent.match(/\d+/);
+            if (optNum && optNum[0] === numValue[0]) {
+              triggerSelectEvents(element, option.value);
+              console.log(`        ✅ SELECT 数字匹配: "${value}" = "${option.textContent.trim()}"`);
+              return true;
+            }
           }
         }
 
         console.log(`        ⚠️  SELECT 匹配失败: "${value}"`);
+        console.log(`        可选项: `, Array.from(element.options).map(o => o.textContent.trim()));
         return false;
+      };
+
+      /**
+       * 填充单选下拉框（自定义下拉框）
+       * @param {HTMLElement} element - 下拉框元素
+       * @param {string} value - 要填充的值
+       * @returns {boolean} 是否填充成功
+       */
+      const fillSelectSingle = async (element, value) => {
+        try {
+          console.log(`        🔽 单选下拉框填充: "${value}"`);
+
+          // 1. 点击打开下拉框
+          await clickElement(element);
+          await sleep(600); // 等待下拉选项完全渲染
+
+          // 2. 查找内部输入框（用于筛选选项）
+          // 先在元素内部查找
+          let internalInput = element.querySelector('input[type="search"], input[type="text"], input.search-input, input[class*="search"]');
+
+          // 如果元素内部没有，在弹出的下拉菜单中查找
+          if (!internalInput) {
+            const dropdowns = document.querySelectorAll('.ud__select__dropdown, .ant-select-dropdown, .el-select-dropdown, [class*="dropdown"][class*="visible"], [class*="dropdown"][class*="open"]');
+            for (const dropdown of dropdowns) {
+              if (isElementVisible(dropdown)) {
+                internalInput = dropdown.querySelector('input[type="search"], input[type="text"], input.search-input, input[class*="search"]');
+                if (internalInput) {
+                  console.log(`        🔍 在下拉菜单中找到内部输入框`);
+                  break;
+                }
+              }
+            }
+          }
+
+          if (internalInput) {
+            // 2.1 在内部输入框输入值进行筛选
+            console.log(`        ⌨️  找到内部输入框，输入 "${value}" 进行筛选`);
+            internalInput.focus();
+            internalInput.value = '';
+
+            for (const char of value) {
+              internalInput.value += char;
+              internalInput.dispatchEvent(new Event('input', { bubbles: true }));
+              await sleep(10);
+            }
+
+            await sleep(600); // 等待筛选完成
+          } else {
+            console.log(`        ℹ️  未找到内部输入框，直接搜索选项`);
+          }
+
+          // 3. 查找匹配的选项
+          const matchingOption = findMatchingOption(value, false, false);
+
+          if (matchingOption) {
+            console.log(`        ✓ 找到匹配选项: "${matchingOption.textContent.trim()}"`);
+
+            // 4. 点击选项（单选会自动关闭下拉框）
+            await clickElement(matchingOption);
+            await sleep(400);
+
+            // 5. 验证选择结果
+            const currentValue = element.value || element.textContent.trim();
+            console.log(`        ✅ 单选下拉框填充成功: "${value}"，当前值: "${currentValue}"`);
+            return true;
+          } else {
+            console.log(`        ⚠️  未找到匹配选项: "${value}"`);
+
+            // 关闭下拉框
+            await clickElement(document.body);
+            await sleep(200);
+            return false;
+          }
+        } catch (error) {
+          console.error(`        ❌ 单选下拉框填充失败:`, error);
+          return false;
+        }
+      };
+
+      /**
+       * 填充多选下拉框（支持多个值，需要勾选 checkbox）
+       * @param {HTMLElement} element - 下拉框元素
+       * @param {string} value - 要填充的值（多个值用 / 分隔）
+       * @returns {boolean} 是否填充成功
+       */
+      const fillSelectMulti = async (element, value) => {
+        try {
+          console.log(`        🔽 多选下拉框填充: "${value}"`);
+
+          // 1. 解析多个值（用 / 分隔，如 "深圳/广州"）
+          const values = value.split('/').map(v => v.trim()).filter(v => v);
+          console.log(`        📋 需要选择 ${values.length} 个选项:`, values);
+
+          // 2. 点击打开下拉框
+          await clickElement(element);
+          await sleep(600);
+
+          // 2.5 查找内部输入框（用于筛选）
+          // 先在元素内部查找
+          let internalInput = element.querySelector('input[type="search"], input[type="text"], input.search-input, input[class*="search"]');
+
+          // 如果元素内部没有，在弹出的下拉菜单中查找
+          if (!internalInput) {
+            const dropdowns = document.querySelectorAll('.ud__select__dropdown, .ant-select-dropdown, .el-select-dropdown, [class*="dropdown"][class*="visible"], [class*="dropdown"][class*="open"]');
+            for (const dropdown of dropdowns) {
+              if (isElementVisible(dropdown)) {
+                internalInput = dropdown.querySelector('input[type="search"], input[type="text"], input.search-input, input[class*="search"]');
+                if (internalInput) {
+                  console.log(`        🔍 在下拉菜单中找到内部输入框`);
+                  break;
+                }
+              }
+            }
+          }
+
+          let successCount = 0;
+
+          // 3. 遍历每个值，查找并勾选
+          for (let i = 0; i < values.length; i++) {
+            const val = values[i];
+            console.log(`        🔍 [${i + 1}/${values.length}] 查找选项: "${val}"`);
+
+            if (internalInput) {
+              // 3.2 输入值进行筛选
+              console.log(`        ⌨️  在内部输入框输入: "${val}"`);
+              internalInput.focus();
+              internalInput.value = '';
+
+              for (const char of val) {
+                internalInput.value += char;
+                internalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await sleep(10);
+              }
+
+              await sleep(600); // 等待筛选完成
+            }
+
+            // 3.3 查找匹配的选项（地区字段需要选择树形结构中最深的节点）
+            const matchingOption = findMatchingOption(val, true, true);
+
+            if (matchingOption) {
+              console.log(`        ✓ 找到匹配选项: "${matchingOption.textContent.trim()}"`);
+
+              // 3.4 查找并勾选 checkbox
+              let checkbox = matchingOption.querySelector('input[type="checkbox"], .ant-checkbox-input, .el-checkbox__input, [role="checkbox"]');
+
+              if (!checkbox) {
+                checkbox = matchingOption.querySelector('[class*="checkbox"]');
+              }
+
+              if (!checkbox && matchingOption.getAttribute('role') === 'option') {
+                // 选项本身可点击
+                console.log(`        📌 选项本身可点击，直接点击`);
+                await clickElement(matchingOption);
+                successCount++;
+              } else if (checkbox) {
+                // 检查是否已选中
+                const isChecked = checkbox.checked ||
+                                checkbox.getAttribute('aria-checked') === 'true' ||
+                                checkbox.classList.contains('checked');
+
+                console.log(`        🔍 找到checkbox: ${checkbox.tagName}.${checkbox.className}, 已选中: ${isChecked}`);
+
+                if (!isChecked) {
+                  console.log(`        ✓ 勾选 checkbox`);
+                  await clickElement(checkbox);
+                  await sleep(300);
+                  successCount++;
+                } else {
+                  console.log(`        ⏭️  已经选中，跳过`);
+                  successCount++;
+                }
+              } else {
+                console.log(`        ⚠️  未找到checkbox，尝试直接点击选项`);
+                await clickElement(matchingOption);
+                successCount++;
+              }
+
+              // 清空筛选输入框（为下一个值做准备）
+              if (internalInput && i < values.length - 1) {
+                internalInput.value = '';
+                internalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await sleep(300);
+              }
+            } else {
+              console.log(`        ⚠️  未找到匹配选项: "${val}"`);
+            }
+          }
+
+          // 4. 关闭下拉框（点击外部区域或按 ESC）
+          console.log(`        ✅ 多选完成，成功 ${successCount}/${values.length} 个选项`);
+
+          // 失焦关闭下拉框
+          await blurElement(element);
+          await sleep(200);
+
+          // 或者点击外部区域
+          await clickElement(document.body);
+          await sleep(200);
+
+          return successCount > 0;
+        } catch (error) {
+          console.error(`        ❌ 多选下拉框填充失败:`, error);
+          return false;
+        }
       };
 
       /**
@@ -3700,52 +4818,282 @@
             continue;
           }
 
-          // 遍历填充每个输入框
-          for (let i = 0; i < blanks.length && i < fillField.blanks.length; i++) {
-            const blank = blanks[i];
-            const fillBlank = fillField.blanks[i];
-            const value = (fillBlank?.value || "").toString().trim();
+          // 特殊处理：手机号字段（可能有多个输入框）
+          const isPhoneField = /(手机号|电话号码|手机号码|联系电话)/i.test(fillFieldName);
 
-            if (!blank.dom || !value) {
-              console.log(`      ⏭️  跳过输入框 ${i}: 无 DOM 或无值`);
-              continue;
+          // 特殊处理：日期范围字段（起始时间和结束时间）
+          const isDateRangeField = /(时间|日期|入学|毕业|开始|结束|起止|至今)/i.test(fillFieldName);
+
+          // 特殊处理：地区选择字段（可能是多选或输入框）
+          const isRegionField = /(地区|城市|省份|意向城市|期望城市|工作地点|地点)/i.test(fillFieldName);
+
+          if (isPhoneField && fillField.blanks.length > 0) {
+            console.log(`    📱 检测到手机号字段，特殊处理`);
+
+            let countryCode = "+86";
+            let phoneNumber = "";
+
+            // 根据 blanks 数量决定处理方式
+            if (fillField.blanks.length >= 2) {
+              // 有两个 blanks：第一个是国家代码，第二个是号码
+              countryCode = (fillField.blanks[0]?.value || "+86").toString().trim();
+              phoneNumber = (fillField.blanks[1]?.value || "").toString().trim();
+              console.log(`      数据格式：分离的国家代码和号码`);
+            } else {
+              // 只有一个 blank：可能包含国家代码+号码
+              let phoneValue = (fillField.blanks[0]?.value || "").toString().trim();
+
+              // 分离国家代码和号码
+              if (phoneValue.startsWith("+86") || phoneValue.startsWith("+")) {
+                const match = phoneValue.match(/^\+(\d+)\s*(.*)$/);
+                if (match) {
+                  countryCode = `+${match[1]}`;
+                  phoneNumber = match[2].trim();
+                }
+              } else if (phoneValue.startsWith("86") && phoneValue.length > 11) {
+                countryCode = "+86";
+                phoneNumber = phoneValue.substring(2).trim();
+              } else {
+                // 纯号码，没有国家代码
+                phoneNumber = phoneValue;
+              }
+              console.log(`      数据格式：合并的号码`);
             }
 
-            // 检查是否已经填充过
-            if (filledElements.has(blank.dom)) {
-              console.log(`      ⏭️  跳过输入框 ${i}: 已经填充过`);
-              continue;
-            }
+            console.log(`      国家代码: ${countryCode}, 号码: ${phoneNumber}`);
 
-            try {
-              console.log(`      📌 填充输入框 ${i}: "${value}"`);
+            // 如果有多个输入框，第一个可能是地区选择，第二个是号码
+            if (blanks.length >= 2) {
+              console.log(`      检测到 ${blanks.length} 个输入框，可能是地区+号码组合`);
 
-              // 滚动到可见区域
-              blank.dom.scrollIntoView({ block: "center", behavior: "smooth" });
-              await sleep(100);
+              // 填充第一个输入框（地区选择）
+              if (!filledElements.has(blanks[0].dom)) {
+                console.log(`      📌 填充地区选择: "${countryCode}"`);
+                blanks[0].dom.scrollIntoView({ block: "center", behavior: "smooth" });
+                await sleep(100);
 
-              // 点击激活
-              await clickElement(blank.dom);
-              await sleep(100);
+                if (blanks[0].type === "select") {
+                  await fillSelect(blanks[0].dom, countryCode);
+                } else {
+                  await fillInput(blanks[0].dom, countryCode, fillFieldName);
+                }
 
-              // 根据类型填充
-              if (blank.type === "input") {
-                await fillInput(blank.dom, value);
-              } else if (blank.type === "select") {
-                await fillSelect(blank.dom, value);
-              } else if (blank.type === "radio") {
-                await fillRadio(blank.dom, value);
+                filledElements.add(blanks[0].dom);
+                await sleep(200);
               }
 
-              // 标记为已填充
-              filledElements.add(blank.dom);
+              // 填充第二个输入框（号码）
+              if (!filledElements.has(blanks[1].dom)) {
+                console.log(`      📌 填充手机号码: "${phoneNumber}"`);
+                blanks[1].dom.scrollIntoView({ block: "center", behavior: "smooth" });
+                await sleep(100);
 
-              // 失焦触发验证
-              await blurElement(blank.dom);
-              await sleep(150);
+                await fillInput(blanks[1].dom, phoneNumber, fillFieldName);
+                filledElements.add(blanks[1].dom);
+                await blurElement(blanks[1].dom);
+                await sleep(150);
+              }
+            } else if (blanks.length === 1) {
+              // 只有一个输入框，直接填充号码（不带国家代码）
+              if (!filledElements.has(blanks[0].dom)) {
+                console.log(`      📌 填充手机号码: "${phoneNumber}"`);
+                blanks[0].dom.scrollIntoView({ block: "center", behavior: "smooth" });
+                await sleep(100);
 
-            } catch (error) {
-              console.error(`      ❌ 填充失败:`, error);
+                await fillInput(blanks[0].dom, phoneNumber, fillFieldName);
+                filledElements.add(blanks[0].dom);
+                await blurElement(blanks[0].dom);
+                await sleep(150);
+              }
+            }
+          } else if (isDateRangeField && fillField.blanks.length >= 2 && blanks.length >= 2) {
+            // 日期范围字段：起始时间和结束时间
+            console.log(`    📅 检测到日期范围字段，特殊处理`);
+
+            const startDate = (fillField.blanks[0]?.value || "").toString().trim();
+            const endDate = (fillField.blanks[1]?.value || "").toString().trim();
+
+            console.log(`      起始时间: ${startDate}, 结束时间: ${endDate}`);
+
+            // 填充起始日期（第一个输入框）
+            if (startDate && !filledElements.has(blanks[0].dom)) {
+              console.log(`      📌 填充起始日期: "${startDate}"`);
+              blanks[0].dom.scrollIntoView({ block: "center", behavior: "smooth" });
+              await sleep(100);
+
+              await clickElement(blanks[0].dom);
+              await sleep(100);
+
+              await fillInput(blanks[0].dom, startDate, fillFieldName);
+              filledElements.add(blanks[0].dom);
+              await blurElement(blanks[0].dom);
+              await sleep(300); // 增加等待时间，确保日期选择器关闭
+            }
+
+            // 填充结束日期（第二个输入框）
+            if (endDate && !filledElements.has(blanks[1].dom)) {
+              console.log(`      📌 填充结束日期: "${endDate}"`);
+              blanks[1].dom.scrollIntoView({ block: "center", behavior: "smooth" });
+              await sleep(100);
+
+              await clickElement(blanks[1].dom);
+              await sleep(100);
+
+              await fillInput(blanks[1].dom, endDate, fillFieldName);
+              filledElements.add(blanks[1].dom);
+              await blurElement(blanks[1].dom);
+              await sleep(300);
+            }
+
+            // 如果还有更多输入框和值，继续填充
+            for (let i = 2; i < blanks.length && i < fillField.blanks.length; i++) {
+              const blank = blanks[i];
+              const fillBlank = fillField.blanks[i];
+              const value = (fillBlank?.value || "").toString().trim();
+
+              if (!blank.dom || !value || filledElements.has(blank.dom)) {
+                continue;
+              }
+
+              try {
+                console.log(`      📌 填充额外日期字段 ${i}: "${value}"`);
+                blank.dom.scrollIntoView({ block: "center", behavior: "smooth" });
+                await sleep(100);
+
+                await clickElement(blank.dom);
+                await sleep(100);
+
+                await fillInput(blank.dom, value, fillFieldName);
+                filledElements.add(blank.dom);
+                await blurElement(blank.dom);
+                await sleep(300);
+              } catch (error) {
+                console.error(`      ❌ 填充失败:`, error);
+              }
+            }
+          } else if (isRegionField && fillField.blanks.length > 0) {
+            // 地区选择字段：使用新的类型检测和填充函数
+            console.log(`    🌍 检测到地区选择字段，使用增强的填充逻辑`);
+
+            // 合并所有 blanks 的值（支持多个城市）
+            const regionValue = fillField.blanks
+              .map(b => (b.value || "").toString().trim())
+              .filter(v => v)
+              .join('/');
+            console.log(`      地区值: "${regionValue}"`);
+
+            for (let i = 0; i < blanks.length; i++) {
+              const blank = blanks[i];
+
+              if (!blank.dom || filledElements.has(blank.dom)) {
+                continue;
+              }
+
+              try {
+                console.log(`      📌 处理地区输入框 ${i}`);
+                blank.dom.scrollIntoView({ block: "center", behavior: "smooth" });
+                await sleep(100);
+
+                // 使用增强的类型检测（地区字段通常是多选）
+                const fieldType = fillField.originalField?.fieldType || 'desiredCity';
+                const detectedType = detectElementType(blank.dom, fieldType);
+
+                console.log(`      🔍 类型检测: ${detectedType.type}${detectedType.isMultiSelect ? ' (多选)' : ''}`);
+
+                // 根据检测到的类型填充
+                if (detectedType.type === 'select-multi') {
+                  // 多选下拉框
+                  await fillSelectMulti(blank.dom, regionValue);
+                } else if (detectedType.type === 'select-single') {
+                  // 单选下拉框（少见，但支持）
+                  await fillSelectSingle(blank.dom, regionValue);
+                } else {
+                  // 普通输入框（直接输入地区名称）
+                  await fillInput(blank.dom, regionValue, fillFieldName);
+                }
+
+                filledElements.add(blank.dom);
+                await blurElement(blank.dom);
+                await sleep(200);
+
+                // 通常地区字段只有一个输入框，填充后退出
+                break;
+
+              } catch (error) {
+                console.error(`      ❌ 地区填充失败:`, error);
+              }
+            }
+          } else {
+            // 普通字段：遍历填充每个输入框
+            for (let i = 0; i < blanks.length && i < fillField.blanks.length; i++) {
+              const blank = blanks[i];
+              const fillBlank = fillField.blanks[i];
+              const value = (fillBlank?.value || "").toString().trim();
+
+              if (!blank.dom || !value) {
+                console.log(`      ⏭️  跳过输入框 ${i}: 无 DOM 或无值`);
+                continue;
+              }
+
+              // 检查是否已经填充过
+              if (filledElements.has(blank.dom)) {
+                console.log(`      ⏭️  跳过输入框 ${i}: 已经填充过`);
+                continue;
+              }
+
+              try {
+                console.log(`      📌 填充输入框 ${i}: "${value}"`);
+
+                // 滚动到可见区域
+                blank.dom.scrollIntoView({ block: "center", behavior: "smooth" });
+                await sleep(100);
+
+                // 点击激活
+                await clickElement(blank.dom);
+                await sleep(100);
+
+                // 使用增强的类型检测函数（获取字段类型用于判断）
+                const fieldType = fillField.originalField?.fieldType || fillFieldName || '';
+                const detectedType = detectElementType(blank.dom, fieldType);
+
+                console.log(`      🔍 类型检测结果: ${detectedType.type}${detectedType.isMultiSelect ? ' (多选)' : ''}, 字段类型: ${fieldType}`);
+
+                // 根据检测到的类型填充
+                if (detectedType.type === 'select-single') {
+                  // 单选下拉框
+                  await fillSelectSingle(blank.dom, value);
+                } else if (detectedType.type === 'select-multi') {
+                  // 多选下拉框
+                  await fillSelectMulti(blank.dom, value);
+                } else if (detectedType.type === 'input' || detectedType.type === 'textarea') {
+                  // 普通输入框或文本域
+                  await fillInput(blank.dom, value, fillFieldName);
+                } else if (detectedType.type === 'radio') {
+                  // 单选按钮
+                  await fillRadio(blank.dom, value);
+                } else {
+                  // 未知类型，尝试使用旧逻辑
+                  console.log(`      ⚠️  未知类型，使用默认填充逻辑`);
+                  const actualType = blank.type;
+                  if (actualType === "input") {
+                    await fillInput(blank.dom, value, fillFieldName);
+                  } else if (actualType === "select") {
+                    await fillSelect(blank.dom, value);
+                  } else if (actualType === "radio") {
+                    await fillRadio(blank.dom, value);
+                  }
+                }
+
+                // 标记为已填充
+                filledElements.add(blank.dom);
+
+                // 失焦触发验证
+                await blurElement(blank.dom);
+                await sleep(150);
+
+              } catch (error) {
+                console.error(`      ❌ 填充失败:`, error);
+              }
             }
           }
         }
@@ -4148,6 +5496,49 @@
     });
   }
 
+  /**
+   * 带超时机制的条件等待函数
+   * @param {Function} condition - 条件检查函数，返回 true 时停止等待
+   * @param {Object} options - 配置选项
+   * @param {number} options.timeout - 超时时间（毫秒），默认 30000ms（30秒）
+   * @param {number} options.interval - 检查间隔（毫秒），默认 500ms
+   * @param {string} options.errorMessage - 超时错误消息
+   * @returns {Promise<void>}
+   * @throws {Error} 超时时抛出错误
+   */
+  function waitWithTimeout(condition, options = {}) {
+    const {
+      timeout = 30000,
+      interval = 500,
+      errorMessage = '等待超时'
+    } = options;
+
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+
+      const check = () => {
+        try {
+          if (condition()) {
+            resolve();
+            return;
+          }
+
+          const elapsed = Date.now() - startTime;
+          if (elapsed > timeout) {
+            reject(new Error(`${errorMessage}（已等待 ${Math.round(elapsed / 1000)}秒）`));
+            return;
+          }
+
+          setTimeout(check, interval);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      check();
+    });
+  }
+
   // ==================== 初始化 ====================
 
   (async () => {
@@ -4162,19 +5553,51 @@
 
 // ==================== 监听网站的 postMessage（用于登录通信） ====================
 
+/**
+ * 生成允许的来源白名单（postMessage 安全检查）
+ * 使用 config.js 中的 ENV_CONFIG（通过 window.ENV_CONFIG 访问）
+ */
+const getAllowedOriginsForMessage = () => {
+  const origins = [];
+
+  // 从 config.js 加载的环境配置
+  const ENV_CONFIG = window.ENV_CONFIG || {};
+  console.log('📋 加载的环境配置:', ENV_CONFIG);
+  // 添加所有环境的 WEB 和 API 地址
+  for (const key in ENV_CONFIG) {
+    const env = ENV_CONFIG[key];
+
+    // WEB 地址
+    if (env.WEB) {
+      const webPort = env.WEB.PORT === "443" ? "" : `:${env.WEB.PORT}`;
+      origins.push(`${env.WEB.HOST}${webPort}`);
+    }
+
+    // API 地址
+    if (env.API) {
+      const apiPort = env.API.PORT === "443" || env.API.PORT === "80" ? "" : `:${env.API.PORT}`;
+      origins.push(`${env.API.HOST}${apiPort}`);
+    }
+  }
+
+  // 添加常用的本地开发地址
+  origins.push('http://localhost:5173');
+  origins.push('http://localhost:3000');
+  origins.push('http://localhost:8080');
+
+  // 去重并返回
+  return [...new Set(origins)];
+};
+
+// 提前生成允许的来源列表（性能优化）
+const ALLOWED_MESSAGE_ORIGINS = getAllowedOriginsForMessage();
+
+console.log('🔒 postMessage 安全白名单已加载:', ALLOWED_MESSAGE_ORIGINS);
+console.log('📋 配置来源: window.ENV_CONFIG');
+
 window.addEventListener('message', (event) => {
   // 安全检查：验证消息来源
-  const allowedOrigins = [
-    'http://192.168.1.144:3000',
-    'http://192.168.1.144:8080',
-    'http://z6467e53.natappfree.cc',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://www.yinian.com'
-  ];
-  
-  // 检查来源是否在白名单中
-  const isAllowedOrigin = allowedOrigins.some(origin => event.origin.startsWith(origin));
+  const isAllowedOrigin = ALLOWED_MESSAGE_ORIGINS.some(origin => event.origin.startsWith(origin));
   
   if (!isAllowedOrigin) {
     return; // 忽略不信任的来源

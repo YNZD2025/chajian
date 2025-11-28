@@ -1,0 +1,51 @@
+<div id="resume-window">
+  <div class="resume-header">
+    <img src="" id="header-logo" alt="求职方舟logo">
+    <h4>求职方舟AI</h4>
+    <button class="minimize-button"><i class="fas fa-chevron-down"></i></button>
+  </div>
+  <div class="resume-display">
+    <div class="resume-content">
+      <div class="resume-field">
+        <label for="resume-version">投递信息</label>
+      </div>
+    </div>
+    <div class="job-info">
+      <input type="text" id="company-name" class="normal-bg" placeholder="公司简称">
+      <input type="text" id="position-name" class="normal-bg" placeholder="职位简称">
+    </div>
+    <div class="resume-content">
+      <div class="resume-field">
+        <label for="resume-version">简历编辑</label>
+        <div class="beautify-resume">
+          <input type="checkbox" id="beautify-checkbox" checked>
+          <label for="beautify-checkbox">
+            <i class="fas fa-square"></i>
+            <i class="fas fa-check"></i>
+            生成专岗美化简历
+          </label>
+        </div>
+      </div>
+      <select id="resume-version">
+        <option value="full">我的标准简历</option>
+        <option value="brief">腾讯公司产品经理专岗简历</option>
+      </select>
+      <textarea id="resume-editor"></textarea>
+    </div>
+    <div class="quick-links">
+      <button id="history-table-btn" class="quick-link-btn">投递进展表</button>
+      <button id="campus-table-btn" class="quick-link-btn">校招汇总表</button>
+      <button id="my-resume-btn" class="quick-link-btn">我的简历</button>
+    </div>
+    <div id="version-notification" class="version-notification" style="display: none;">
+      <i class="fas fa-arrow-circle-up"></i>
+      <span>有新版本升级，简历填写更棒~</span>
+      <button id="update-now-btn">立即更新</button>
+    </div>
+  </div>
+  <div class="bottom-function">
+    <button id="start-button"><i class="fas fa-play"></i></button>
+    <div id="state-text">方舟准备中，请先填写公司和职位</div>
+    <button id="close-window"><i class="fas fa-chevron-right"></i></button>
+  </div>
+</div>

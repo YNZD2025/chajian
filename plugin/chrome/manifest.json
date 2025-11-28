@@ -32,9 +32,13 @@
       ],
       "resources": [
         "popup/fill.html",
+        "popup/logo-small.png",
         "popup/styles/common.css",
         "popup/styles/fill.css",
-        "icons/icon128.png"
+        "case/css/resumeInterface.css",
+        "icons/icon128.png",
+        "test_data/resume.md",
+        "webfonts/fa-solid-900.woff2"
       ]
     }
   ],
@@ -44,14 +48,16 @@
         "<all_urls>"
       ],
       "js": [
-        "js/content.js",
-        "js/resumeInterface.js"
+        "js2/messageBridge.js",
+        "js2/configContent.js",
+        "js2/content.js",
+        "js2/resumeInterfaceTwo.js"
       ],
       "run_at": "document_idle"
     }
   ],
   "background": {
-    "service_worker": "js/background.js",
+    "service_worker": "js2/background.js",
     "type": "module"
   },
   "content_security_policy": {
@@ -62,7 +68,8 @@
       "http://192.168.1.144:*/*",
       "http://z6467e53.natappfree.cc/*",
       "http://localhost:*/*",
-      "https://www.yinian.com/*"
+      "https://applymind.cn/*",
+      "http://g6fedde8.natappfree.cc/*"
     ]
   }
 }

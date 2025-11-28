@@ -1,0 +1,54 @@
+
+/* 高亮背景颜色 - 根据开关状态自动切换 */
+:root {
+
+  --highlight-yellow: #ffffff00;
+  --highlight-green: #ffffff00;
+  --highlight-red: #ffffff00;
+  --highlight-blue: #ffffff00;
+  --highlight-purple: #ffffff00;
+} 
+
+/* 当开启高亮时的颜色 */
+:root[style*="--highlight-enabled: 1"] {
+  --highlight-yellow: #feffaf99;
+  --highlight-green: #ebfeef99;
+  --highlight-red: #ffe6e199;
+  --highlight-blue: #e8f2ff99;
+  --highlight-purple: #e1e1ff99;
+}
+
+:root[style*="--highlight-enabled: 1"] .ark-color-green {
+  background-color: var(--highlight-green);
+}
+:root[style*="--highlight-enabled: 1"] .ark-color-green * {
+  background-color: #ffffff00 !important;
+}
+
+:root[style*="--highlight-enabled: 1"] .ark-color-yellow {
+  background-color: var(--highlight-yellow);
+}
+:root[style*="--highlight-enabled: 1"] .ark-color-yellow * {
+  background-color: #ffffff00 !important;
+}
+
+:root[style*="--highlight-enabled: 1"] .ark-color-red {
+  background-color: var(--highlight-red);
+}
+:root[style*="--highlight-enabled: 1"] .ark-color-red * {
+  background-color: #ffffff00 !important;
+}
+
+:root[style*="--highlight-enabled: 1"] .ark-color-blue {
+  background-color: var(--highlight-blue);
+}
+:root[style*="--highlight-enabled: 1"] .ark-color-blue * {
+  background-color: #ffffff00 !important;
+}
+
+:root[style*="--highlight-enabled: 1"] .ark-color-purple {
+  background-color: var(--highlight-purple);
+}
+:root[style*="--highlight-enabled: 1"] .ark-color-purple * {
+  background-color: #ffffff00 !important;
+}

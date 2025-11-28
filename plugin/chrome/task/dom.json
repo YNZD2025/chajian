@@ -1,0 +1,552 @@
+[
+    {
+        "name": "基本信息",
+        "dom": {
+            
+        },
+        "fields": [
+            {
+                "name": "姓名",
+                "originalField": {
+                    "fieldName": "姓名",
+                    "fieldType": "name"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "手机号码",
+                "originalField": {
+                    "fieldName": "手机号码",
+                    "fieldType": "phone"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "手机号码*",
+                        "dom": {},
+                        "type": "input"
+                    },
+                    {
+                        "name": "手机号码*",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "邮箱",
+                "originalField": {
+                    "fieldName": "邮箱",
+                    "fieldType": "email"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "期望工作地点",
+                "originalField": {
+                    "fieldName": "期望工作地点",
+                    "fieldType": "desiredCity"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "教育经历",
+        "dom": {
+            "selector": ".p.applyFormModuleWrapper-text.sofiaBold"
+        },
+        "fields": [
+            {
+                "name": "学校名称",
+                "originalField": {
+                    "fieldName": "学校名称",
+                    "fieldType": "school"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "学历",
+                "originalField": {
+                    "fieldName": "学历",
+                    "fieldType": "education"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {
+                            "selector": "input.ud__select__selector__search__input.ud__native-input"
+                        },
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "专业",
+                "originalField": {
+                    "fieldName": "专业",
+                    "fieldType": "major"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "起止时间",
+                "originalField": {
+                    "fieldName": "起止时间",
+                    "fieldType": "educationStartDate"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "无准确的毕业时间可填写预计毕业时间",
+                        "dom": {},
+                        "type": "input"
+                    },
+                    {
+                        "name": "微信",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "实习经历",
+        "dom": {},
+        "fields": [
+            {
+                "name": "公司名称",
+                "originalField": {
+                    "fieldName": "公司名称",
+                    "fieldType": "company"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "职位名称",
+                "originalField": {
+                    "fieldName": "职位名称",
+                    "fieldType": "position"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "起止时间",
+                "originalField": {
+                    "fieldName": "起止时间",
+                    "fieldType": "workStartDate"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "起止时间*",
+                        "dom": {},
+                        "type": "input"
+                    },
+                    {
+                        "name": "微信",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "描述",
+                "originalField": {
+                    "fieldName": "描述",
+                    "fieldType": "workDescription"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "项目经历",
+        "dom": {},
+        "fields": [
+            {
+                "name": "项目名称",
+                "originalField": {
+                    "fieldName": "项目名称",
+                    "fieldType": "projectName"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "项目角色",
+                "originalField": {
+                    "fieldName": "项目角色",
+                    "fieldType": "projectRole"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "起止时间",
+                "originalField": {
+                    "fieldName": "起止时间",
+                    "fieldType": "projectStartDate"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "起止时间*",
+                        "dom": {},
+                        "type": "input"
+                    },
+                    {
+                        "name": "微信",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "项目链接",
+                "originalField": {
+                    "fieldName": "项目链接",
+                    "fieldType": "projectDescription"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "描述",
+                "originalField": {
+                    "fieldName": "描述",
+                    "fieldType": "projectDescription"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "作品",
+        "dom": {},
+        "fields": [
+            {
+                "name": "作品链接",
+                "originalField": {
+                    "fieldName": "作品链接",
+                    "fieldType": "attachment"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "作品附件",
+                "originalField": {
+                    "fieldName": "作品附件",
+                    "fieldType": "attachment"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": []
+            },
+            {
+                "name": "描述",
+                "originalField": {
+                    "fieldName": "描述",
+                    "fieldType": "projectDescription"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "获奖",
+        "dom": {},
+        "fields": [
+            {
+                "name": "获奖名称",
+                "originalField": {
+                    "fieldName": "获奖名称",
+                    "fieldType": "certificate"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "获奖时间",
+                "originalField": {
+                    "fieldName": "获奖时间",
+                    "fieldType": "certificate"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            },
+            {
+                "name": "描述",
+                "originalField": {
+                    "fieldName": "描述",
+                    "fieldType": "certificate"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "语言能力",
+        "dom": {},
+        "fields": [
+            {
+                "name": "语言",
+                "originalField": {
+                    "fieldName": "语言",
+                    "fieldType": "language"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "select"
+                    }
+                ]
+            },
+            {
+                "name": "精通程度",
+                "originalField": {
+                    "fieldName": "精通程度",
+                    "fieldType": "language"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "select"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "自我评价",
+        "dom": {},
+        "fields": [
+            {
+                "name": "自我评价",
+                "originalField": {
+                    "fieldName": "自我评价",
+                    "fieldType": "selfEvaluation"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "社交账号",
+        "dom": {},
+        "fields": [
+            {
+                "name": "社交平台",
+                "originalField": {
+                    "fieldName": "社交平台",
+                    "fieldType": "attachment"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "select"
+                    }
+                ]
+            },
+            {
+                "name": "URL / ID",
+                "originalField": {
+                    "fieldName": "URL / ID",
+                    "fieldType": "attachment"
+                },
+                "field": {
+                    "dom": {}
+                },
+                "blanks": [
+                    {
+                        "name": "",
+                        "dom": {},
+                        "type": "input"
+                    }
+                ]
+            }
+        ]
+    }
+]

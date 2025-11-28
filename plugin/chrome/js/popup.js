@@ -3,7 +3,7 @@
 
 "use strict";
 
-import { WEB_URL } from "../config.js";
+import { WEB_URL } from "./config.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // 简历切换相关元素
