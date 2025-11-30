@@ -30,7 +30,7 @@
                 PORT: "3000"
             },
             API: {
-                HOST: "http://192.168.1.144",
+                HOST: "http://localhost",
                 PORT: "8080"
             }
         },

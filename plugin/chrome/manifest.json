@@ -32,13 +32,23 @@
       ],
       "resources": [
         "popup/fill.html",
+        "popup/profile.html",
+        "popup/history.html",
+        "popup/settings.html",
+        "popup/edit-resume.html",
+        "popup/login.html",
+        "popup/change-password.html",
+        "popup/privacy-settings.html",
+        "popup/about.html",
+        "popup/help.html",
+        "popup/feedback.html",
         "popup/logo-small.png",
         "popup/styles/common.css",
         "popup/styles/fill.css",
+        "popup/scripts/transitions.js",
         "case/css/resumeInterface.css",
         "icons/icon128.png",
-        "test_data/resume.md",
-        "webfonts/fa-solid-900.woff2"
+        "test_data/resume.md"
       ]
     }
   ],
@@ -61,7 +71,7 @@
     "type": "module"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com data:;"
   },
   "externally_connectable": {
     "matches": [

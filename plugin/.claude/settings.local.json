@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b \"D:\\1.code\\1.code\\1.ProjectManagement\\dev-projects\\new\\code\\chajian\\plugin\\chrome\")",
+      "Bash(findstr:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

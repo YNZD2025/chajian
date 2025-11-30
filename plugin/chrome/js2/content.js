@@ -1,6 +1,52 @@
 "use strict";
 
 (async () => {
+    // ==================== 注入高亮样式 ====================
+    (() => {
+        if (document.getElementById('ark-highlight-styles')) return;
+
+        const style = document.createElement('style');
+        style.id = 'ark-highlight-styles';
+        style.textContent = `
+            /* 使用class控制高亮，更简单可靠 */
+            html.ark-highlight-enabled .ark-color-green {
+                background-color: #ebfeef99 !important;
+            }
+            html.ark-highlight-enabled .ark-color-green * {
+                background-color: transparent !important;
+            }
+
+            html.ark-highlight-enabled .ark-color-yellow {
+                background-color: #feffaf99 !important;
+            }
+            html.ark-highlight-enabled .ark-color-yellow * {
+                background-color: transparent !important;
+            }
+
+            html.ark-highlight-enabled .ark-color-red {
+                background-color: #ffe6e199 !important;
+            }
+            html.ark-highlight-enabled .ark-color-red * {
+                background-color: transparent !important;
+            }
+
+            html.ark-highlight-enabled .ark-color-blue {
+                background-color: #e8f2ff99 !important;
+            }
+            html.ark-highlight-enabled .ark-color-blue * {
+                background-color: transparent !important;
+            }
+
+            html.ark-highlight-enabled .ark-color-purple {
+                background-color: #e1e1ff99 !important;
+            }
+            html.ark-highlight-enabled .ark-color-purple * {
+                background-color: transparent !important;
+            }
+        `;
+        document.head.appendChild(style);
+    })();
+
     // ==================== 全局变量 ====================
     // window.config 已在 configContent.js 中设置，这里不要覆盖
     window.runFillResume = null;
@@ -60,6 +106,16 @@
         cancelButtons = [];
         confirmButtons = [];
         deleteConfirmButtons = [];
+
+        // 清除所有高亮样式
+        try {
+            const highlightedElements = document.querySelectorAll('[class*="ark-color-"]');
+            for (const el of highlightedElements) {
+                setElementColor(el, "");
+            }
+            // 移除高亮启用标志
+            document.documentElement.classList.remove('ark-highlight-enabled');
+        } catch (error) { }
 
         // if (learningInterval) {
         //     clearInterval(learningInterval);
@@ -441,14 +497,26 @@
      * 设置元素高亮颜色
      */
     function setElementColor(element, color = "") {
+        if (!element) {
+            return;
+        }
+
         const colors = ["ark-color-yellow", "ark-color-green", "ark-color-red", "ark-color-blue", "ark-color-purple"];
+
+        // 移除所有颜色类
         for (const c of colors) {
             element.classList.remove(c);
         }
+
+        // 如果没有指定颜色，只是清除
         if (!color) return;
+
+        // 添加新的颜色类
         const colorClass = `ark-color-${color}`;
         if (colors.includes(colorClass)) {
             element.classList.add(colorClass);
+        } else {
+            console.warn("不支持的颜色:", color);
         }
     }
 
@@ -2921,33 +2989,32 @@
      */
     async function getNeedFields(html) {
         console.log("html====>", html)
-        // try {
-        //     const response = await fetchWithJwt(
-        //         `${window.config.API_BASE_URL}analyze-page`,
-        //         {
-        //             method: "POST",
-        //             headers: { "Content-Type": "application/json" },
-        //             body: JSON.stringify({
-        //                 url: window.location.href,
-        //                 version: chrome.runtime.getManifest().version,
-        //                 html: html,
-        //                 company: "字节",
-        //                 position: "java"
-        //             })
-        //         }
-        //     );
-        //     serverFields = response.sections;
-        //     sessionId = response.sessionId;
-        //     console.log("response======>",response)
-        //     console.log("serverFields======>", serverFields);
-        // } catch (error) {
-        //     isNetworkError = true;
-        //     errorFunctionName = "getNeedField";
-        //     throw error;
-        // }
+        try {
+            const response = await fetchWithJwt(
+                `${window.config.API_BASE_URL}analyze-page`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        url: window.location.href,
+                        version: chrome.runtime.getManifest().version,
+                        html: html,
+                        company: "字节",
+                        position: "java"
+                    })
+                }
+            );
+            serverFields = response.fields;
+            sessionId = response.sessionId;
+            console.log("response======>",response)
+        } catch (error) {
+            isNetworkError = true;
+            errorFunctionName = "getNeedField";
+            throw error;
+        }
 
-        sessionId = "692972b5ce47bbfa55afa594";
-        serverFields = [
+        // sessionId = "692972b5ce47bbfa55afa594";
+        let serverFields2 = [
             {
                 "name": "基本信息",
                 "fields": [
@@ -3083,6 +3150,7 @@
             }
         ];
         console.log("serverFields====>", serverFields)
+        console.log("serverFields2====>", serverFields2)
     }
 
     /**
@@ -3115,34 +3183,35 @@
      * 获取字段填充值
      */
     async function fillResumeValues(apiFields, company, position, resumeMd, resumeId) {
-        // try {
-        //     // todo 已修改为自己后端接口
-        //     const response = await fetchWithJwt(
-        //         `${window.config.API_BASE_URL}fill-values`,
-        //         {
-        //             method: "POST",
-        //             headers: { "Content-Type": "application/json" },
-        //             body: JSON.stringify({
-        //                 sessionId: sessionId,
-        //                 url: window.location.href,
-        //                 version: chrome.runtime.getManifest().version,
-        //                 fields: apiFields,
-        //                 company: company,
-        //                 position: position,
-        //                 resumeMd: resumeMd,
-        //                 resumeId: resumeId
-        //             })
-        //         }
-        //     );
-        //     //convertedFillData = response.values;
-        //     convertedFillData = response.matches;
-        // } catch (error) {
-        //     isNetworkError = true;
-        //     errorFunctionName = "fillResumeValue";
-        //     throw error;
-        // }
+        let data = {"awards": ["大学生互联网+大赛校级二等奖"], "skills": {"other": ["UI交互设计", "产品设计", "数据分析", "需求调研", "竞品分析", "原型设计", "PRD文档撰写"], "tools": ["Axure", "Figma", "Excel"], "databases": [], "frameworks": [], "programmingLanguages": []}, "summary": "我是烟台南山学院产品设计专业的本科在读学生，具有2年的产品助理实习经验。擅长需求调研、竞品分析、原型设计和PRD文档撰写，熟练使用Axure、Figma等产品设计工具。在实习期间参与过积分商城和课程回放模块的迭代优化，通过用户反馈分析和数据监测，成功推动产品功能改进，用户投诉量下降30%。具备完整的产品工作思维，能够以用户为中心分析痛点需求并设计解决方案。担任班长和学生会部长，具备良好的沟通协调能力，希望在产品经理岗位继续发展。", "projects": [{"name": "大学生互联网+大赛（人宠共享家具辅助APP设计）", "role": "产品设计负责人", "period": "2024.04 - 2024.07", "description": "针对\"家庭空间利用率低，家具使用不方便\"问题，设计人宠共享家具辅助APP", "technologies": ["Axure"]}], "basicInfo": {"age": "未提供", "name": "刘力元", "email": "1251558307@qq.com", "phone": "19712001633", "gender": "男", "location": "", "avatarUrl": ""}, "education": [{"gpa": "", "major": "产品设计", "degree": "本科", "period": "2022 - 2026", "school": "烟台南山学院"}], "languages": [], "__moduleOrder": ["basicInfo", "education", "workExperience", "projects", "custom-0", "certifications", "skills", "languages", "custom-1", "custom-2", "custom-3", "awards", "summary"], "customModules": [{"items": [{"id": 228, "title": "1212", "period": null, "content": "12112", "displayOrder": 0}], "moduleName": "志愿服务"}, {"items": [{"id": 229, "title": "112", "period": null, "content": "121221", "displayOrder": 0}], "moduleName": "发表论文"}, {"items": [{"id": 230, "title": "121221", "period": null, "content": "1212", "displayOrder": 0}], "moduleName": "121233"}, {"items": [{"id": 231, "title": "213123", "period": null, "content": "123123", "displayOrder": 0}], "moduleName": "23213213"}], "certifications": ["1212121", "312321321"], "workExperience": [{"period": "2024.07 - 2024.09", "company": "苏州端粒心流科技有限公司", "position": "产品助理", "responsibilities": "原型与PRD输出：用Axure独立完成教育APP\"课程回放倍速控制页\"\"作业提交批改模块\"等3个核心功能高保真原型；从协助优化到独立输出\"作业批改评分体系\"PRD，明确逻辑与验收标准，推动需求顺利进入开发。竞品分析支持：聚焦教育APP社区互动功能，拆解猿辅导、作业帮等4家竞品的功能模块、用户体验及商业模式，输出2000字报告，提炼\"学习进度标签推荐\"等2个可复用亮点，支撑产品迭代决策。协调设计/开发/测试团队，解决3类协作问题，保障V2.1版本按期上线。"}, {"period": "2023.07 - 2023.09", "company": "河南数巢软件科技有限公司", "position": "产品助理", "responsibilities": "需求调研与分析：通过用户访谈（10+位核心用户）、竞品分析（3家同类产品）的方式，得出用户操作繁琐、兑换商品没有吸引力等问题输出《积分商城需求调研总结报告》。设计方案：协助撰写PRD文档2份，明确更新之后功能的转变与商品焕新的方向，使用Axure绘制低保真原型20+张，确保需求清晰传递给设计与开发团队。用户反馈与迭代：负责产品后台用户反馈数据整理，每日筛选题高频问（如\"兑换失败\"\"页面卡顿\"），输出《用户反馈周报》，提炼核心问题推动迭代优化，其中\"简化退款申请步骤\"优化后，用户投诉量下降30%。数据监测与分析：使用Excel/产品后台数据工具，监测积分兑换实物功能上线后的核心指标（如用户活跃度、功能使用率），输出数据报告3份。"}]}
+        try {
+            // todo 已修改为自己后端接口
+            const response = await fetchWithJwt(
+                `${window.config.API_BASE_URL}fill-values`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        url: window.location.href,
+                        version: chrome.runtime.getManifest().version,
+                        fields: apiFields,
+                        company: company,
+                        position: position,
+                        resumeData: data,
+                        resumeId: resumeId
+                    })
+                }
+            );
+            //convertedFillData = response.values;
+            convertedFillData = response.matches;
+        } catch (error) {
+            isNetworkError = true;
+            errorFunctionName = "fillResumeValue";
+            throw error;
+        }
         console.log("apiFields====>", apiFields)
-        convertedFillData = [
+        let convertedFillData2 = [
             {
                 "name": "基本信息",
                 "fields": [
@@ -3165,10 +3234,6 @@
                     {
                         "name": "期望工作地点",
                         "value": "深圳"
-                    },
-                    {
-                        "name": "期望工作地点",
-                        "value": "广州"
                     }
                 ]
             },
@@ -3482,6 +3547,7 @@
             }
         ];
         console.log("convertedFillData====>", convertedFillData)
+        console.log("convertedFillData2====>", convertedFillData2)
         return null;
     }
 
@@ -3799,30 +3865,41 @@
     async function highlightAllFields(structures) {
         isHighlightComplete = false;
         try {
+
+            // 启用高亮样式 - 使用class
+            document.documentElement.classList.add('ark-highlight-enabled');
+
             await scrollToTop();
 
+            let highlightCount = 0;
             for (const section of structures) {
                 if (section.dom !== null) {
                     section.dom.scrollIntoView({ block: "center" });
-                    setElementColor(section.dom, "purple");
+                    setElementColor(section.dom, "blue");
+                    highlightCount++;
                     await delay(100);
 
                     for (const field of section.fields) {
                         if (field.field.dom !== null) {
                             field.field.dom.scrollIntoView({ block: "center" });
                             setElementColor(field.field.dom, "yellow");
+                            highlightCount++;
 
                             for (const blank of field.blanks) {
-                                setElementColor(blank.dom, "green");
-                                await delay(100);
+                                if (blank.dom) {
+                                    setElementColor(blank.dom, "green");
+                                    highlightCount++;
+                                    await delay(100);
+                                }
                             }
                         }
                     }
                 }
             }
-
             await scrollToTop();
-        } catch (error) { }
+        } catch (error) {
+            console.error("高亮过程出错:", error);
+        }
         isHighlightComplete = true;
     }
 
@@ -4074,7 +4151,6 @@
 
             // 阶段2：获取服务器字段（异步）
             getNeedFields(getCleanHtml());
-            // 停止后续操作
 
             // 阶段3：如果启用美化，请求美化简历（异步）
             // if (enableBeautify) {

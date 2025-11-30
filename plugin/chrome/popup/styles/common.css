@@ -200,9 +200,11 @@ img {
 /* --- 滚动内容区 --- */
 .plugin-content {
     height: 100%;
-    overflow-y: auto;
-    padding: 75px 15px 20px;
-    scrollbar-width: none;
+    overflow: hidden;
+    padding: 75px 15px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .plugin-content::-webkit-scrollbar {

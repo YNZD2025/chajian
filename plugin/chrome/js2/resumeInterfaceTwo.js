@@ -43,14 +43,14 @@
             // 创建DOM结构
             await createDomStructure();
 
-            // 加载CSS样式
-            loadStyles();
+            // 加载CSS样式 - 等待样式加载完成
+            await loadStyles();
 
-            // 加载字体图标
-            loadFontAwesome();
+            // 加载字体图标 - 等待字体加载完成
+            await loadFontAwesome();
 
             // 初始化高亮设置
-            initHighlight();
+            await initHighlight();
 
             // 绑定事件监听
             await bindEvents(logoButton, resumeWindow);
@@ -63,8 +63,10 @@
 
             // 监听窗口大小变化
             window.addEventListener("resize", debounce(adjustWindowHeight, 200));
+
+            console.log("UI初始化完成");
         } catch (error) {
-            // 静默处理初始化错误
+            console.error("初始化错误:", error);
         }
     }
 
@@ -247,72 +249,628 @@
      * @returns {HTMLElement} 简历窗口元素
      */
     async function createResumeWindow() {
+        console.log("开始创建简历窗口...");
         const container = document.createElement("div");
         container.id = "resume-window-container";
 
         try {
             // 加载HTML模板 - 改为引用 fill.html
-            const response = await fetch(chrome.runtime.getURL("popup/fill.html"));
+            const url = chrome.runtime.getURL("popup/fill.html");
+            console.log(`正在加载HTML: ${url}`);
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP错误: ${response.status}`);
+            }
+
             const html = await response.text();
-            container.innerHTML = html;
+            console.log(`✓ HTML加载成功 (${html.length} 字符)`);
+
+            // 将HTML解析为DOM，移除head中的样式链接（我们已在loadStyles中处理）
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+
+            // 移除head中的link标签（避免重复加载）
+            const links = doc.querySelectorAll("head link");
+            console.log(`移除 ${links.length} 个<link>标签`);
+            links.forEach(link => link.remove());
+
+            // ⚠️ 关键修复：在注入前移除所有可能导致页面跳转的属性和事件
+            console.log("清理HTML中的内联事件和危险属性...");
+
+            // 1. 先移除所有script标签
+            const scripts = doc.body.querySelectorAll('script');
+            scripts.forEach(script => script.remove());
+            console.log(`✓ 已移除 ${scripts.length} 个<script>标签`);
+
+            // 2. 清理所有元素的内联事件
+            const allElements = doc.body.querySelectorAll('*');
+            let removedCount = 0;
+            allElements.forEach(el => {
+                // 移除所有on*事件属性
+                Array.from(el.attributes).forEach(attr => {
+                    if (attr.name.startsWith('on')) {
+                        console.log(`  移除 ${el.tagName}.${attr.name} = "${attr.value}"`);
+                        el.removeAttribute(attr.name);
+                        removedCount++;
+                    }
+                });
+
+                // 处理a标签的href
+                if (el.tagName === 'A') {
+                    const href = el.getAttribute('href');
+                    if (href && href !== '#' && href !== 'javascript:void(0)') {
+                        el.setAttribute('data-href', href);
+                        el.setAttribute('href', 'javascript:void(0)');
+                    }
+                }
+
+                // 处理button标签
+                if (el.tagName === 'BUTTON') {
+                    el.setAttribute('type', 'button');
+                }
+            });
+            console.log(`✓ 已移除 ${removedCount} 个内联事件属性`);
+
+            // 只取body内容
+            container.innerHTML = doc.body.innerHTML;
+            console.log("✓ HTML内容已注入到容器");
         } catch (error) {
+            console.error("✗ 加载简历窗口失败:", error);
             return null;
         }
 
         shadowRoot.appendChild(container);
+        console.log("✓ 容器已添加到Shadow DOM");
 
         // 保存容器引用
         resumeWindowContainer = container;
 
+        // ⚠️ 额外安全措施：添加全局点击事件监听，拦截所有可能的导航
+        container.addEventListener('click', (e) => {
+            const target = e.target;
+
+            // 检查是否是a标签或button
+            if (target.tagName === 'A' || target.closest('a')) {
+                const link = target.tagName === 'A' ? target : target.closest('a');
+                const href = link.getAttribute('href');
+
+                // 如果href会导致页面跳转（不是 # 或 javascript:void(0)）
+                if (href && href !== '#' && href !== 'javascript:void(0)' && !href.startsWith('data-')) {
+                    console.warn(`⚠️ 拦截潜在的页面跳转: ${href}`);
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+
+            // 检查button的onclick
+            if (target.tagName === 'BUTTON' && target.hasAttribute('onclick')) {
+                console.warn(`⚠️ 检测到button的onclick属性，已阻止`);
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true); // 使用捕获阶段，优先拦截
+        console.log("✓ 全局导航拦截器已启用");
+
         const window = container.querySelector(".plugin-container");
-        if (!window) return null;
+        if (!window) {
+            console.error("✗ 未找到 .plugin-container 元素");
+            return null;
+        }
+        console.log("✓ 找到.plugin-container元素");
+
+        // 调试：检查导航栏按钮
+        const navItems = container.querySelectorAll(".nav-item");
+        console.log(`导航栏按钮数量: ${navItems.length}`);
+
+        if (navItems.length === 0) {
+            console.error("✗ 警告：没有找到任何导航按钮！");
+            console.log("容器HTML:", container.innerHTML.substring(0, 500));
+        }
+
+        navItems.forEach((item, index) => {
+            const label = item.querySelector(".nav-label");
+            const icon = item.querySelector(".nav-icon-box i");
+            // 优先读取data-href（如果已经处理过），否则读取原始href
+            const originalHref = item.getAttribute('data-href') || item.getAttribute('href');
+            console.log(`按钮 ${index + 1}: ${label ? label.textContent : '无标签'}, 图标: ${icon ? icon.className : '无图标'}, href: ${originalHref}`);
+
+            // 阻止导航链接的默认跳转行为，改为页面切换
+            if (item.tagName === 'A' && originalHref && originalHref !== 'javascript:void(0)') {
+                // 保存原始href到data属性（如果还没有），然后替换href防止跳转
+                if (!item.hasAttribute('data-href')) {
+                    item.setAttribute('data-href', originalHref);
+                }
+                item.setAttribute('href', 'javascript:void(0)');
+
+                // 使用闭包保存原始href，避免后续读取问题
+                const targetPage = originalHref;
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log(`点击了导航按钮: ${label ? label.textContent : '无标签'}, 切换到: ${targetPage}`);
+                    navigateToPage(targetPage);
+                });
+            }
+        });
+
+        // 验证sidebar是否存在
+        const sidebar = container.querySelector(".sidebar");
+        if (sidebar) {
+            console.log("✓ 找到.sidebar元素");
+            console.log(`  sidebar子元素数量: ${sidebar.children.length}`);
+        } else {
+            console.error("✗ 未找到.sidebar元素");
+        }
 
         return window;
     }
 
     /**
+     * 页面导航函数 - 在Shadow DOM内切换页面
+     * @param {string} pageHtml - 页面HTML文件名（如 fill.html, profile.html）
+     */
+    async function navigateToPage(pageHtml) {
+        console.log(`开始导航到页面: ${pageHtml}`);
+
+        // 验证参数
+        if (!pageHtml || pageHtml === 'javascript:void(0)' || pageHtml === '#') {
+            console.error(`✗ 无效的页面参数: ${pageHtml}`);
+            return;
+        }
+
+        if (!resumeWindowContainer) {
+            console.error("✗ 容器未初始化");
+            return;
+        }
+
+        try {
+            // 加载新页面HTML
+            const url = chrome.runtime.getURL(`popup/${pageHtml}`);
+            console.log(`正在加载页面: ${url}`);
+
+            // 验证URL是否有效
+            if (!url || url.includes('invalid')) {
+                console.error(`✗ 生成的URL无效: ${url}`);
+                return;
+            }
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP错误: ${response.status}`);
+            }
+
+            const html = await response.text();
+            console.log(`✓ 页面加载成功 (${html.length} 字符)`);
+
+            // 解析HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+
+            // 移除head中的link标签（避免重复加载）
+            const links = doc.querySelectorAll("head link");
+            links.forEach(link => link.remove());
+
+            // 提取内联样式（如果有）
+            const inlineStyles = doc.querySelectorAll("head style");
+            const styleContents = Array.from(inlineStyles).map(style => style.textContent).join('\n');
+
+            // ⚠️ 关键修复：在注入前移除所有可能导致页面跳转的属性和事件
+            console.log("清理页面HTML中的内联事件和危险属性...");
+
+            // 1. 先移除所有script标签
+            const scripts = doc.body.querySelectorAll('script');
+            scripts.forEach(script => script.remove());
+            console.log(`✓ 已移除 ${scripts.length} 个<script>标签`);
+
+            // 2. 清理所有元素的内联事件
+            const allElements = doc.body.querySelectorAll('*');
+            let removedCount = 0;
+            allElements.forEach(el => {
+                // 移除所有on*事件属性
+                Array.from(el.attributes).forEach(attr => {
+                    if (attr.name.startsWith('on')) {
+                        console.log(`  移除 ${el.tagName}.${attr.name} = "${attr.value}"`);
+                        el.removeAttribute(attr.name);
+                        removedCount++;
+                    }
+                });
+
+                // 处理a标签的href
+                if (el.tagName === 'A') {
+                    const href = el.getAttribute('href');
+                    if (href && href !== '#' && href !== 'javascript:void(0)') {
+                        el.setAttribute('data-href', href);
+                        el.setAttribute('href', 'javascript:void(0)');
+                    }
+                }
+
+                // 处理button标签
+                if (el.tagName === 'BUTTON') {
+                    el.setAttribute('type', 'button');
+                }
+            });
+            console.log(`✓ 已移除 ${removedCount} 个内联事件属性`);
+
+            // 获取清理后的body内容
+            const bodyContent = doc.body.innerHTML;
+
+            // 清空当前容器并注入新内容
+            resumeWindowContainer.innerHTML = bodyContent;
+
+            // 如果有内联样式，注入到Shadow DOM
+            if (styleContents) {
+                const pageStyle = document.createElement("style");
+                pageStyle.textContent = styleContents;
+                shadowRoot.appendChild(pageStyle);
+                console.log("✓ 页面内联样式已注入");
+            }
+
+            console.log("✓ 页面内容已更新");
+
+            // ⚠️ 验证：确保所有危险的属性都被移除
+            const dangerousElements = resumeWindowContainer.querySelectorAll('[onclick], [onload]');
+            if (dangerousElements.length > 0) {
+                console.warn(`⚠️ 警告：发现 ${dangerousElements.length} 个元素仍有内联事件，立即清理`);
+                dangerousElements.forEach(el => {
+                    Array.from(el.attributes).forEach(attr => {
+                        if (attr.name.startsWith('on')) {
+                            el.removeAttribute(attr.name);
+                        }
+                    });
+                });
+            }
+
+            // 更新导航按钮的active状态
+            updateActiveNav(pageHtml);
+
+            // 重新绑定导航按钮事件（因为DOM已更新）
+            rebindNavigationEvents();
+
+            // 根据页面类型绑定特定事件
+            bindPageSpecificEvents(pageHtml);
+
+            // ⚠️ 强制触发布局重新计算（修复页面切换后滚动失效的问题）
+            if (pageHtml === 'fill.html') {
+                // 对于 fill.html，强制重新计算 flex 布局
+                const bookWrapper = resumeWindowContainer.querySelector('.book-wrapper');
+                const resumePageCurrent = resumeWindowContainer.querySelector('.resume-page-current');
+                const resumeHeader = resumeWindowContainer.querySelector('.resume-header');
+                const infoGrid = resumeWindowContainer.querySelector('.info-grid-compact');
+
+                if (infoGrid) {
+                    // 强制浏览器重新计算布局
+                    void infoGrid.offsetHeight;
+
+                    // 调试信息
+                    console.log('=== 填充页面布局信息 ===');
+                    console.log(`  .book-wrapper 高度: ${bookWrapper ? bookWrapper.offsetHeight : 'N/A'}px`);
+                    console.log(`  .resume-page-current 高度: ${resumePageCurrent ? resumePageCurrent.offsetHeight : 'N/A'}px`);
+                    console.log(`  .resume-header 高度: ${resumeHeader ? resumeHeader.offsetHeight : 'N/A'}px`);
+                    console.log(`  .info-grid-compact 高度: ${infoGrid.offsetHeight}px`);
+                    console.log(`  .info-grid-compact scrollHeight: ${infoGrid.scrollHeight}px`);
+                    console.log(`  .info-grid-compact overflow-y: ${window.getComputedStyle(infoGrid).overflowY}`);
+                    console.log(`  需要滚动: ${infoGrid.scrollHeight > infoGrid.offsetHeight ? '是' : '否'}`);
+                    console.log('========================');
+                }
+            }
+
+        } catch (error) {
+            console.error("✗ 页面导航失败:", error);
+        }
+    }
+
+    /**
+     * 更新导航栏active状态
+     * @param {string} pageHtml - 当前页面HTML文件名
+     */
+    function updateActiveNav(pageHtml) {
+        if (!resumeWindowContainer) return;
+
+        const navItems = resumeWindowContainer.querySelectorAll(".nav-item");
+        navItems.forEach(item => {
+            // 检查 data-href 或原始 href
+            const href = item.getAttribute('data-href') || item.getAttribute('href');
+            if (href === pageHtml) {
+                item.classList.add('active');
+                console.log(`✓ 设置active: ${href}`);
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * 重新绑定导航按钮事件
+     */
+    function rebindNavigationEvents() {
+        if (!resumeWindowContainer) return;
+
+        const navItems = resumeWindowContainer.querySelectorAll(".nav-item");
+        console.log(`重新绑定 ${navItems.length} 个导航按钮事件`);
+
+        navItems.forEach((item, index) => {
+            const label = item.querySelector(".nav-label");
+            // 优先读取data-href，然后才是href
+            const originalHref = item.getAttribute('data-href') || item.getAttribute('href');
+
+            // 移除旧的事件监听器（通过克隆节点）
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+
+            // 添加新的事件监听器
+            if (newItem.tagName === 'A' && originalHref && originalHref !== 'javascript:void(0)') {
+                // 确保data-href存在
+                if (!newItem.hasAttribute('data-href')) {
+                    newItem.setAttribute('data-href', originalHref);
+                }
+                newItem.setAttribute('href', 'javascript:void(0)');
+
+                // 使用闭包保存原始href
+                const targetPage = originalHref;
+                newItem.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const labelText = newItem.querySelector(".nav-label")?.textContent || '无标签';
+                    console.log(`导航按钮点击: ${labelText} -> ${targetPage}`);
+                    navigateToPage(targetPage);
+                });
+            }
+        });
+
+        console.log("✓ 导航事件重新绑定完成");
+    }
+
+    /**
+     * 绑定特定页面的事件
+     * @param {string} pageHtml - 页面HTML文件名
+     */
+    function bindPageSpecificEvents(pageHtml) {
+        if (!resumeWindowContainer) return;
+
+        console.log(`绑定页面特定事件: ${pageHtml}`);
+
+        // fill.html - 填充页面
+        if (pageHtml === 'fill.html') {
+            const fillBtn = resumeWindowContainer.querySelector(".liquid-cta-btn");
+            if (fillBtn) {
+                fillBtn.addEventListener("click", () => {
+                    console.log("一键智能填充按钮被点击");
+                    startFilling();
+                });
+                console.log("✓ 填充按钮事件已绑定");
+            }
+        }
+
+        // profile.html - 个人页面
+        if (pageHtml === 'profile.html') {
+            const editResumeBtn = resumeWindowContainer.querySelector(".edit-resume-btn");
+            if (editResumeBtn) {
+                // 移除原有的内联onclick属性，防止页面跳转
+                editResumeBtn.removeAttribute('onclick');
+
+                editResumeBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("编辑简历按钮被点击");
+
+                    // 打开外部Web页面进行简历编辑
+                    const resumeUrl = window.config?.WEB_URL || 'http://localhost:3000/resume';
+                    console.log(`打开简历编辑页面: ${resumeUrl}`);
+                    window.open(resumeUrl, '_blank');
+                });
+                console.log("✓ 编辑简历按钮事件已绑定（打开外部Web页面）");
+            }
+        }
+
+        // history.html - 投递记录页面
+        if (pageHtml === 'history.html') {
+            const viewBtns = resumeWindowContainer.querySelectorAll(".view-btn");
+            if (viewBtns.length > 0) {
+                viewBtns.forEach((btn, index) => {
+                    btn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log(`查看按钮被点击 (记录 ${index + 1})`);
+                        // TODO: 实现查看详情功能
+                    });
+                });
+                console.log(`✓ ${viewBtns.length} 个查看按钮事件已绑定`);
+            }
+        }
+
+        // 绑定右上角设置按钮（或关闭按钮）
+        const settingsBtn = resumeWindowContainer.querySelector(".liquid-close");
+        if (settingsBtn) {
+            // 移除原有的内联事件属性，防止页面跳转
+            settingsBtn.removeAttribute('onclick');
+            settingsBtn.removeAttribute('href');
+            settingsBtn.setAttribute('href', 'javascript:void(0)');
+
+            settingsBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("右上角按钮被点击");
+
+                // 判断按钮图标类型
+                const icon = settingsBtn.querySelector('i');
+                if (icon && icon.classList.contains('fa-times')) {
+                    // 关闭图标 - 不执行任何操作（settings页面的返回按钮）
+                    console.log("关闭按钮（不执行任何操作）");
+                } else {
+                    // 设置图标 - 跳转到设置页面
+                    navigateToPage('settings.html');
+                }
+            });
+            console.log("✓ 右上角按钮事件已绑定");
+        }
+    }
+
+    /**
      * 加载CSS样式
      */
-    function loadStyles() {
-        // Font Awesome 图标库
-        const fontAwesomeLink = document.createElement("link");
-        fontAwesomeLink.rel = "stylesheet";
-        fontAwesomeLink.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css";
-        shadowRoot.appendChild(fontAwesomeLink);
+    async function loadStyles() {
+        console.log("开始加载样式...");
+        try {
+            // 1. 首先加载本地 CSS 文件（fetch 方式，最可靠）
+            const cssFiles = [
+                "popup/styles/common.css",
+                "popup/styles/fill.css"
+                // 移除 resumeInterface.css，因为它是为旧的深色主题设计的，会与新设计冲突
+            ];
 
-        // Common 通用样式
-        const commonLink = document.createElement("link");
-        commonLink.rel = "stylesheet";
-        commonLink.href = chrome.runtime.getURL("popup/styles/common.css");
-        shadowRoot.appendChild(commonLink);
+            const fetchPromises = cssFiles.map(async (file) => {
+                try {
+                    const url = chrome.runtime.getURL(file);
+                    console.log(`正在加载CSS: ${file}`);
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const content = await response.text();
+                        console.log(`✓ CSS加载成功: ${file} (${content.length} 字符)`);
+                        return content;
+                    } else {
+                        console.error(`✗ CSS加载失败: ${file}, 状态: ${response.status}`);
+                        return "";
+                    }
+                } catch (error) {
+                    console.error(`✗ CSS加载异常: ${file}`, error);
+                    return "";
+                }
+            });
 
-        // Fill 页面样式
-        const fillLink = document.createElement("link");
-        fillLink.rel = "stylesheet";
-        fillLink.href = chrome.runtime.getURL("popup/styles/fill.css");
-        shadowRoot.appendChild(fillLink);
+            const cssContents = await Promise.all(fetchPromises);
 
-        // ✨ 新增：Logo 按钮样式（包含在 resumeInterface.css 中）
-        const resumeInterfaceLink = document.createElement("link");
-        resumeInterfaceLink.rel = "stylesheet";
-        resumeInterfaceLink.href = chrome.runtime.getURL("case/css/resumeInterface.css");
-        shadowRoot.appendChild(resumeInterfaceLink);
+            // 创建内联样式标签
+            const inlineStyle = document.createElement("style");
+            inlineStyle.textContent = cssContents.join("\n\n");
+            shadowRoot.appendChild(inlineStyle);
+            console.log("✓ 本地CSS样式已注入Shadow DOM");
+
+            // 添加Logo按钮和窗口容器的样式（从 resumeInterface.css 提取）
+            const logoAndContainerStyle = document.createElement("style");
+            logoAndContainerStyle.textContent = `
+                /* Logo按钮样式 */
+                #logo-button {
+                    position: fixed;
+                    bottom: 40px;
+                    right: 40px;
+                    z-index: 100000000;
+                    background-color: #111;
+                    border: 1px solid #222;
+                    border-radius: 20px;
+                    cursor: pointer !important;
+                    width: 50px;
+                    height: 50px;
+                    padding: 0;
+                    overflow: hidden;
+                    transition: display 0.2s ease;
+                    animation: logo-button-breathe 3s ease-in-out infinite;
+                }
+
+                #logo-button:hover {
+                    cursor: pointer !important;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                }
+
+                #logo-button img {
+                    width: 100%;
+                    height: 100%;
+                    vertical-align: initial;
+                }
+
+                @keyframes logo-button-breathe {
+                    0% { transform: scale(1); }
+                    10% { transform: scale(1.02); }
+                    15% { transform: scale(1.1); }
+                    20% { transform: scale(1.05); }
+                    25% { transform: scale(1.1); }
+                    30% { transform: scale(1.02); }
+                    40% { transform: scale(1); }
+                    100% { transform: scale(1); }
+                }
+
+                /* 简历窗口容器样式 */
+                #resume-window-container {
+                    position: fixed;
+                    bottom: 40px;
+                    right: 40px;
+                    max-height: calc(100vh - 80px);
+                    width: 420px;
+                    height: 600px;
+                    border-radius: 20px;
+                    z-index: 100000001;
+                    display: none;
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                }
+
+                #resume-window-container .plugin-container {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 20px;
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
+                    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2), 0 0 40px rgba(0, 0, 0, 0.1);
+                }
+            `;
+            shadowRoot.appendChild(logoAndContainerStyle);
+            console.log("✓ Logo和容器样式已注入");
+
+            // 2. 加载 Font Awesome - 直接使用备用emoji方案（避免CDN CSP问题）
+            console.log("使用emoji图标方案（避免CDN CSP问题）");
+            const iconStyle = document.createElement("style");
+            iconStyle.textContent = `
+                /* 图标基础样式 */
+                .fas, .far, .fab, .fa {
+                    display: inline-block;
+                    font-style: normal;
+                    font-variant: normal;
+                    text-rendering: auto;
+                    line-height: 1;
+                }
+
+                /* Emoji图标映射 */
+                .fa-rocket::before { content: "🚀"; font-size: 1.2em; }
+                .fa-magic::before { content: "✨"; font-size: 1.2em; }
+                .fa-bolt::before { content: "⚡"; font-size: 1.2em; }
+                .fa-history::before { content: "🕐"; font-size: 1.2em; }
+                .fa-user::before { content: "👤"; font-size: 1.2em; }
+                .fa-cog::before { content: "⚙️"; font-size: 1.2em; }
+                .fa-info-circle::before { content: "ℹ️"; font-size: 1.2em; }
+                .fa-times::before { content: "✖"; font-size: 1.2em; }
+                .fa-edit::before { content: "✏️"; font-size: 1.2em; }
+            `;
+            shadowRoot.appendChild(iconStyle);
+            console.log("✓ Emoji图标样式已注入");
+
+            // 验证样式是否成功注入
+            const styleCount = shadowRoot.querySelectorAll('style').length;
+            console.log(`✓ 样式加载完成，共注入 ${styleCount} 个<style>标签到Shadow DOM`);
+
+        } catch (error) {
+            console.error("✗ 加载样式时出错:", error);
+        }
     }
 
     /**
      * 加载Font Awesome字体
+     * 注意：Font Awesome 的字体由 CDN CSS 自动处理
      */
-    function loadFontAwesome() {
-        const fontUrl = chrome.runtime.getURL("webfonts/fa-solid-900.woff2");
-        const fontFace = new FontFace("Font Awesome 6 Free", `url(${fontUrl})`, {
-            weight: "900"
-        });
+    async function loadFontAwesome() {
+        try {
+            // Font Awesome CDN 会自动处理字体加载
+            // 我们只需要确保 CDN CSS 已加载（在 loadStyles 中处理）
 
-        fontFace.load().then((loadedFont) => {
-            document.fonts.add(loadedFont);
-        }).catch((error) => {
-            // 字体加载失败，静默处理
-        });
+            // 等待一小段时间确保 CDN CSS 加载完成
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            console.log("Font Awesome CDN 已就绪");
+        } catch (error) {
+            console.error("Font Awesome 初始化失败:", error);
+        }
     }
 
     /**
@@ -484,7 +1042,7 @@
                     const md = await res.text();
                     resumeData = { 
                         status: "ok", 
-                        resumeId: "resume-md-default", 
+                        resumeId: 123456, 
                         resumeMd: md ,
                         company: "测试",
                         position: "java"
