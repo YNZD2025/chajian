@@ -25,6 +25,7 @@ import {
     API_BASE_URL,           // 基础 API 地址
     API_AUTH_URL,           // 认证 API 地址
     API_HISTORY_URL,        // 历史记录 API 地址
+    API_RESUME_URL,         // 简历管理 API 地址
     WEB_DOMAIN,             // 网站域名
     WEB_URL,                // 网站完整 URL
     LOGIN_URL,              // 登录页面 URL
@@ -222,6 +223,7 @@ const ConfigModule = {
                 API_BASE_URL,
                 API_AUTH_URL,
                 API_HISTORY_URL,
+                API_RESUME_URL,
                 WEB_URL,
                 LOGIN_URL,
                 CAMPUS_URL,
@@ -259,9 +261,14 @@ const AuthModule = {
      */
     async handleMessage(message, sender, sendResponse) {
         try {
+            console.log("[AuthModule] 收到fetchWithJwt请求:", message.url, message.options);
             const response = await this.fetchWithJwt(message.url, message.options);
-            sendResponse(await response.json());
+            console.log("[AuthModule] 请求成功，状态:", response.status);
+            const jsonData = await response.json();
+            console.log("[AuthModule] 响应数据:", jsonData);
+            sendResponse(jsonData);
         } catch (error) {
+            console.error("[AuthModule] 请求失败:", error.message);
             sendResponse({ error: error.message });
         }
     },
@@ -312,10 +319,14 @@ const AuthModule = {
      * @throws {Error} - 未登录或请求失败时抛出错误
      */
     async fetchWithJwt(url, options = {}) {
+        console.log("[AuthModule.fetchWithJwt] 开始处理请求:", url);
+
         // 获取存储的认证信息
         const { auth } = await chrome.storage.local.get(["auth"]);
+        console.log("[AuthModule.fetchWithJwt] Token状态:", auth?.token ? "存在" : "不存在");
 
         if (!auth?.token) {
+            console.error("[AuthModule.fetchWithJwt] 未登录");
             throw new Error("未登录");
         }
 
@@ -324,6 +335,9 @@ const AuthModule = {
          * @param {string} token - JWT Token
          */
         const executeRequest = async (token) => {
+            console.log("[AuthModule.fetchWithJwt] 执行fetch请求:", url);
+            console.log("[AuthModule.fetchWithJwt] 请求选项:", { ...options, headers: { ...options.headers, Authorization: "Bearer ***" } });
+
             return await fetch(url, {
                 ...options,
                 headers: {
@@ -335,7 +349,9 @@ const AuthModule = {
 
         try {
             // 首次请求
+            console.log("[AuthModule.fetchWithJwt] 发起首次请求...");
             let response = await executeRequest(auth.token);
+            console.log("[AuthModule.fetchWithJwt] 首次请求完成，状态码:", response.status);
 
             // 处理 401 未授权（Token 过期）
             if (response.status === 401) {
@@ -373,6 +389,9 @@ const AuthModule = {
 
             return response;
         } catch (error) {
+            console.error("[AuthModule.fetchWithJwt] 捕获到错误:", error);
+            console.error("[AuthModule.fetchWithJwt] 错误类型:", error.constructor.name);
+            console.error("[AuthModule.fetchWithJwt] 错误消息:", error.message);
             throw error;
         }
     },

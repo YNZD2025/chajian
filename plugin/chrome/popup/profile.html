@@ -6,6 +6,7 @@
     <title>个人中心 - 一念职达</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/fill.css">
     <style>
         .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
         .profile-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
@@ -17,19 +18,29 @@
         .resume-page-current { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; border-radius: 20px; padding: 18px; border: 1px solid rgba(0,0,0,0.05); box-shadow: -5px 10px 30px rgba(0,0,0,0.1); z-index: 2; transition: transform 0.4s ease; display: flex; flex-direction: column; }
         .book-wrapper:hover .resume-page-current { transform: translateX(-20px) rotateY(-5deg); }
         .book-wrapper:hover .resume-page-next { transform: rotate(1deg) translateZ(0); filter: blur(0); opacity: 1; }
-        .switch-tooltip { position: absolute; right: -10px; top: 25px; background: var(--accent); color: white; font-size: 9px; padding: 2px 5px; border-radius: 5px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 10; white-space: nowrap; }
-        .book-wrapper:hover .switch-tooltip { opacity: 1; right: -35px; }
+        .switch-tooltip { position: absolute; right: 15px; top: 25px; background: var(--accent); color: white; font-size: 9px; padding: 2px 5px; border-radius: 5px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 10; white-space: nowrap; }
+        .book-wrapper:hover .switch-tooltip { opacity: 1; right: 10px; }
         .skeleton-block { height: 35px; background: #f0f0f0; border-radius: 8px; margin-bottom: 8px; }
         .skeleton-text { height: 7px; width: 60%; background: #eee; margin-bottom: 6px; border-radius: 3px; }
 
-        .resume-section { margin-bottom: 12px; }
-        .resume-section h4 { color: var(--primary); font-size: 12px; margin-bottom: 6px; }
-        .resume-section .title { font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 2px; }
-        .resume-section .subtitle { font-size: 10px; color: #999; }
-        .resume-divider { height: 1px; background: #f5f5f5; margin: 10px 0; }
-
-        .skill-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-        .skill-tag { font-size: 9px; background: #e0f7fa; color: var(--dark-green); padding: 2px 6px; border-radius: 5px; }
+        /* 简历内容区域 - 使其占据剩余空间并可滚动 */
+        .info-grid-compact {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            padding-right: 5px;
+        }
+        /* 自定义滚动条样式 */
+        .info-grid-compact::-webkit-scrollbar {
+            width: 4px;
+        }
+        .info-grid-compact::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 2px;
+        }
+        .info-grid-compact::-webkit-scrollbar-thumb:hover {
+            background: #ccc;
+        }
 
         .edit-resume-btn { margin-top: auto; border: 1px solid var(--accent); color: var(--accent); background: white; padding: 8px 0; border-radius: 18px; font-size: 11px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .edit-resume-btn:hover { background: var(--accent); color: white; }
@@ -62,50 +73,64 @@
             <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
             <div class="plugin-content" style="padding-top: 15px;">
                 <div class="profile-header">
-                    <img src="https://i.pravatar.cc/150?img=47" class="profile-avatar">
+                    <img src="logo-small.png" class="profile-avatar">
                     <div class="profile-name">李艺伟</div>
                     <div class="profile-status">求职中</div>
                 </div>
 
                 <div class="book-wrapper">
-                    <div class="switch-tooltip">查看英文版</div>
+                    <div class="switch-tooltip">切换下一份简历</div>
                     <div class="resume-page-next">
-                        <div style="text-align:right; font-size:9px; color:var(--primary); font-weight:bold;">English Resume</div>
-                        <div style="margin-top:25px;">
-                            <div class="skeleton-text" style="width:30%"></div>
-                            <div class="skeleton-block"></div>
-                        </div>
+                        <div style="text-align:right; font-size:8px; color:var(--primary); font-weight:bold; margin-bottom:6px;">简历 B</div>
+                        <div style="font-size:10px; font-weight:bold; color:#ccc;">加载中...</div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-block"></div>
                     </div>
 
                     <div class="resume-page-current">
-                        <div style="flex:1; overflow-y:auto; padding-right:5px; scrollbar-width:none;">
-                            <div class="resume-section">
-                                <h4>教育背景</h4>
-                                <div class="title">清华大学 / 硕士</div>
-                                <div class="subtitle">计算机科学与技术 | 2023-2026</div>
+                        <div class="resume-header">
+                            <div class="resume-meta">
+                                <div class="resume-name">李艺伟</div>
+                                <div class="resume-type">中文简历 (默认)</div>
                             </div>
-                            <div class="resume-divider"></div>
+                        </div>
 
-                            <div class="resume-section">
-                                <h4>实习经历</h4>
-                                <div class="title">微软亚洲研究院</div>
-                                <div class="subtitle">算法实习生 | 2024.06 - 2024.09</div>
+                        <div class="info-grid-compact">
+                            <div class="info-cell">
+                                <div class="info-cell-label">学校</div>
+                                <div class="info-cell-value">清华大学</div>
                             </div>
-                            <div class="resume-divider"></div>
-
-                            <div class="resume-section">
-                                <h4>专业技能</h4>
-                                <div class="skill-tags">
-                                    <span class="skill-tag">Python</span>
-                                    <span class="skill-tag">C++</span>
-                                    <span class="skill-tag">PyTorch</span>
-                                </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">学历</div>
+                                <div class="info-cell-value">硕士</div>
                             </div>
-                            <div class="resume-divider"></div>
-
-                            <div class="resume-section">
-                                <h4>获奖经历</h4>
-                                <div style="font-size:10px; color:var(--text-main);">• 国家奖学金 (2024)</div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">专业</div>
+                                <div class="info-cell-value">计算机科学与技术</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">毕业年份</div>
+                                <div class="info-cell-value">2026</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">手机</div>
+                                <div class="info-cell-value">138****9876</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">邮箱</div>
+                                <div class="info-cell-value">li***@thu.edu</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">意向岗位</div>
+                                <div class="info-cell-value">算法工程师</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">期望城市</div>
+                                <div class="info-cell-value">北京/上海</div>
+                            </div>
+                            <div class="info-cell" style="grid-column: span 2;">
+                                <div class="info-cell-label">核心技能</div>
+                                <div class="info-cell-value">Python, C++, PyTorch, TensorFlow</div>
                             </div>
                         </div>
 

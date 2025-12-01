@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(dir /s /b \"D:\\1.code\\1.code\\1.ProjectManagement\\dev-projects\\new\\code\\chajian\\plugin\\chrome\")",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(powershell -command \"(Get-Content ''D:\\1.code\\1.code\\1.ProjectManagement\\dev-projects\\new\\code\\chajian\\plugin\\chrome\\js2\\content.js'' | Measure-Object -Line).Lines\")",
+      "Bash(powershell -command:*)"
     ],
     "deny": [],
     "ask": []

@@ -30,7 +30,7 @@
                 PORT: "3000"
             },
             API: {
-                HOST: "http://localhost",
+                HOST: "http://192.168.1.144",
                 PORT: "8080"
             }
         },
@@ -91,6 +91,7 @@
         API_BASE_URL: buildUrl("/api/autofill/", "API"),
         API_AUTH_URL: buildUrl("/api/plugin/", "API"),
         API_HISTORY_URL: buildUrl("/api/history/", "API"),
+        API_RESUME_URL: buildUrl("/api/resume/", "API"),
 
         // 网站 URL
         WEB_DOMAIN: config.WEB.HOST,

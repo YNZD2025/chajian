@@ -111,6 +111,15 @@ export const API_AUTH_URL = buildUrl("/api/plugin/", "API");
  */
 export const API_HISTORY_URL = buildUrl("/api/history/", "API");
 
+/**
+ * 简历管理相关 API 基础路径
+ * 用于：简历列表查询、简历详情等
+ *
+ * @example
+ * fetch(`${API_RESUME_URL}list`, { method: "GET" })
+ */
+export const API_RESUME_URL = buildUrl("/api/resume/", "API");
+
 // ============================================================================
 // 网站 URL 导出
 // ============================================================================

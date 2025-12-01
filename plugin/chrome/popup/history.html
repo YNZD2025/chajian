@@ -12,6 +12,56 @@
         .status-dot.inactive { background: #ccc; box-shadow: none; }
         .view-btn { background: #f7f9fa; padding: 5px 12px; border-radius: 12px; font-size: 11px; color: var(--text-gray); border: none; font-weight: 600; cursor: pointer; }
         .view-btn:hover { background: #edf1f3; color: var(--primary); }
+
+        /* 为投递记录列表启用滚动功能 */
+        .plugin-content {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* 自定义滚动条样式 */
+        .plugin-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .plugin-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .plugin-content::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 3px;
+        }
+        .plugin-content::-webkit-scrollbar-thumb:hover {
+            background: #ccc;
+        }
+
+        /* 确保标题在滚动内容之上，并有不透明背景 */
+        .liquid-title {
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .liquid-close {
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 100;
+        }
+
+        /* 添加顶部遮罩层，防止滚动内容透过标题区域 */
+        .main-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(to bottom,
+                rgba(255, 255, 255, 1) 0%,
+                rgba(255, 255, 255, 0.98) 70%,
+                rgba(255, 255, 255, 0.95) 85%,
+                transparent 100%);
+            z-index: 50;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -38,7 +88,7 @@
             </div>
         </div>
         <div class="main-area">
-            <div class="liquid-title">投递记录</div>
+            <div class="liquid-title">使用记录</div>
             <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
             <div class="plugin-content">
                 <!-- 投递记录将通过 JavaScript 动态加载 -->

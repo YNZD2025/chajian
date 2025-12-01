@@ -27,7 +27,6 @@
     let resumeWindow = null;        // n - 简历窗口主容器
     let resumeWindowContainer = null; // 简历窗口容器
     let resumeData = null;          // o - 简历数据对象
-    let simpleMDE = null;           // a - SimpleMDE编辑器实例
 
     // ============================================================================
     // 初始化函数
@@ -646,27 +645,34 @@
                 });
                 console.log("✓ 填充按钮事件已绑定（已移除旧事件）");
             }
+
+            // 初始化简历数据
+            initResumeData();
         }
 
         // profile.html - 个人页面
         if (pageHtml === 'profile.html') {
-            const editResumeBtn = resumeWindowContainer.querySelector(".edit-resume-btn");
-            if (editResumeBtn) {
-                // 移除原有的内联onclick属性，防止页面跳转
-                editResumeBtn.removeAttribute('onclick');
+            // 初始化简历数据（会自动调用bindResumeSwitchEvents）
+            // 等待初始化完成后再绑定编辑按钮事件
+            initResumeData().then(() => {
+                const editResumeBtn = resumeWindowContainer.querySelector(".edit-resume-btn");
+                if (editResumeBtn) {
+                    // 移除原有的内联onclick属性，防止页面跳转
+                    editResumeBtn.removeAttribute('onclick');
 
-                editResumeBtn.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log("编辑简历按钮被点击");
+                    editResumeBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("编辑简历按钮被点击");
 
-                    // 打开外部Web页面进行简历编辑
-                    const resumeUrl = window.config?.WEB_URL || 'http://localhost:3000/resume';
-                    console.log(`打开简历编辑页面: ${resumeUrl}`);
-                    window.open(resumeUrl, '_blank');
-                });
-                console.log("✓ 编辑简历按钮事件已绑定（打开外部Web页面）");
-            }
+                        // 打开外部Web页面进行简历编辑
+                        const resumeUrl = window.config?.WEB_URL || 'http://localhost:3000/resume';
+                        console.log(`打开简历编辑页面: ${resumeUrl}`);
+                        window.open(resumeUrl, '_blank');
+                    });
+                    console.log("✓ 编辑简历按钮事件已绑定（打开外部Web页面）");
+                }
+            });
         }
 
         // history.html - 投递记录页面
@@ -737,6 +743,65 @@
             });
 
             const cssContents = await Promise.all(fetchPromises);
+
+            // 首先定义CSS变量（在Shadow DOM中，:root不工作，需要用:host或*）
+            const cssVariables = document.createElement("style");
+            cssVariables.textContent = `
+                :host {
+                    /* --- 核心色板 --- */
+                    --primary: #57c5b6;
+                    --primary-dark: #3a8e82;
+                    --accent: #ff9a9e;
+                    --text-main: #2d3436;
+                    --text-gray: #636e72;
+
+                    /* --- 背景流体 --- */
+                    --bg-fluid: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
+
+                    /* --- 材质系统 --- */
+                    --glass-clear-bg: rgba(255, 255, 255, 0.35);
+                    --glass-clear-blur: blur(12px);
+                    --glass-clear-border: 1px solid rgba(255, 255, 255, 0.6);
+                    --glass-clear-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+
+                    --card-white: rgba(255, 255, 255, 0.85);
+                    --card-blur: blur(20px);
+                    --card-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+
+                    /* --- 圆角 --- */
+                    --r-card: 20px;
+                    --r-btn: 25px;
+
+                    /* --- 深绿色 --- */
+                    --dark-green: #006666;
+                }
+
+                * {
+                    /* 确保所有元素都能访问到这些变量 */
+                    --primary: #57c5b6;
+                    --primary-dark: #3a8e82;
+                    --accent: #ff9a9e;
+                    --text-main: #2d3436;
+                    --text-gray: #636e72;
+                    --bg-fluid: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
+                    --glass-clear-bg: rgba(255, 255, 255, 0.35);
+                    --glass-clear-blur: blur(12px);
+                    --glass-clear-border: 1px solid rgba(255, 255, 255, 0.6);
+                    --glass-clear-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+                    --card-white: rgba(255, 255, 255, 0.85);
+                    --card-blur: blur(20px);
+                    --card-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+                    --r-card: 20px;
+                    --r-btn: 25px;
+                    --dark-green: #006666;
+                }
+            `;
+            shadowRoot.appendChild(cssVariables);
+            console.log("✓ CSS变量已注入Shadow DOM");
 
             // 创建内联样式标签
             const inlineStyle = document.createElement("style");
@@ -812,6 +877,170 @@
                     -webkit-backdrop-filter: blur(10px);
                     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2), 0 0 40px rgba(0, 0, 0, 0.1);
                 }
+
+                /* 核心样式备份 - 确保关键元素一定能显示 */
+                .sidebar {
+                    width: 70px;
+                    height: 100%;
+                    background: #57c5b6;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 30px 0;
+                    gap: 18px;
+                    flex-shrink: 0;
+                    border-radius: 0 13px 13px 0;
+                    box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2);
+                }
+
+                .main-area {
+                    flex: 1;
+                    height: 100%;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                /* 悬浮标题（玻璃效果） */
+                .liquid-title {
+                    position: absolute;
+                    top: 20px;
+                    left: 20px;
+                    background: rgba(255, 255, 255, 0.35);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    border: 1px solid rgba(255, 255, 255, 0.6);
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+                    padding: 10px 20px;
+                    border-radius: 18px;
+                    font-size: 16px;
+                    font-weight: 800;
+                    color: #2d3436;
+                    z-index: 30;
+                }
+
+                /* 悬浮关闭/设置按钮 */
+                .liquid-close {
+                    position: absolute;
+                    top: 20px;
+                    right: 15px;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 14px;
+                    background: rgba(255, 255, 255, 0.35);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    border: 1px solid rgba(255, 255, 255, 0.6);
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: #636e72;
+                    z-index: 30;
+                    cursor: pointer;
+                    font-size: 16px;
+                    text-decoration: none;
+                    transition: all 0.3s ease;
+                }
+
+                .liquid-close:hover {
+                    background: rgba(255, 255, 255, 0.6);
+                    color: #57c5b6;
+                }
+
+                /* 滚动内容区 */
+                .plugin-content {
+                    height: 100%;
+                    overflow: hidden;
+                    padding: 75px 15px 110px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .plugin-content::-webkit-scrollbar {
+                    display: none;
+                }
+
+                /* Switch tooltip 关键样式 */
+                .switch-tooltip {
+                    position: absolute;
+                    right: 10px;
+                    top: 25px;
+                    background: #ff9a9e;
+                    color: white;
+                    font-size: 13px;
+                    padding: 2px 20px;
+                    border-radius: 5px;
+                    opacity: 0;
+                    transition: opacity 0.3s ease, transform 0.3s ease;
+                    pointer-events: none;
+                    z-index: 10;
+                    white-space: nowrap;
+                    transform: translateX(10px);
+                }
+
+                .book-wrapper:hover .switch-tooltip {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+
+                .book-wrapper {
+                    position: relative;
+                    width: 96%;
+                    height: 280px;
+                    perspective: 1000px;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                    min-height: 280px;
+                    max-height: 280px;
+                }
+
+                .resume-page-current {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: white;
+                    border-radius: 18px;
+                    padding: 14px;
+                    border: 1px solid rgba(0, 0, 0, 0.05);
+                    box-shadow: -5px 10px 30px rgba(0, 0, 0, 0.1);
+                    z-index: 2;
+                    transition: transform 0.4s ease;
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 0;
+                }
+
+                .book-wrapper:hover .resume-page-current {
+                    transform: translateX(-20px) rotateY(-5deg);
+                }
+
+                .resume-page-next {
+                    position: absolute;
+                    top: 8px;
+                    right: -16px;
+                    width: 98%;
+                    height: 100%;
+                    background: rgba(255, 255, 255, 0.8);
+                    border: 1px solid rgba(255, 255, 255, 0.5);
+                    border-radius: 18px;
+                    padding: 14px;
+                    transform: rotate(3deg) translateZ(-10px);
+                    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05);
+                    z-index: 1;
+                    transition: transform 0.4s ease, filter 0.4s ease, opacity 0.4s ease;
+                    filter: blur(1px);
+                    opacity: 0.8;
+                    overflow: hidden;
+                }
+
+                .book-wrapper:hover .resume-page-next {
+                    transform: rotate(1deg) translateZ(0);
+                    filter: blur(0);
+                    opacity: 1;
+                }
             `;
             shadowRoot.appendChild(logoAndContainerStyle);
             console.log("✓ Logo和容器样式已注入");
@@ -839,6 +1068,25 @@
                 .fa-info-circle::before { content: "ℹ️"; font-size: 1.2em; }
                 .fa-times::before { content: "✖"; font-size: 1.2em; }
                 .fa-edit::before { content: "✏️"; font-size: 1.2em; }
+                .fa-pause::before { content: "⏸"; font-size: 1.2em; }
+                .fa-play::before { content: "▶️"; font-size: 1.2em; }
+                .fa-calendar-check::before { content: "✅"; font-size: 1.2em; }
+                .fa-sync::before { content: "🔄"; font-size: 1.2em; }
+                .fa-spinner::before { content: "⏳"; font-size: 1.2em; }
+                .fa-inbox::before { content: "📥"; font-size: 1.2em; }
+                .fa-bug::before { content: "🐛"; font-size: 1.2em; }
+                .fa-charging-station::before { content: "🔋"; font-size: 1.2em; }
+                .fa-wand-magic-sparkles::before { content: "🪄"; font-size: 1.2em; }
+
+                /* Spinner 动画 */
+                .fa-spin {
+                    animation: fa-spin 2s infinite linear;
+                }
+
+                @keyframes fa-spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
             `;
             shadowRoot.appendChild(iconStyle);
             console.log("✓ Emoji图标样式已注入");
@@ -918,14 +1166,10 @@
      * @param {HTMLElement} resumeWin - 简历窗口
      */
     async function bindEvents(logoBtn, resumeWin) {
-        console.log("resumeWin====>", resumeWin);
         if (!resumeWin) return;
 
         // Logo按钮点击 - 打开/关闭窗口
-        console.log("logoBtn====>", logoBtn);
         logoBtn.addEventListener("click", async () => {
-            console.log("logoBtn 被点击");
-            console.log("window.config====>", window.config);
             const { auth } = await chrome.storage.local.get(["auth"]);
             console.log("auth====>", auth);
             if (auth) {
@@ -1005,8 +1249,6 @@
      * @param {boolean} show - true显示，false隐藏
      */
     async function toggleWindow(show) {
-        console.log("resumeWindow====>", resumeWindow)
-        console.log("resumeWindowContainer====>", resumeWindowContainer)
         if (!resumeWindow || !resumeWindowContainer) return;
 
         if (show) {
@@ -1039,30 +1281,7 @@
 
             // 加载简历数据
             if (!resumeData) {
-                window.setStateText("加载简历...", "min");
-                // todo 修改获取默认简历接口
-                // resumeData = await apiRequest("initResume", {
-                //     url: window.location.href
-                // });
-                try {
-                    console.log("获取简历数据。。。。")
-                    const url = chrome.runtime.getURL("test_data/resume.md");
-                    const res = await fetch(url);
-                    if (!res.ok) throw new Error(`load resume.md failed: ${res.status}`);
-                    const md = await res.text();
-                    resumeData = { 
-                        status: "ok", 
-                        resumeId: 123456, 
-                        resumeMd: md ,
-                        company: "测试",
-                        position: "java"
-                    };
-                    const editor = resumeWindow.querySelector("#resume-editor");
-                    if (editor) editor.value = md;
-                    console.log("获取成功数据为：===",resumeData)
-                } catch (e) {
-                    resumeData = { status: "error", detail: "简历加载失败" };
-                }
+                renderResumeData();
 
                 if (resumeData.status === "error") {
                     if (resumeData.detail && resumeData.detail === "用户没有简历") {
@@ -1216,9 +1435,10 @@
             console.log("[startFilling] 开始新的填充流程");
             // todo 检查配额接口
             // 检查配额
-            // const quotaResult = await apiRequest("getQuota", {});
-            const quotaResult = { remainQuota: 9999 };
-            if (quotaResult.remainQuota <= 0) {
+            const quotaResult = await apiRequestForGet("quota", {},false);
+            console.log("[startFilling] 检查配额结果:", quotaResult);
+            // const quotaResult = { remainQuota: 9999 };
+            if (quotaResult.quota <= 0) {
                 const goToPricing = confirm(
                     "抱歉，一念职达AI本月的试用配额已用完，请升级会员方案~\n" +
                     "点击\"取消\"稍后再试，\n" +
@@ -1235,31 +1455,68 @@
             // 重新初始化高亮
             initHighlight();
 
+            // 锁定简历，防止填充过程中切换
+            isResumeLocked = true;
+            console.log("[startFilling] 简历已锁定");
+
             // 开始运行
             changeState("running");
 
             // TODO: 从fill.html获取表单数据
-            const company = "字节跳动"; // resumeWindow.querySelector("#company-name").value;
-            const position = "java"; // resumeWindow.querySelector("#position-name").value;
-            const resumeMd = resumeData?.resumeMd; // resumeWindow.querySelector("#resume-editor").value;
+            // 如果 resumeData 中没有公司名称，尝试重新获取
+            let company = resumeData?.company;
+            if (!company || company.trim() === '') {
+                company = getCurrentCompanyName();
+                console.log("[startFilling] resumeData中公司名称为空，重新获取:", company);
+            }
+            const position = resumeData?.position;
             const resumeId = resumeData?.resumeId;
+
+            console.log("[startFilling] 填充参数 - 公司:", company, "职位:", position, "简历ID:", resumeId);
 
             // 调用填充函数
             if (typeof window.runFillResume === 'function') {
-                window.runFillResume(company, position, resumeMd, resumeId, false, (result) => {
+                window.runFillResume(company, position, resumeId, false, (result) => {
                     console.log("[startFilling] 填充完成，结果:", result);
                     if (result.status === "success") {
                         changeState("success");
                         // 保存投递记录
                         saveApplicationRecord(company, position);
                     } else {
-                        changeState("error");
+                        // 处理错误情况
+                        console.error("[startFilling] 填充失败:", result);
+
+                        // 提取错误信息
+                        let errorMessage = "填充过程中发生错误";
+                        if (result.error) {
+                            errorMessage = result.error;
+                        } else if (result.message) {
+                            errorMessage = result.message;
+                        } else if (result.detail) {
+                            errorMessage = result.detail;
+                        }
+
+                        // 显示错误提示
+                        setStateText(`错误: ${errorMessage}`, "show");
+
+                        // 同时使用alert提示用户
+                        alert(`自动填充失败\n\n错误信息: ${errorMessage}\n\n请点击"刷新重试"按钮重新尝试`);
+
+                        // 更改状态为错误
+                        changeState("error", errorMessage);
                     }
+                    // 填充完成后解锁简历
+                    isResumeLocked = false;
+                    console.log("[startFilling] 填充完成，简历已解锁");
                 });
             } else {
                 console.error("[startFilling] window.runFillResume 函数未定义！");
-                alert("填充功能未加载，请刷新页面后重试");
-                changeState("error");
+                const errorMsg = "填充功能未加载，请刷新页面后重试";
+                alert(errorMsg);
+                setStateText(`错误: ${errorMsg}`, "show");
+                changeState("error", errorMsg);
+                // 发生错误时也要解锁
+                isResumeLocked = false;
             }
         } else if (fillState === "running") {
             // 暂停
@@ -1275,10 +1532,22 @@
     /**
      * 改变填充状态
      * @param {string} state - 新状态
+     * @param {string} errorMessage - 错误消息（仅在state为"error"时使用）
      */
-    function changeState(state) {
+    function changeState(state, errorMessage = null) {
         console.log(`[changeState] 状态变化: ${fillState} -> ${state}`);
+        if (errorMessage) {
+            console.log(`[changeState] 错误信息:`, errorMessage);
+        }
         fillState = state;
+
+        // 在结束状态时解锁简历
+        if (["ready", "success", "error", "quota"].includes(state)) {
+            if (isResumeLocked) {
+                isResumeLocked = false;
+                console.log(`[changeState] 状态变为${state}，简历已解锁`);
+            }
+        }
 
         // TODO: 根据fill.html的按钮实现状态变化
         const startButton = resumeWindowContainer?.querySelector(".liquid-cta-btn");
@@ -1318,7 +1587,7 @@
                 // 添加刷新按钮
                 let refreshBtn = buttonContainer?.querySelector('.refresh-btn');
                 if (!refreshBtn && buttonContainer) {
-                    refreshBtn = document.createElement('div');
+                    refreshBtn = document.createElement('button');
                     refreshBtn.className = 'refresh-btn';
                     refreshBtn.innerHTML = '<i class="fas fa-sync"></i> 刷新';
                     refreshBtn.style.cssText = `
@@ -1336,6 +1605,11 @@
                         transition: all 0.3s ease;
                         margin-left: 10px;
                         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                        border: none;
+                        outline: none;
+                        pointer-events: auto;
+                        z-index: 9999;
+                        position: relative;
                     `;
 
                     // 添加悬停效果
@@ -1348,25 +1622,98 @@
                         refreshBtn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
                     });
 
-                    refreshBtn.addEventListener('click', () => {
+                    // 刷新按钮点击事件 - 重置所有状态
+                    refreshBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
                         console.log("[changeState] 刷新按钮被点击，重置状态");
+
+                        // 移除刷新按钮
+                        refreshBtn.remove();
+
+                        // 重置填充状态
                         fillState = "ready";
+
+                        // 更新UI状态
                         changeState("ready");
+
+                        console.log("[changeState] 状态已重置为 ready");
                     });
 
                     buttonContainer.appendChild(refreshBtn);
+                    console.log("[changeState] 刷新按钮已添加到DOM");
                 }
                 console.log("[changeState] 按钮已更新为: 填充完成，已添加刷新按钮");
                 break;
             case "error":
-                startButton.innerHTML = '<i class="fas fa-bug"></i> 填充失败';
+                startButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 填充错误';
                 startButton.classList.remove("paused");
-                startButton.style.pointerEvents = "auto";
-                startButton.style.opacity = "1";
-                // 移除刷新按钮（如果存在）
-                const errorRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (errorRefreshBtn) errorRefreshBtn.remove();
-                console.log("[changeState] 按钮已更新为: 填充失败");
+                // 禁用错误按钮的点击
+                startButton.style.pointerEvents = "none";
+                startButton.style.opacity = "0.7";
+
+                // 添加刷新按钮
+                let errorRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (!errorRefreshBtn && buttonContainer) {
+                    errorRefreshBtn = document.createElement('button');
+                    errorRefreshBtn.className = 'refresh-btn';
+                    errorRefreshBtn.innerHTML = '<i class="fas fa-sync"></i> 刷新重试';
+                    errorRefreshBtn.style.cssText = `
+                        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                        color: white;
+                        padding: 12px 24px;
+                        border-radius: 18px;
+                        font-size: 13px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        transition: all 0.3s ease;
+                        margin-left: 10px;
+                        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+                        border: none;
+                        outline: none;
+                        pointer-events: auto;
+                        z-index: 9999;
+                        position: relative;
+                    `;
+
+                    // 添加悬停效果
+                    errorRefreshBtn.addEventListener('mouseenter', () => {
+                        errorRefreshBtn.style.transform = 'translateY(-2px)';
+                        errorRefreshBtn.style.boxShadow = '0 6px 20px rgba(245, 87, 108, 0.6)';
+                    });
+                    errorRefreshBtn.addEventListener('mouseleave', () => {
+                        errorRefreshBtn.style.transform = 'translateY(0)';
+                        errorRefreshBtn.style.boxShadow = '0 4px 15px rgba(245, 87, 108, 0.4)';
+                    });
+
+                    // 刷新按钮点击事件 - 重置所有状态并重新填充
+                    errorRefreshBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        console.log("[changeState] 刷新按钮被点击，重置状态并重新填充");
+
+                        // 移除刷新按钮
+                        errorRefreshBtn.remove();
+
+                        // 重置填充状态
+                        fillState = "ready";
+
+                        // 更新UI状态
+                        changeState("ready");
+
+                        // 延迟一小段时间后自动开始填充
+                        setTimeout(() => {
+                            console.log("[changeState] 自动重新开始填充");
+                            startFilling();
+                        }, 300);
+                    });
+
+                    buttonContainer.appendChild(errorRefreshBtn);
+                    console.log("[changeState] 错误刷新按钮已添加到DOM");
+                }
+                console.log("[changeState] 按钮已更新为: 填充错误，已添加刷新按钮");
                 break;
             case "quota":
                 startButton.innerHTML = '<i class="fas fa-charging-station"></i> 配额已用完';
@@ -1568,24 +1915,63 @@
     }
 
     /**
+     * 发送GET API请求
+     * @param {string} endpoint - API端点
+     * @param {Object} params - 查询参数
+     * @param {boolean} useResumeApi - 是否使用简历API路径（默认false使用autofill路径）
+     * @returns {Promise<Object>} 响应数据
+     */
+    async function apiRequestForGet(endpoint, params = {}, useResumeApi = false) {
+        try {
+            // 根据参数选择API基础路径
+            const baseUrl = useResumeApi ? window.config.API_RESUME_URL : window.config.API_BASE_URL;
+
+            // 将params转换为URL查询字符串
+            let url = `${baseUrl}${endpoint}`;
+            if (params && Object.keys(params).length > 0) {
+                const queryString = new URLSearchParams(params).toString();
+                url += `?${queryString}`;
+            }
+
+            console.log("[apiRequestForGet] 请求URL:", url);
+
+            const response = await fetchWithJwt(url, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            return response;
+        } catch (error) {
+            console.error("[apiRequestForGet] 请求失败:", error);
+            return { status: "error", detail: error.message || "未知错误" };
+        }
+    }
+
+    /**
      * 带JWT的请求
      * @param {string} url - 请求URL
      * @param {Object} options - 请求选项
      */
     async function fetchWithJwt(url, options = {}) {
         try {
+            console.log("[fetchWithJwt] 发送请求到background:", { url, options });
+
             const response = await chrome.runtime.sendMessage({
                 type: "fetchWithJwt",
                 url: url,
                 options: options
             });
 
+            console.log("[fetchWithJwt] 收到background响应:", response);
+
             if (response.error) {
+                console.error("[fetchWithJwt] 请求返回错误:", response.error);
                 throw new Error(response.error);
             }
 
             return response;
         } catch (error) {
+            console.error("[fetchWithJwt] 捕获到异常:", error);
             throw error;
         }
     }
@@ -1661,6 +2047,316 @@
      */
     function showVersionNotification() {
         // TODO: 实现版本通知逻辑
+    }
+
+    // ============================================================================
+    // 简历数据管理
+    // ============================================================================
+
+    let resumeList = []; // 简历列表
+    let currentResumeIndex = 0; // 当前选中的简历索引
+    let isResumeLocked = false; // 简历锁定状态（填充过程中锁定，防止切换）
+
+    /**
+     * 获取简历列表
+     * @returns {Promise<Array>} 简历列表
+     */
+    async function getResumeList() {
+        try {
+            // todo 简历接口
+            // 调用后端API获取简历列表
+            const response = await apiRequestForGet("resume/list", {}, false);
+            console.log("[getResumeList] API响应数据:", response);
+
+            // 检查响应是否成功，并且有列表数据
+            if (response && response.success && response.list && Array.isArray(response.list)) {
+                const processedList = processResumeList(response.list);
+                console.log("[getResumeList] 处理后的简历列表:", processedList);
+                return processedList;
+            }
+
+            console.warn("[getResumeList] API响应格式不正确或无数据");
+            return [];
+        } catch (error) {
+            console.error("[getResumeList] 获取简历列表失败:", error);
+            console.error("[getResumeList] 错误详情:", error.message);
+            return [];
+        }
+    }
+
+    /**
+     * 处理简历列表数据
+     * @param {Array} list - 原始简历列表
+     * @returns {Array} 处理后的简历列表
+     */
+    function processResumeList(list) {
+        return list.map((resume, index) => {
+            // 处理coreSkills - 从JSON字符串转换为逗号分隔的字符串
+            let coreSkillsText = '';
+            if (resume.coreSkills) {
+                try {
+                    const skillsArray = JSON.parse(resume.coreSkills);
+                    if (Array.isArray(skillsArray)) {
+                        coreSkillsText = skillsArray.join(', ');
+                    }
+                } catch (e) {
+                    coreSkillsText = resume.coreSkills;
+                }
+            }
+
+            // 处理毕业年份 - 只显示年份
+            let graduationYearText = '';
+            if (resume.graduationYear) {
+                const year = resume.graduationYear.split('-')[0];
+                graduationYearText = year;
+            }
+
+            // 如果没有resumeName，生成一个默认名称
+            const resumeName = resume.resumeName || `简历 ${index + 1}`;
+
+            return {
+                id: resume.id,
+                name: resume.name || '未命名',
+                resumeName: resumeName,
+                school: resume.school || '',
+                educationDegreeText: resume.educationDegreeText || '',
+                major: resume.major || '',
+                graduationYear: graduationYearText,
+                phone: resume.phone || '',
+                email: resume.email || '',
+                jobIntention: resume.jobIntention || '',
+                expectedCity: resume.expectedCity || '',
+                coreSkills: coreSkillsText
+            };
+        });
+    }
+
+    /**
+     * 获取当前选中的简历
+     * @returns {Object|null} 当前简历对象
+     */
+    function getCurrentResume() {
+        if (resumeList.length === 0) return null;
+        return resumeList[currentResumeIndex] || null;
+    }
+
+    /**
+     * 切换到下一个简历
+     */
+    function switchToNextResume() {
+        if (resumeList.length === 0) return;
+
+        // 检查简历是否被锁定
+        if (isResumeLocked) {
+            console.warn("[switchToNextResume] 简历已锁定，无法切换");
+            alert("填充正在进行中，无法切换简历！\n请等待填充完成或取消填充后再切换。");
+            return;
+        }
+
+        currentResumeIndex = (currentResumeIndex + 1) % resumeList.length;
+        console.log(`[switchToNextResume] 切换到简历 ${currentResumeIndex + 1}/${resumeList.length}`);
+        renderResumeData();
+    }
+
+    /**
+     * 切换到上一个简历
+     */
+    function switchToPrevResume() {
+        if (resumeList.length === 0) return;
+
+        // 检查简历是否被锁定
+        if (isResumeLocked) {
+            console.warn("[switchToPrevResume] 简历已锁定，无法切换");
+            alert("填充正在进行中，无法切换简历！\n请等待填充完成或取消填充后再切换。");
+            return;
+        }
+
+        currentResumeIndex = (currentResumeIndex - 1 + resumeList.length) % resumeList.length;
+        console.log(`[switchToPrevResume] 切换到简历 ${currentResumeIndex + 1}/${resumeList.length}`);
+        renderResumeData();
+    }
+
+    /**
+     * 渲染简历数据到UI
+     */
+    function renderResumeData() {
+        if (!resumeWindowContainer) {
+            console.warn("[renderResumeData] 容器未初始化");
+            return;
+        }
+
+        const resume = getCurrentResume();
+        if (!resume) {
+            console.warn("[renderResumeData] 没有可用的简历数据");
+            return;
+        }
+
+        console.log("[renderResumeData] 开始渲染简历数据:", resume);
+
+        // 更新姓名 (resume-name)
+        const resumeNameEl = resumeWindowContainer.querySelector('.resume-name');
+        if (resumeNameEl) {
+            resumeNameEl.textContent = resume.name || '未命名';
+        }
+
+        // 更新简历名称 (resume-type)
+        const resumeType = resumeWindowContainer.querySelector('.resume-type');
+        if (resumeType) {
+            resumeType.textContent = resume.resumeName || '未命名简历';
+        }
+
+        // 更新简历字段映射（根据真实API数据）
+        const fieldMapping = {
+            '学校': 'school',
+            '学历': 'educationDegreeText',
+            '专业': 'major',
+            '毕业年份': 'graduationYear',
+            '手机': 'phone',
+            '邮箱': 'email',
+            '意向岗位': 'jobIntention',
+            '期望城市': 'expectedCity',
+            '核心技能': 'coreSkills'
+        };
+
+        // 遍历所有info-cell
+        const infoCells = resumeWindowContainer.querySelectorAll('.info-cell');
+        infoCells.forEach(cell => {
+            const label = cell.querySelector('.info-cell-label');
+            const value = cell.querySelector('.info-cell-value');
+
+            if (label && value) {
+                const labelText = label.textContent.trim();
+                const fieldKey = fieldMapping[labelText];
+
+                if (fieldKey && resume[fieldKey]) {
+                    value.textContent = resume[fieldKey];
+                } else if (fieldKey && !resume[fieldKey]) {
+                    // 如果字段为空，显示默认提示
+                    value.textContent = '-';
+                }
+            }
+        });
+
+        // 更新下一个简历的预览
+        updateNextResumePreview();
+
+        // 通知content.js更新当前简历ID
+        if (typeof window.updateCurrentResumeId === 'function') {
+            window.updateCurrentResumeId(resume.id);
+        }
+
+        // 更新全局resumeData对象，绑定选中的简历数据
+        const companyName = getCurrentCompanyName();
+        resumeData = {
+            status: "ok",
+            detail: resume.id,
+            resumeId: resume.id,
+            company: companyName || '',
+            position: resume.jobIntention || '',
+            name: resume.name || '',
+            resumeName: resume.resumeName || '',
+            school: resume.school || '',
+            educationDegreeText: resume.educationDegreeText || '',
+            major: resume.major || '',
+            graduationYear: resume.graduationYear || '',
+            phone: resume.phone || '',
+            email: resume.email || '',
+            jobIntention: resume.jobIntention || '',
+            expectedCity: resume.expectedCity || '',
+            coreSkills: resume.coreSkills || ''
+        };
+
+        console.log("[renderResumeData] 简历数据渲染完成，简历ID:", resume.id);
+        console.log("[renderResumeData] resumeData已更新:", resumeData);
+    }
+
+    /**
+     * 更新下一个简历的预览
+     */
+    function updateNextResumePreview() {
+        if (!resumeWindowContainer) return;
+
+        // 更新切换提示文字（始终更新）
+        const tooltip = resumeWindowContainer.querySelector('.switch-tooltip');
+        if (tooltip) {
+            tooltip.textContent = `切换下一份简历`;
+        }
+
+        // 只有多个简历时才更新预览内容
+        if (resumeList.length <= 1) return;
+
+        const nextIndex = (currentResumeIndex + 1) % resumeList.length;
+        const nextResume = resumeList[nextIndex];
+
+        const nextPage = resumeWindowContainer.querySelector('.resume-page-next');
+        if (nextPage && nextResume) {
+            // 更新提示文字
+            const nextTitle = nextPage.querySelector('div[style*="text-align:right"]');
+            if (nextTitle) {
+                nextTitle.textContent = nextResume.resumeName || '简历 B';
+            }
+        }
+    }
+
+    /**
+     * 初始化简历数据
+     */
+    async function initResumeData() {
+        try {
+            console.log("[initResumeData] 开始初始化简历数据");
+
+            // 获取简历列表
+            resumeList = await getResumeList();
+
+            if (resumeList.length === 0) {
+                console.warn("[initResumeData] 没有可用的简历数据");
+                return;
+            }
+
+            // 重置索引
+            currentResumeIndex = 0;
+
+            // 渲染简历数据
+            renderResumeData();
+
+            // 绑定简历切换事件
+            bindResumeSwitchEvents();
+
+            console.log(`[initResumeData] 简历数据初始化完成，共 ${resumeList.length} 份简历`);
+        } catch (error) {
+            console.error("[initResumeData] 初始化简历数据失败:", error);
+        }
+    }
+
+    /**
+     * 绑定简历切换事件
+     */
+    function bindResumeSwitchEvents() {
+        if (!resumeWindowContainer) return;
+
+        const bookWrapper = resumeWindowContainer.querySelector('.book-wrapper');
+        if (bookWrapper) {
+            // 移除旧的事件监听器
+            const newBookWrapper = bookWrapper.cloneNode(true);
+            bookWrapper.parentNode.replaceChild(newBookWrapper, bookWrapper);
+
+            // 绑定新的点击事件
+            newBookWrapper.addEventListener('click', (e) => {
+                // 检查点击目标是否是编辑简历按钮或其子元素
+                const editBtn = e.target.closest('.edit-resume-btn');
+                if (editBtn) {
+                    console.log("[bindResumeSwitchEvents] 点击了编辑按钮，不触发切换");
+                    return;
+                }
+
+                // 只有在有多份简历时才切换
+                if (resumeList.length > 1) {
+                    switchToNextResume();
+                }
+            });
+
+            console.log("[bindResumeSwitchEvents] 简历切换事件已绑定");
+        }
     }
 
     // ============================================================================
@@ -1893,6 +2589,228 @@
         };
     }
 
+    /**
+     * 获取当前网站的公司名称
+     * 从页面URL、页面标题或DOM元素中提取公司名称
+     * 支持主流招聘网站：Boss直聘、前程无忧、智联招聘、拉勾网、猎聘等
+     *
+     * 降级策略：如果无法从页面提取公司名称，则使用当前网站域名作为公司名称
+     *
+     * @returns {string} 公司名称，优先返回提取的名称，其次返回域名（去除www和端口号）
+     */
+    function getCurrentCompanyName() {
+        try {
+            const url = window.location.href;
+            const hostname = window.location.hostname;
+
+            console.log("[getCurrentCompanyName] 当前URL:", url);
+            console.log("[getCurrentCompanyName] 域名:", hostname);
+
+            let companyName = '';
+
+            // ========================================
+            // 针对不同招聘网站使用特定的提取策略
+            // ========================================
+
+            // Boss直聘 (www.zhipin.com)
+            if (hostname.includes('zhipin.com')) {
+                console.log("[getCurrentCompanyName] 检测到Boss直聘");
+                const selectors = [
+                    '.company-name a',
+                    '.sider-company .company-name',
+                    '.job-company-name',
+                    'h3.name',
+                    'a[ka="job-detail-company"]',
+                    '.info-company h3.name'
+                ];
+                companyName = trySelectorsInOrder(selectors);
+            }
+
+            // 前程无忧/51job (www.51job.com)
+            else if (hostname.includes('51job.com')) {
+                console.log("[getCurrentCompanyName] 检测到前程无忧");
+                const selectors = [
+                    '.cname a',
+                    '.tCompany a',
+                    '.companyName',
+                    'p.cname a',
+                    '.cn a'
+                ];
+                companyName = trySelectorsInOrder(selectors);
+            }
+
+            // 智联招聘 (www.zhaopin.com)
+            else if (hostname.includes('zhaopin.com')) {
+                console.log("[getCurrentCompanyName] 检测到智联招聘");
+                const selectors = [
+                    '.company__title',
+                    'a.company-text',
+                    '.companyInfo h3 a',
+                    '.company-info__name',
+                    'h3.company a'
+                ];
+                companyName = trySelectorsInOrder(selectors);
+            }
+
+            // 拉勾网 (www.lagou.com)
+            else if (hostname.includes('lagou.com')) {
+                console.log("[getCurrentCompanyName] 检测到拉勾网");
+                const selectors = [
+                    '.job-name .company',
+                    '.company-name a',
+                    'em.b2',
+                    '#job_company .c_feature_name',
+                    '.position-head .company a'
+                ];
+                companyName = trySelectorsInOrder(selectors);
+            }
+
+            // 猎聘 (www.liepin.com)
+            else if (hostname.includes('liepin.com')) {
+                console.log("[getCurrentCompanyName] 检测到猎聘");
+                const selectors = [
+                    '.company-name a',
+                    '.job-info .company-name',
+                    '.company-logo a',
+                    'p.company-name a',
+                    '.job-apply-content .name'
+                ];
+                companyName = trySelectorsInOrder(selectors);
+            }
+
+            // 脉脉 (maimai.cn)
+            else if (hostname.includes('maimai.cn')) {
+                console.log("[getCurrentCompanyName] 检测到脉脉");
+                const selectors = [
+                    '.company-name',
+                    '.company-info-name',
+                    '.job-cpy-name'
+                ];
+                companyName = trySelectorsInOrder(selectors);
+            }
+
+            // ========================================
+            // 通用提取策略（适用于其他招聘网站）
+            // ========================================
+            else {
+                console.log("[getCurrentCompanyName] 使用通用提取策略");
+                const generalSelectors = [
+                    '.company-name',
+                    '.company',
+                    '.job-company',
+                    '.employer-name',
+                    '[class*="company-name"]',
+                    '[class*="companyName"]',
+                    '[class*="company_name"]',
+                    '[data-company]',
+                    'h1.company',
+                    'h2.company',
+                    'h3.company',
+                    '.job-company-name'
+                ];
+                companyName = trySelectorsInOrder(generalSelectors);
+
+                // 尝试从页面标题提取
+                if (!companyName) {
+                    const title = document.title;
+                    console.log("[getCurrentCompanyName] 尝试从标题提取:", title);
+
+                    // 常见格式: "职位名称-公司名称-招聘网站"
+                    const titleParts = title.split(/[-_|]/);
+                    if (titleParts.length >= 2) {
+                        companyName = titleParts[1].trim();
+                        console.log("[getCurrentCompanyName] 从标题提取到公司名称:", companyName);
+                    }
+                }
+
+                // 尝试从URL参数提取
+                if (!companyName) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const companyParam = urlParams.get('company') ||
+                                       urlParams.get('companyName') ||
+                                       urlParams.get('employer') ||
+                                       urlParams.get('co');
+                    if (companyParam) {
+                        companyName = decodeURIComponent(companyParam);
+                        console.log("[getCurrentCompanyName] 从URL参数提取到公司名称:", companyName);
+                    }
+                }
+            }
+
+            // ========================================
+            // 清理和验证公司名称
+            // ========================================
+            if (companyName) {
+                // 清理公司名称：去除多余空格、换行符等
+                companyName = companyName
+                    .replace(/\s+/g, ' ')  // 多个空格替换为单个空格
+                    .replace(/[\r\n\t]/g, '') // 去除换行和制表符
+                    .trim();
+
+                // 验证公司名称是否有效（长度合理，不是纯数字或特殊字符）
+                if (companyName.length > 0 && companyName.length <= 100 && !/^[\d\s\-_]+$/.test(companyName)) {
+                    console.log("[getCurrentCompanyName] ✓ 成功获取公司名称:", companyName);
+                    return companyName;
+                }
+            }
+
+            // ========================================
+            // 降级策略：使用当前网站域名
+            // ========================================
+            console.warn("[getCurrentCompanyName] ⚠ 无法获取有效的公司名称，使用域名作为降级方案");
+
+            // 清理域名：去除 www. 前缀和端口号
+            let fallbackName = hostname
+                .replace(/^www\./i, '')  // 去除 www. 前缀
+                .replace(/:\d+$/, '')    // 去除端口号
+                .trim();
+
+            console.log("[getCurrentCompanyName] ✓ 使用域名作为公司名称:", fallbackName);
+            return fallbackName;
+
+        } catch (error) {
+            console.error("[getCurrentCompanyName] ✗ 获取公司名称时出错:", error);
+
+            // 即使出错也尝试返回域名
+            try {
+                const fallbackName = window.location.hostname
+                    .replace(/^www\./i, '')
+                    .replace(/:\d+$/, '')
+                    .trim();
+                console.log("[getCurrentCompanyName] ✓ 异常处理：使用域名作为公司名称:", fallbackName);
+                return fallbackName;
+            } catch (err) {
+                console.error("[getCurrentCompanyName] ✗ 无法获取域名:", err);
+                return '';
+            }
+        }
+    }
+
+    /**
+     * 按顺序尝试多个选择器，返回第一个有效的文本内容
+     * @param {string[]} selectors - 选择器数组
+     * @returns {string} 提取到的文本，如果都失败则返回空字符串
+     */
+    function trySelectorsInOrder(selectors) {
+        for (const selector of selectors) {
+            try {
+                const element = document.querySelector(selector);
+                if (element) {
+                    const text = element.textContent || element.innerText;
+                    if (text && text.trim()) {
+                        const cleanText = text.trim();
+                        console.log(`[trySelectorsInOrder] 选择器 "${selector}" 找到内容:`, cleanText);
+                        return cleanText;
+                    }
+                }
+            } catch (err) {
+                console.warn(`[trySelectorsInOrder] 选择器 "${selector}" 出错:`, err.message);
+            }
+        }
+        console.log("[trySelectorsInOrder] 所有选择器都未找到有效内容");
+        return '';
+    }
+
     // ============================================================================
     // 全局API暴露
     // ============================================================================
@@ -1918,6 +2836,11 @@
      * 格式化显示时间
      */
     window.formatDisplayTime = formatDisplayTime;
+
+    /**
+     * 获取当前网站的公司名称（暴露到全局以便调试）
+     */
+    window.getCurrentCompanyName = getCurrentCompanyName;
 
     /**
      * 绑定美化后的简历

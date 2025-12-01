@@ -46,7 +46,9 @@
         "popup/styles/common.css",
         "popup/styles/fill.css",
         "popup/scripts/transitions.js",
+        "popup/scripts/statusPopup.js",
         "case/css/resumeInterface.css",
+        "case/data/简历列表数据.json",
         "icons/icon128.png",
         "test_data/resume.md"
       ]
