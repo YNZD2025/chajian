@@ -635,11 +635,16 @@
         if (pageHtml === 'fill.html') {
             const fillBtn = resumeWindowContainer.querySelector(".liquid-cta-btn");
             if (fillBtn) {
-                fillBtn.addEventListener("click", () => {
+                // 使用克隆节点移除旧的事件监听器，防止重复绑定
+                const newFillBtn = fillBtn.cloneNode(true);
+                fillBtn.parentNode.replaceChild(newFillBtn, fillBtn);
+
+                // 绑定新的事件监听器
+                newFillBtn.addEventListener("click", () => {
                     console.log("一键智能填充按钮被点击");
                     startFilling();
                 });
-                console.log("✓ 填充按钮事件已绑定");
+                console.log("✓ 填充按钮事件已绑定（已移除旧事件）");
             }
         }
 
@@ -666,18 +671,8 @@
 
         // history.html - 投递记录页面
         if (pageHtml === 'history.html') {
-            const viewBtns = resumeWindowContainer.querySelectorAll(".view-btn");
-            if (viewBtns.length > 0) {
-                viewBtns.forEach((btn, index) => {
-                    btn.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log(`查看按钮被点击 (记录 ${index + 1})`);
-                        // TODO: 实现查看详情功能
-                    });
-                });
-                console.log(`✓ ${viewBtns.length} 个查看按钮事件已绑定`);
-            }
+            // 加载并渲染投递记录
+            loadApplicationRecords();
         }
 
         // 绑定右上角设置按钮（或关闭按钮）
@@ -696,10 +691,12 @@
                 // 判断按钮图标类型
                 const icon = settingsBtn.querySelector('i');
                 if (icon && icon.classList.contains('fa-times')) {
-                    // 关闭图标 - 不执行任何操作（settings页面的返回按钮）
-                    console.log("关闭按钮（不执行任何操作）");
+                    // 关闭图标 - 关闭整个窗口
+                    console.log("关闭按钮 - 关闭窗口");
+                    toggleWindow(false);
                 } else {
                     // 设置图标 - 跳转到设置页面
+                    console.log("设置按钮 - 跳转到设置页面");
                     navigateToPage('settings.html');
                 }
             });
@@ -940,17 +937,30 @@
             }
         });
 
-        // 绑定一键智能填充按钮
-        const fillBtn = resumeWin.querySelector(".liquid-cta-btn");
-        if (fillBtn) {
-            fillBtn.addEventListener("click", () => {
-                console.log("一键智能填充按钮被点击");
-                startFilling();
+        // 注意：填充按钮的绑定已在 bindPageSpecificEvents('fill.html') 中处理
+        // 这里不需要重复绑定，否则会导致点击一次触发两次事件
+
+        // 绑定点击窗口外部关闭功能
+        if (resumeWindowContainer) {
+            resumeWindowContainer.addEventListener("click", (e) => {
+                // 如果点击的是容器本身（而不是窗口内容），则关闭窗口
+                if (e.target === resumeWindowContainer) {
+                    console.log("点击窗口外部，关闭窗口");
+                    toggleWindow(false);
+                }
             });
         }
 
-        // TODO: 绑定关闭按钮 - 暂未实现
-        // const closeBtn = resumeWin.querySelector("#close-window");
+        // 绑定ESC键关闭窗口
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && resumeWindowContainer && resumeWindowContainer.style.display === "block") {
+                console.log("按下ESC键，关闭窗口");
+                toggleWindow(false);
+            }
+        });
+
+        // 绑定初始页面（fill.html）的特定事件（包括关闭按钮）
+        bindPageSpecificEvents('fill.html');
 
         // TODO: 绑定简历头部区域点击 - 暂未实现
         // const header = resumeWin.querySelector(".resume-header");
@@ -1186,7 +1196,12 @@
      * 开始填充流程
      */
     async function startFilling() {
-        if (editorState !== "success") return;
+        console.log(`[startFilling] 当前状态: ${fillState}, 编辑器状态: ${editorState}`);
+
+        if (editorState !== "success") {
+            console.log("[startFilling] 编辑器未就绪，退出");
+            return;
+        }
 
         // 检查是否可以开始
         if (!canStart()) {
@@ -1198,10 +1213,11 @@
 
         // 只有在特定状态下才能开始
         if (["ready", "success", "error", "quota"].includes(fillState)) {
+            console.log("[startFilling] 开始新的填充流程");
             // todo 检查配额接口
             // 检查配额
             // const quotaResult = await apiRequest("getQuota", {});
-            const quotaResult = 9999;
+            const quotaResult = { remainQuota: 9999 };
             if (quotaResult.remainQuota <= 0) {
                 const goToPricing = confirm(
                     "抱歉，一念职达AI本月的试用配额已用完，请升级会员方案~\n" +
@@ -1229,18 +1245,29 @@
             const resumeId = resumeData?.resumeId;
 
             // 调用填充函数
-            window.runFillResume(company, position, resumeMd, resumeId, false, (result) => {
-                if (result.status === "success") {
-                    changeState("success");
-                } else {
-                    changeState("error");
-                }
-            });
+            if (typeof window.runFillResume === 'function') {
+                window.runFillResume(company, position, resumeMd, resumeId, false, (result) => {
+                    console.log("[startFilling] 填充完成，结果:", result);
+                    if (result.status === "success") {
+                        changeState("success");
+                        // 保存投递记录
+                        saveApplicationRecord(company, position);
+                    } else {
+                        changeState("error");
+                    }
+                });
+            } else {
+                console.error("[startFilling] window.runFillResume 函数未定义！");
+                alert("填充功能未加载，请刷新页面后重试");
+                changeState("error");
+            }
         } else if (fillState === "running") {
             // 暂停
+            console.log("[startFilling] 暂停填充");
             changeState("pause");
         } else if (fillState === "pause") {
             // 继续
+            console.log("[startFilling] 继续填充");
             changeState("running");
         }
     }
@@ -1250,35 +1277,125 @@
      * @param {string} state - 新状态
      */
     function changeState(state) {
+        console.log(`[changeState] 状态变化: ${fillState} -> ${state}`);
         fillState = state;
 
         // TODO: 根据fill.html的按钮实现状态变化
-        const startButton = resumeWindow.querySelector(".liquid-cta-btn");
-        if (!startButton) return;
+        const startButton = resumeWindowContainer?.querySelector(".liquid-cta-btn");
+        if (!startButton) {
+            console.warn("[changeState] 未找到填充按钮");
+            return;
+        }
+
+        const buttonContainer = startButton.parentElement;
 
         switch (state) {
             case "running":
                 startButton.innerHTML = '<i class="fas fa-pause"></i> 暂停填充';
                 startButton.classList.add("paused");
+                startButton.style.pointerEvents = "auto";
+                // 移除刷新按钮（如果存在）
+                const runningRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (runningRefreshBtn) runningRefreshBtn.remove();
+                console.log("[changeState] 按钮已更新为: 暂停填充");
                 break;
             case "pause":
                 startButton.innerHTML = '<i class="fas fa-play"></i> 继续填充';
                 startButton.classList.remove("paused");
+                startButton.style.pointerEvents = "auto";
+                // 移除刷新按钮（如果存在）
+                const pauseRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (pauseRefreshBtn) pauseRefreshBtn.remove();
+                console.log("[changeState] 按钮已更新为: 继续填充");
                 break;
             case "success":
                 startButton.innerHTML = '<i class="fas fa-calendar-check"></i> 填充完成';
                 startButton.classList.remove("paused");
+                // 禁用填充完成按钮的点击
+                startButton.style.pointerEvents = "none";
+                startButton.style.opacity = "0.7";
+
+                // 添加刷新按钮
+                let refreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (!refreshBtn && buttonContainer) {
+                    refreshBtn = document.createElement('div');
+                    refreshBtn.className = 'refresh-btn';
+                    refreshBtn.innerHTML = '<i class="fas fa-sync"></i> 刷新';
+                    refreshBtn.style.cssText = `
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 12px 24px;
+                        border-radius: 18px;
+                        font-size: 13px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        transition: all 0.3s ease;
+                        margin-left: 10px;
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                    `;
+
+                    // 添加悬停效果
+                    refreshBtn.addEventListener('mouseenter', () => {
+                        refreshBtn.style.transform = 'translateY(-2px)';
+                        refreshBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+                    });
+                    refreshBtn.addEventListener('mouseleave', () => {
+                        refreshBtn.style.transform = 'translateY(0)';
+                        refreshBtn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+                    });
+
+                    refreshBtn.addEventListener('click', () => {
+                        console.log("[changeState] 刷新按钮被点击，重置状态");
+                        fillState = "ready";
+                        changeState("ready");
+                    });
+
+                    buttonContainer.appendChild(refreshBtn);
+                }
+                console.log("[changeState] 按钮已更新为: 填充完成，已添加刷新按钮");
                 break;
             case "error":
                 startButton.innerHTML = '<i class="fas fa-bug"></i> 填充失败';
                 startButton.classList.remove("paused");
+                startButton.style.pointerEvents = "auto";
+                startButton.style.opacity = "1";
+                // 移除刷新按钮（如果存在）
+                const errorRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (errorRefreshBtn) errorRefreshBtn.remove();
+                console.log("[changeState] 按钮已更新为: 填充失败");
                 break;
             case "quota":
                 startButton.innerHTML = '<i class="fas fa-charging-station"></i> 配额已用完';
                 startButton.classList.remove("paused");
+                startButton.style.pointerEvents = "auto";
+                startButton.style.opacity = "1";
+                // 移除刷新按钮（如果存在）
+                const quotaRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (quotaRefreshBtn) quotaRefreshBtn.remove();
+                console.log("[changeState] 按钮已更新为: 配额已用完");
                 break;
             case "learning":
                 startButton.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> 学习中';
+                startButton.style.pointerEvents = "auto";
+                startButton.style.opacity = "1";
+                // 移除刷新按钮（如果存在）
+                const learningRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (learningRefreshBtn) learningRefreshBtn.remove();
+                console.log("[changeState] 按钮已更新为: 学习中");
+                break;
+            default:
+                console.log("[changeState] 按钮已更新为: 一键智能填充");
+                startButton.innerHTML = '<i class="fas fa-bolt"></i> 一键智能填充';
+                startButton.classList.remove("paused");
+                startButton.style.pointerEvents = "auto";
+                startButton.style.opacity = "1";
+                // 移除刷新按钮（如果存在）
+                const defaultRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
+                if (defaultRefreshBtn) defaultRefreshBtn.remove();
                 break;
         }
     }
@@ -1547,6 +1664,172 @@
     }
 
     // ============================================================================
+    // 投递记录管理
+    // ============================================================================
+
+    /**
+     * 保存投递记录
+     * @param {string} company - 公司名称
+     * @param {string} position - 岗位名称
+     */
+    async function saveApplicationRecord(company, position) {
+        try {
+            const record = {
+                position: position,
+                company: company,
+                time: formatDateTime(new Date()),
+                url: window.location.href
+            };
+
+            console.log("[saveApplicationRecord] 保存投递记录:", record);
+
+            // 从本地存储读取现有记录
+            const { applicationRecords = [] } = await chrome.storage.local.get(['applicationRecords']);
+
+            // 添加新记录到数组开头（最新的在前面）
+            applicationRecords.unshift(record);
+
+            // 限制最多保存100条记录
+            if (applicationRecords.length > 100) {
+                applicationRecords.pop();
+            }
+
+            // 保存到本地存储
+            await chrome.storage.local.set({ applicationRecords });
+
+            console.log("[saveApplicationRecord] 投递记录已保存，当前记录数:", applicationRecords.length);
+        } catch (error) {
+            console.error("[saveApplicationRecord] 保存投递记录失败:", error);
+        }
+    }
+
+    /**
+     * 获取投递记录列表
+     * @returns {Promise<Array>} 投递记录数组
+     */
+    async function getApplicationRecords() {
+        try {
+            const { applicationRecords = [] } = await chrome.storage.local.get(['applicationRecords']);
+            console.log("[getApplicationRecords] 读取到", applicationRecords.length, "条投递记录");
+            return applicationRecords;
+        } catch (error) {
+            console.error("[getApplicationRecords] 读取投递记录失败:", error);
+            return [];
+        }
+    }
+
+    /**
+     * 格式化日期时间为 yyyy-MM-dd HH:mm:ss
+     * @param {Date} date - 日期对象
+     * @returns {string} 格式化后的日期时间字符串
+     */
+    function formatDateTime(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    /**
+     * 格式化显示时间（简化版）
+     * @param {string} dateTimeStr - 完整时间字符串 yyyy-MM-dd HH:mm:ss
+     * @returns {string} 简化的时间字符串 yyyy/MM/dd HH:mm
+     */
+    function formatDisplayTime(dateTimeStr) {
+        if (!dateTimeStr) return '';
+
+        try {
+            // yyyy-MM-dd HH:mm:ss -> yyyy/MM/dd HH:mm
+            const parts = dateTimeStr.split(' ');
+            const datePart = parts[0].replace(/-/g, '/');
+            const timePart = parts[1].substring(0, 5); // 只取 HH:mm
+            return `${datePart} ${timePart}`;
+        } catch (error) {
+            return dateTimeStr;
+        }
+    }
+
+    /**
+     * 加载并渲染投递记录列表
+     */
+    async function loadApplicationRecords() {
+        if (!resumeWindowContainer) return;
+
+        const container = resumeWindowContainer.querySelector(".plugin-content");
+        if (!container) {
+            console.error("[loadApplicationRecords] 未找到容器");
+            return;
+        }
+
+        try {
+            // 获取投递记录
+            const records = await getApplicationRecords();
+
+            // 清空容器
+            container.innerHTML = '';
+
+            if (records.length === 0) {
+                // 显示空状态
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; color: #ddd;"></i>
+                        <div style="font-size: 14px;">暂无投递记录</div>
+                        <div style="font-size: 12px; margin-top: 8px;">完成填充后将自动记录</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // 渲染记录列表
+            records.forEach((record, index) => {
+                const jobItem = document.createElement('div');
+                jobItem.className = 'job-item';
+                jobItem.innerHTML = `
+                    <div style="display:flex;align-items:center;">
+                        <div class="status-dot ${index === 0 ? '' : 'inactive'}"></div>
+                        <div>
+                            <div style="font-weight:600;font-size:13px;">${record.position} - ${record.company}</div>
+                            <div style="font-size:10px;color:#999;">${formatDisplayTime(record.time)}</div>
+                        </div>
+                    </div>
+                    <button class="view-btn" data-url="${record.url}">查看</button>
+                `;
+
+                container.appendChild(jobItem);
+            });
+
+            // 绑定查看按钮事件
+            const viewBtns = container.querySelectorAll(".view-btn");
+            viewBtns.forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const url = btn.getAttribute('data-url');
+                    if (url) {
+                        console.log("[loadApplicationRecords] 跳转到:", url);
+                        window.open(url, '_blank');
+                    }
+                });
+            });
+
+            console.log(`✓ 已加载 ${records.length} 条投递记录`);
+        } catch (error) {
+            console.error("[loadApplicationRecords] 加载投递记录失败:", error);
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: #f44336;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
+                    <div style="font-size: 14px;">加载失败</div>
+                    <div style="font-size: 12px; margin-top: 8px;">请刷新页面重试</div>
+                </div>
+            `;
+        }
+    }
+
+    // ============================================================================
     // 消息监听
     // ============================================================================
 
@@ -1627,6 +1910,16 @@
     };
 
     /**
+     * 获取投递记录
+     */
+    window.getApplicationRecords = getApplicationRecords;
+
+    /**
+     * 格式化显示时间
+     */
+    window.formatDisplayTime = formatDisplayTime;
+
+    /**
      * 绑定美化后的简历
      */
     window.bindBeautifyResume = function (data) {
@@ -1663,8 +1956,34 @@
      * 关闭高亮
      */
     window.closeHighlight = async function () {
+        console.log("[closeHighlight] 开始清除高亮");
         await delay(1000);
-        document.documentElement.style.setProperty("--highlight-enabled", "0");
+
+        // 清除所有高亮样式
+        try {
+            const highlightedElements = document.querySelectorAll('[class*="ark-color-"]');
+            console.log(`[closeHighlight] 找到 ${highlightedElements.length} 个高亮元素`);
+
+            for (const el of highlightedElements) {
+                // 移除所有 ark-color-* 类
+                const classes = Array.from(el.classList);
+                classes.forEach(className => {
+                    if (className.startsWith('ark-color-')) {
+                        el.classList.remove(className);
+                    }
+                });
+            }
+
+            // 移除高亮启用标志
+            document.documentElement.classList.remove('ark-highlight-enabled');
+
+            // 同时也设置 CSS 变量为 0（向后兼容）
+            document.documentElement.style.setProperty("--highlight-enabled", "0");
+
+            console.log("[closeHighlight] 高亮已清除");
+        } catch (error) {
+            console.error("[closeHighlight] 清除高亮失败:", error);
+        }
     };
 
     /**
