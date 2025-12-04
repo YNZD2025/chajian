@@ -2,6 +2,7 @@
    一念职达 - Chrome 插件弹窗共用样式
    ======================================== */
 
+/* CSS 变量定义 - 支持普通页面和 Shadow DOM */
 :root {
     /* --- 核心色板 --- */
     --primary: #57c5b6;
@@ -30,7 +31,33 @@
     --r-btn: 25px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+/* Shadow DOM 支持 */
+:host {
+    --primary: #57c5b6;
+    --primary-dark: #3a8e82;
+    --accent: #ff9a9e;
+    --text-main: #2d3436;
+    --text-gray: #636e72;
+    --bg-fluid: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
+    --glass-clear-bg: rgba(255, 255, 255, 0.35);
+    --glass-clear-blur: blur(12px);
+    --glass-clear-border: 1px solid rgba(255, 255, 255, 0.6);
+    --glass-clear-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    --card-white: rgba(255, 255, 255, 0.85);
+    --card-blur: blur(20px);
+    --card-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+    --r-card: 20px;
+    --r-btn: 25px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 
 body {
     background: var(--bg-fluid);
@@ -63,10 +90,12 @@ img {
     position: relative;
     display: flex;
     overflow: hidden;
-    border-radius: 0px;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    border: none;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
-    background: rgba(255, 255, 255, 0.1);
+    background: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
 }
 
 /* --- 侧边栏导航 --- */
@@ -80,7 +109,7 @@ img {
     padding: 30px 0;
     gap: 18px;
     flex-shrink: 0;
-    border-radius: 0 13px 13px 0;
+    border-radius: 20px;
     box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2);
 }
 
@@ -148,6 +177,10 @@ img {
     height: 100%;
     position: relative;
     overflow: hidden;
+    border-radius: 0 20px 20px 0;
+    background: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
 }
 
 /* --- 悬浮标题（玻璃效果） --- */

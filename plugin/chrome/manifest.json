@@ -9,7 +9,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_popup": "popup/fill.html",
+    "default_popup": "popup/profileMini.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -28,13 +28,16 @@
   "web_accessible_resources": [
     {
       "matches": [
-        "<all_urls>"
+        "http://*/*",
+        "https://*/*"
       ],
       "resources": [
         "popup/fill.html",
         "popup/profile.html",
         "popup/history.html",
         "popup/settings.html",
+        "popup/settingsMini.html",
+        "popup/profileMini.html",
         "popup/edit-resume.html",
         "popup/login.html",
         "popup/change-password.html",
@@ -45,8 +48,11 @@
         "popup/logo-small.png",
         "popup/styles/common.css",
         "popup/styles/fill.css",
+        "popup/styles/simple-icons.css",
         "popup/scripts/transitions.js",
         "popup/scripts/statusPopup.js",
+        "popup/scripts/settingsMini.js",
+        "popup/scripts/profileMini.js",
         "case/css/resumeInterface.css",
         "case/data/简历列表数据.json",
         "icons/icon128.png",
@@ -73,7 +79,7 @@
     "type": "module"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com data:;"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
   },
   "externally_connectable": {
     "matches": [
@@ -81,7 +87,8 @@
       "http://z6467e53.natappfree.cc/*",
       "http://localhost:*/*",
       "https://applymind.cn/*",
-      "http://g6fedde8.natappfree.cc/*"
+      "http://g6fedde8.natappfree.cc/*",
+      "https://test.applymind.cn/*"
     ]
   }
 }

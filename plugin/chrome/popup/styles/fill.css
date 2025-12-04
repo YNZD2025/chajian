@@ -7,9 +7,80 @@
 .book-wrapper:hover .switch-tooltip { opacity: 1; right: 0px; }
 .skeleton-block { height: 30px; background: #f0f0f0; border-radius: 8px; margin-bottom: 6px; }
 .skeleton-text { height: 6px; width: 60%; background: #eee; margin-bottom: 5px; border-radius: 3px; }
-.liquid-cta-container { position: absolute; bottom: 40px; left: 34px; right: 0; width: calc(100% - 70px); display: flex; justify-content: center; pointer-events: none; z-index: 40; }
-.liquid-cta-btn { pointer-events: auto; cursor: pointer; background: var(--glass-clear-bg); backdrop-filter: var(--glass-clear-blur); -webkit-backdrop-filter: var(--glass-clear-blur); box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25); border: 1px solid var(--accent); padding: 12px 25px; border-radius: 25px; color: var(--accent); font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-.liquid-cta-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.35); }
+.liquid-cta-container { position: absolute; bottom: 15px; left: 34px; right: 0; width: calc(100% - 70px); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; z-index: 40; }
+.liquid-cta-btn {
+  pointer-events: auto;
+  cursor: pointer;
+  background: var(--glass-clear-bg);
+  backdrop-filter: var(--glass-clear-blur);
+  -webkit-backdrop-filter: var(--glass-clear-blur);
+  box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25);
+  border: 1px solid var(--accent);
+  padding: 12px 20px;
+  border-radius: 25px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.liquid-cta-btn .btn-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.liquid-cta-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.35);
+}
+
+/* 按钮状态样式 */
+.liquid-cta-btn.btn-processing {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  border-color: #667eea;
+  color: #667eea;
+  animation: breathe 2s ease-in-out infinite;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+  min-width: 220px;
+  max-width: 95%;
+  font-size: 12px;
+}
+
+.liquid-cta-btn.btn-success {
+  background: linear-gradient(135deg, rgba(17, 153, 142, 0.2) 0%, rgba(56, 239, 125, 0.2) 100%);
+  border-color: #11998e;
+  color: #11998e;
+  box-shadow: 0 10px 40px rgba(17, 153, 142, 0.4);
+}
+
+.liquid-cta-btn.btn-error {
+  background: linear-gradient(135deg, rgba(235, 51, 73, 0.2) 0%, rgba(244, 92, 67, 0.2) 100%);
+  border-color: #eb3349;
+  color: #eb3349;
+  box-shadow: 0 10px 40px rgba(235, 51, 73, 0.4);
+  animation: shake 0.5s;
+}
+
+/* 呼吸动画 */
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
+  }
+}
 .task-card { background: white; border-radius: 16px; padding: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); flex-shrink: 0; height: 110px; display: flex; flex-direction: column; }
 .task-card h4 { margin-bottom: 8px; font-size: 12px; color: var(--text-main); display: flex; align-items: center; gap: 5px; }
 .task-card h4 i { color: var(--primary); font-size: 10px; }
@@ -30,65 +101,18 @@
 .info-cell-label { font-size: 8px; color: #999; margin-bottom: 2px; }
 .info-cell-value { color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* 悬浮按钮样式 */
-.float-status-button {
-  position: fixed;
-  bottom: 30px;
-  right: 100px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  z-index: 9998;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.float-status-button i {
-  color: white;
-  font-size: 22px;
-  transition: transform 0.3s ease;
-}
-
-.float-status-button:hover {
-  transform: scale(1.1) rotate(10deg);
-  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
-}
-
-.float-status-button:hover i {
-  transform: scale(1.1);
-}
-
-.float-status-button:active {
-  transform: scale(0.95);
-}
-
-/* 悬浮按钮脉动动画 */
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-  }
-  50% {
-    box-shadow: 0 4px 30px rgba(102, 126, 234, 0.7);
-  }
-}
-
 /* 状态弹窗样式 */
 .status-popup {
   position: fixed;
-  bottom: 95px;
-  right: 90px;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px) scale(0.95);
   width: 320px;
+  max-width: 90%;
   background: white;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   opacity: 0;
-  transform: translateY(20px) scale(0.95);
   transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   pointer-events: none;
   z-index: 9999;
@@ -97,7 +121,7 @@
 
 .status-popup.show {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0) scale(1);
   pointer-events: auto;
 }
 
@@ -197,6 +221,113 @@
   }
 }
 
+/* 状态消息类型样式 */
+.status-message.status-processing {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-left-color: #2196f3;
+}
+
+.status-message.status-processing::before {
+  background: linear-gradient(180deg, #2196f3 0%, #1976d2 100%);
+}
+
+.status-message.status-success {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-left-color: #4caf50;
+}
+
+.status-message.status-success::before {
+  background: linear-gradient(180deg, #4caf50 0%, #388e3c 100%);
+  animation: none;
+}
+
+.status-message.status-error {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  border-left-color: #f44336;
+}
+
+.status-message.status-error::before {
+  background: linear-gradient(180deg, #f44336 0%, #d32f2f 100%);
+  animation: none;
+}
+
+/* 按钮抖动动画 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* 状态展示框样式 */
+.status-display {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  animation: slideIn 0.3s ease-out;
+  max-width: 90%;
+}
+
+.status-display .status-icon {
+  font-size: 14px;
+  animation: spin 1s linear infinite;
+}
+
+.status-display .status-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+/* 状态展示框 - 成功状态 */
+.status-display.status-success {
+  background: linear-gradient(135deg, rgba(17, 153, 142, 0.95) 0%, rgba(56, 239, 125, 0.95) 100%);
+  box-shadow: 0 8px 25px rgba(17, 153, 142, 0.4);
+}
+
+.status-display.status-success .status-icon {
+  animation: none;
+}
+
+/* 状态展示框 - 错误状态 */
+.status-display.status-error {
+  background: linear-gradient(135deg, rgba(235, 51, 73, 0.95) 0%, rgba(244, 92, 67, 0.95) 100%);
+  box-shadow: 0 8px 25px rgba(235, 51, 73, 0.4);
+}
+
+.status-display.status-error .status-icon {
+  animation: none;
+}
+
+/* 滑入动画 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* 滚动条样式 */
 .status-popup-content::-webkit-scrollbar {
   width: 6px;
@@ -218,20 +349,8 @@
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-  .float-status-button {
-    right: 20px;
-    bottom: 20px;
-    width: 45px;
-    height: 45px;
-  }
-
-  .float-status-button i {
-    font-size: 20px;
-  }
-
   .status-popup {
-    right: 15px;
-    bottom: 75px;
+    bottom: 100px;
     width: calc(100vw - 30px);
     max-width: 320px;
   }

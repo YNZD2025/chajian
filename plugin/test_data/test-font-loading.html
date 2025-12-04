@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字体加载测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .icon-test {
+            font-size: 24px;
+            margin: 10px;
+        }
+        pre {
+            background: #333;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Font Awesome 加载测试</h1>
+
+    <div class="test-section">
+        <h2>1. 检查插件是否加载</h2>
+        <p id="extension-status">检测中...</p>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 测试图标显示</h2>
+        <div>
+            <i class="fas fa-heart icon-test"></i> fas fa-heart
+            <i class="fas fa-user icon-test"></i> fas fa-user
+            <i class="fas fa-cog icon-test"></i> fas fa-cog
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 控制台日志</h2>
+        <p>请打开浏览器控制台（F12）查看详细的加载信息</p>
+        <button onclick="showDebugInfo()">显示调试信息</button>
+        <pre id="debug-output">点击按钮显示调试信息</pre>
+    </div>
+
+    <script>
+        // 检查插件是否加载
+        setTimeout(() => {
+            const arkAi = document.getElementById('ark-ai');
+            const status = document.getElementById('extension-status');
+            if (arkAi) {
+                status.innerHTML = '✅ 插件已加载（找到 #ark-ai 元素）';
+            } else {
+                status.innerHTML = '❌ 插件未加载（未找到 #ark-ai 元素）';
+            }
+        }, 2000);
+
+        function showDebugInfo() {
+            const output = document.getElementById('debug-output');
+            const info = {
+                '页面URL': window.location.href,
+                '协议': window.location.protocol,
+                '主机': window.location.host,
+                '插件元素': document.getElementById('ark-ai') ? '存在' : '不存在',
+                '当前时间': new Date().toLocaleString()
+            };
+
+            let text = '调试信息:\n\n';
+            for (const [key, value] of Object.entries(info)) {
+                text += `${key}: ${value}\n`;
+            }
+
+            output.textContent = text;
+
+            // 打印到控制台
+            console.log('=== Font Awesome 加载测试 ===');
+            console.log(info);
+            console.log('请检查上方的日志，看是否有 Font Awesome 相关的加载信息');
+        }
+    </script>
+</body>
+</html>

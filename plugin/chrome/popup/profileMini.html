@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 一念职达</title>
+    <link rel="stylesheet" href="styles/simple-icons.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <style>
+        /* profileMini 页面专用样式 - 适配固定尺寸不滚动 */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .plugin-container {
+            width: 305px;
+            height: 575px;
+            overflow: hidden;
+        }
+
+        .main-area {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .liquid-close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-light);
+            transition: 0.2s;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .liquid-close:hover {
+            background: white;
+            color: var(--text-main);
+        }
+
+        .plugin-content {
+            flex: 1;
+            overflow: hidden;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 个人信息区 */
+        .profile-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-top: 10px;
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .profile-name {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .profile-status {
+            font-size: 9px;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
+
+        /* 简历卡片区 */
+        .book-wrapper {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            perspective: 1000px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .resume-page-next {
+            position: absolute;
+            top: 6px;
+            right: -8px;
+            width: 96%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 15px;
+            padding: 12px;
+            transform: rotate(3deg) translateZ(-10px);
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.05);
+            z-index: 1;
+            transition: transform 0.4s ease;
+            filter: blur(1px);
+            opacity: 0.8;
+            overflow: hidden;
+        }
+
+        .resume-page-current {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 15px;
+            padding: 12px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: -3px 6px 20px rgba(0,0,0,0.1);
+            z-index: 2;
+            transition: transform 0.4s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-wrapper:hover .resume-page-current {
+            transform: translateX(-15px) rotateY(-5deg);
+        }
+
+        .book-wrapper:hover .resume-page-next {
+            transform: rotate(1deg) translateZ(0);
+            filter: blur(0);
+            opacity: 1;
+        }
+
+        .switch-tooltip {
+            position: absolute;
+            right: 10px;
+            top: 20px;
+            background: var(--accent);
+            color: white;
+            font-size: 8px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .book-wrapper:hover .switch-tooltip {
+            opacity: 1;
+            right: 8px;
+        }
+
+        .skeleton-block {
+            height: 25px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+
+        .skeleton-text {
+            height: 6px;
+            width: 60%;
+            background: #eee;
+            margin-bottom: 5px;
+            border-radius: 3px;
+        }
+
+        .resume-header {
+            margin-bottom: 8px;
+        }
+
+        .resume-meta {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .resume-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .resume-type {
+            font-size: 9px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        /* 简历内容区域 - 使其占据剩余空间并可滚动 */
+        .info-grid-compact {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            padding-right: 3px;
+        }
+
+        .info-grid-compact::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .info-grid-compact::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        .info-grid-compact::-webkit-scrollbar-thumb:hover {
+            background: #ccc;
+        }
+
+        .info-cell {
+            background: rgba(0,0,0,0.02);
+            padding: 6px;
+            border-radius: 6px;
+        }
+
+        .info-cell-label {
+            font-size: 9px;
+            color: var(--text-light);
+            margin-bottom: 3px;
+        }
+
+        .info-cell-value {
+            font-size: 10px;
+            color: var(--text-main);
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        /* 底部按钮区 */
+        .bottom-buttons {
+            flex-shrink: 0;
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+            padding-top: 10px;
+            justify-content: center;
+        }
+
+        .btn-settings,
+        .btn-logout {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-settings {
+            color: var(--primary);
+        }
+
+        .btn-settings:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-logout {
+            color: var(--danger);
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(220,53,69,0.3);
+        }
+
+        /* 页脚 */
+        .plugin-footer {
+            flex-shrink: 0;
+            text-align: center;
+            padding-top: 8px;
+        }
+
+        .plugin-footer p {
+            font-size: 9px;
+            color: var(--text-light);
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="plugin-container">
+        <div class="main-area">
+            <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
+
+            <div class="plugin-content">
+                <!-- 个人信息区 -->
+                <div class="profile-header">
+                    <img src="logo-small.png" class="profile-avatar" id="user-avatar">
+                    <div class="profile-name" id="user-nickname">加载中...</div>
+                    <div class="profile-status">求职中</div>
+                </div>
+
+                <!-- 简历卡片区 -->
+                <div class="book-wrapper">
+                    <div class="switch-tooltip">切换下一份简历</div>
+                    <div class="resume-page-next">
+                        <div style="text-align:right; font-size:7px; color:var(--primary); font-weight:bold; margin-bottom:4px;">简历 B</div>
+                        <div style="font-size:9px; font-weight:bold; color:#ccc;">加载中...</div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-block"></div>
+                    </div>
+
+                    <div class="resume-page-current">
+                        <div class="resume-header">
+                            <div class="resume-meta">
+                                <div class="resume-name" id="resume-nickname">加载中...</div>
+                                <div class="resume-type">简历名称</div>
+                            </div>
+                        </div>
+
+                        <div class="info-grid-compact">
+                            <div class="info-cell">
+                                <div class="info-cell-label">学校</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">学历</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">专业</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">毕业年份</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">手机</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">邮箱</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">意向岗位</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell">
+                                <div class="info-cell-label">期望城市</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                            <div class="info-cell" style="grid-column: span 2;">
+                                <div class="info-cell-label">核心技能</div>
+                                <div class="info-cell-value">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部按钮区 -->
+                <div class="bottom-buttons">
+                    <button class="btn-settings" title="设置">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="btn-logout" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+
+                <!-- 页脚 -->
+                <div class="plugin-footer">
+                    <p>一念职达 v1.0.0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/transitions.js"></script>
+    <script src="scripts/profileMini.js"></script>
+</body>
+</html>

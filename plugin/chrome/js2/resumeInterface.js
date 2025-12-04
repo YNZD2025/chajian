@@ -512,9 +512,9 @@
 
             // 更新状态提示
             if (canStart()) {
-                window.setStateText("方舟已就位，等待启动", "show");
+                window.setStateText("一念职达已就位，等待启动", "show");
             } else {
-                window.setStateText("方舟准备中，请先填写公司和职位", "show");
+                window.setStateText("一念职达准备中，请先填写公司和职位", "show");
                 await delay(600);
                 resumeWindow.querySelector("#company-name").focus();
             }
@@ -613,7 +613,7 @@
         // 检查是否可以开始
         if (!canStart()) {
             alert("要先填写公司和职位，才能生成专岗美化简历哦！");
-            window.setStateText("方舟准备中，请先填写公司和职位", "show");
+            window.setStateText("一念职达准备中，请先填写公司和职位", "show");
             resumeWindow.querySelector("#company-name").focus();
             return;
         }
@@ -770,9 +770,9 @@
 
             // 更新状态提示
             if (canStart()) {
-                window.setStateText("方舟已就位，等待启动", "show");
+                window.setStateText("一念职达已就位，等待启动", "show");
             } else {
-                window.setStateText("方舟准备中，请先填写公司和职位", "show");
+                window.setStateText("一念职达准备中，请先填写公司和职位", "show");
                 resumeWindow.querySelector("#company-name").focus();
             }
         } else {
@@ -786,9 +786,9 @@
      */
     function onBeautifyChange(enabled) {
         if (canStart()) {
-            window.setStateText("方舟已就位，等待启动", "show");
+            window.setStateText("一念职达已就位，等待启动", "show");
         } else {
-            window.setStateText("方舟准备中，请先填写公司和职位", "show");
+            window.setStateText("一念职达准备中，请先填写公司和职位", "show");
             resumeWindow.querySelector("#company-name").focus();
         }
     }

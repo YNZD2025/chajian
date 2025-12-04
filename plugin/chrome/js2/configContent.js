@@ -1,13 +1,13 @@
 /**
  * ============================================================================
- * 求职方舟 (Job Ark) - Content Script 配置文件
+ * 一念职达 (Job Ark) - Content Script 配置文件
  * ============================================================================
  *
  * 此文件为 Content Script 专用配置
  * 使用 IIFE 方式将配置挂载到 window 对象
  * 注意：此文件不能使用 ES6 模块语法（export/import）
  *
- * @author 求职方舟团队
+ * @author 一念职达团队
  * @version 基于 Manifest V3 规范
  */
 
@@ -38,11 +38,11 @@
         // 生产环境配置
         production: {
             WEB: {
-                HOST: "https://applymind.cn/",
+                HOST: "https://test.applymind.cn",
                 PORT: "443"
             },
             API: {
-                HOST: "https://applymind.cn/",
+                HOST: "https://test.applymind.cn",
                 PORT: "443"
             }
         }
@@ -52,7 +52,7 @@
      * 当前环境
      * 可选值: "development" | "production"
      */
-    const currentEnv = "development";
+    const currentEnv = "production";
 
     /**
      * 当前环境的配置
@@ -107,13 +107,11 @@
         // 所有官网 URL 列表
         ALL_WEB_URLS: [
             "http://localhost:5173",           // 开发环境
-            "https://www.qiuzhifangzhou.com"   // 生产环境
+            "https://test.applymind.cn"   // 测试环境
         ],
 
         // 环境检测函数
         isDevEnv: () => currentEnv === "development",
         getEnv: () => currentEnv
     };
-
-    console.log("Content Script 配置已加载:", window.arkConfig);
 })();

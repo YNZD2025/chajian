@@ -2,7 +2,7 @@
 
 /**
  * ============================================================================
- * 求职方舟 (Job Ark) - Popup 弹窗脚本
+ * 一念职达 (Job Ark) - Popup 弹窗脚本
  * ============================================================================
  *
  * 此文件是 Chrome 扩展弹窗页面的交互脚本
@@ -12,7 +12,7 @@
  * - 统计数据展示
  * - 向 Content Script 广播设置变更
  *
- * @author 求职方舟团队
+ * @author 一念职达团队
  * @version 基于 Manifest V3 规范
  */
 
@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ========================================================================
 
     /**
-     * 访问求职方舟按钮
+     * 访问一念职达按钮
      */
     const visitArcButton = document.querySelector("#visitArc");
     visitArcButton.addEventListener("click", () => {
@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (authData?.userInfo) {
         // 已登录
         document.querySelector(".profile-name").textContent =
-            "求职方舟 · " + authData.userInfo.nickname;
+            "一念职达 · " + authData.userInfo.nickname;
         document.querySelector("#logout").style.display = "block";
     } else {
         // 未登录

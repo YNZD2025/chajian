@@ -117,19 +117,6 @@
             // 移除高亮启用标志
             document.documentElement.classList.remove('ark-highlight-enabled');
         } catch (error) { }
-
-        // if (learningInterval) {
-        //     clearInterval(learningInterval);
-        //     learningInterval = null;
-        //     lastHtml = "";
-        //     // 停止学习字段
-        //     const html = getCleanHtml();
-        //     chrome.runtime.sendMessage({
-        //         type: "stopLearnField",
-        //         url: window.location.href,
-        //         html: html
-        //     }, (response) => {});
-        // }
     }
 
     // ==================== 基础工具函数 ====================
@@ -1906,7 +1893,7 @@
      * 将字段结构转换为API请求格式
      */
     function convertToApiFormat(structures, serverFields) {
-        console.log("structures====>", structures)
+        
         try {
             const result = [];
             for (const section of serverFields) {
@@ -2989,7 +2976,7 @@
      * 获取需要填写的字段
      */
     async function getNeedFields(html) {
-        console.log("html====>", html)
+        
         try {
             const response = await fetchWithJwt(
                 `${window.config.API_BASE_URL}analyze-page`,
@@ -3007,7 +2994,7 @@
             );
             serverFields = response.fields;
             sessionId = response.sessionId;
-            console.log("response======>",response)
+            
         } catch (error) {
             isNetworkError = true;
             errorFunctionName = "getNeedField";
@@ -3150,14 +3137,13 @@
                 ]
             }
         ];
-        console.log("serverFields====>", serverFields)
-        console.log("serverFields2====>", serverFields2)
+
     }
 
     /**
      * 获取字段填充值
      */
-    async function fillResumeValues(apiFields, company, position, resumeId) {
+    async function fillResumeValues(apiFields, company, position, resumeId,taskContent) {
             try {
             // todo 已修改为自己后端接口
             const response = await fetchWithJwt(
@@ -3172,10 +3158,17 @@
                         fields: apiFields,
                         company: company,
                         position: position,
-                        resumeId: resumeId
+                        resumeId: resumeId,
+                        task:taskContent
                     })
                 }
             );
+            if(response.error){
+                // 接口返回错误，抛出异常
+                isNetworkError = true;
+                errorFunctionName = "fillResumeValues";
+                throw new Error(response.error || "获取填充值失败，请刷新页面重试");
+            }
             //convertedFillData = response.values;
             convertedFillData = response.matches;
         } catch (error) {
@@ -3183,7 +3176,7 @@
             errorFunctionName = "fillResumeValue";
             throw error;
         }
-        console.log("apiFields====>", apiFields)
+        
         let convertedFillData2 = [
             {
                 "name": "基本信息",
@@ -3519,8 +3512,7 @@
                 ]
             }
         ];
-        console.log("convertedFillData====>", convertedFillData)
-        console.log("convertedFillData2====>", convertedFillData2)
+
         return null;
     }
 
@@ -3530,9 +3522,7 @@
      * 执行填充操作
      */
     async function executeFilling(structures, fillData) {
-        console.log("structures====>", structures)
-        console.log("fillData====>", fillData)
-        console.log("开始执行填写。。。。")
+
         try {
             let sectionIndex = 0;
 
@@ -4109,6 +4099,7 @@
         company,
         position,
         resumeId,
+        taskContent = '',
         enableBeautify = false,
         callback = (result) => { }
     ) => {
@@ -4117,9 +4108,7 @@
         try {
             // 保存当前简历ID
             currentResumeId = resumeId;
-            console.log("[runFillResume] 简历ID已更新:", currentResumeId);
-
-            window.setStateText("方舟！启动！");
+            window.setStateText("一念职达！为您职达岗位！");
             resetState();
 
             // 阶段1：展开所有"添加更多"按钮
@@ -4128,13 +4117,8 @@
             // 阶段2：获取服务器字段（异步）
             getNeedFields(getCleanHtml());
 
-            // 阶段3：如果启用美化，请求美化简历（异步）
-            // if (enableBeautify) {
-            //     beautifyResume(company, position, resumeMd);
-            // }
-
             // 阶段4：扫描输入框
-            console.log("阶段4：扫描输入框")
+            
             await scanAllInputs();
 
             window.setStateText("正在扫描网站...", "min");
@@ -4152,7 +4136,6 @@
             }
 
             // 阶段5：构建字段结构
-            console.log("阶段5：构建字段结构");
             window.setStateText("正在标记简历字段...", "min");
 
             // 构建字段结构
@@ -4166,15 +4149,14 @@
             locateFieldInputs(fieldStructures);
 
             // 阶段6：转换为API格式
-            console.log("阶段6：转换为API格式")
+            
             fillValues = convertToApiFormat(fieldStructures, serverFields);
 
             // 获取填充值
-            fillResumeValues(fillValues, company, position, resumeId);
-            
+            fillResumeValues(fillValues, company, position, resumeId, taskContent);
 
             // 阶段7：高亮字段（异步）
-            console.log("阶段7：高亮字段（异步）")
+            
             highlightAllFields(fieldStructures);
 
             // 等待高亮完成
@@ -4184,13 +4166,12 @@
             }
 
             // 阶段8：等待填充值返回
-            console.log("阶段8：等待填充值返回")
-            
+
             window.setStateText("正在理解简历...", "show");
             window.breatheResume("begin");
 
             let waitCount = 0;
-            console.log("convertedFillData.length====>", convertedFillData.length)
+            
             while (!convertedFillData.length || !window.isRunning()) {
                 checkNetworkError();
                 await delay(500);
@@ -4207,11 +4188,9 @@
             }
 
             window.breatheResume("end");
-            
 
             // 阶段9：执行填充
-            console.log("convertedFillData.length====>", convertedFillData.length)
-            console.log(" 阶段9：执行填充")
+
             window.setStateText("尝试为你填写简历...", "min");
             await delay(500);
             // 将API返回的填充值转换为内部格式
@@ -4220,8 +4199,7 @@
             transformedFillData = processPhoneNumbers(transformedFillData);
 
             // 执行填充操作
-            console.log("convertedFillData====>", convertedFillData)
-            console.log("执行填充操作。。。。。。。")
+
             await executeFilling(fieldStructures, transformedFillData);
 
             // 完成
@@ -4426,7 +4404,6 @@
      */
     window.updateCurrentResumeId = function(resumeId) {
         currentResumeId = resumeId;
-        console.log("[updateCurrentResumeId] 简历ID已更新:", currentResumeId);
     };
 
     /**
@@ -4445,7 +4422,6 @@
         if (!window.config) {
             console.error("配置未加载：window.config 不存在，请检查 configContent.js 是否正确加载");
         } else {
-            console.log("content.js: 配置已就绪", window.config);
         }
     })();
 })();

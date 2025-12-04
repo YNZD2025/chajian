@@ -1,0 +1,236 @@
+/* 简单图标系统 - 使用 Unicode 字符和 CSS */
+
+/* 基础图标样式 */
+.icon {
+    font-style: normal;
+    display: inline-block;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* 闪电图标 - ⚡ */
+.icon-bolt::before {
+    content: "⚡";
+}
+
+/* 旋转加载图标 */
+.icon-spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: icon-spin 0.8s linear infinite;
+}
+
+@keyframes icon-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 成功图标 - ✓ */
+.icon-check::before {
+    content: "✓";
+    font-weight: bold;
+}
+
+.icon-check-circle::before {
+    content: "✓";
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    line-height: 1.2em;
+    text-align: center;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+/* 警告图标 - ⚠ */
+.icon-warning::before,
+.icon-exclamation-triangle::before {
+    content: "⚠";
+}
+
+/* 暂停图标 - ❚❚ */
+.icon-pause::before {
+    content: "❚❚";
+    letter-spacing: -0.1em;
+}
+
+/* 播放图标 - ▶ */
+.icon-play::before {
+    content: "▶";
+}
+
+/* 日历图标 - 📅 */
+.icon-calendar::before,
+.icon-calendar-check::before {
+    content: "📅";
+}
+
+/* Bug图标 - 🐛 */
+.icon-bug::before {
+    content: "🐛";
+}
+
+/* 充电图标 - 🔋 */
+.icon-charging::before,
+.icon-charging-station::before {
+    content: "🔋";
+}
+
+/* 魔法棒图标 - ✨ */
+.icon-magic::before,
+.icon-wand-magic-sparkles::before {
+    content: "✨";
+}
+
+/* 相机图标 - 📷 */
+.icon-camera::before {
+    content: "📷";
+}
+
+/* 刷新图标 - ↻ */
+.icon-sync::before {
+    content: "↻";
+    display: inline-block;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* 关闭图标 - × */
+.icon-times::before,
+.icon-close::before {
+    content: "×";
+    font-size: 1.4em;
+    font-weight: bold;
+    line-height: 0.8;
+}
+
+/* 历史图标 - 🕐 */
+.icon-history::before {
+    content: "🕐";
+}
+
+/* 用户图标 - 👤 */
+.icon-user::before {
+    content: "👤";
+}
+
+/* 设置图标 - ⚙ */
+.icon-cog::before,
+.icon-settings::before {
+    content: "⚙";
+}
+
+/* 信息图标 - ℹ */
+.icon-info::before,
+.icon-info-circle::before {
+    content: "ℹ";
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    line-height: 1.2em;
+    text-align: center;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* 收件箱图标 - 📥 */
+.icon-inbox::before {
+    content: "📥";
+}
+
+/* 兼容旧的 Font Awesome 类名 */
+.fas, .far, .fab {
+    font-style: normal;
+    display: inline-block;
+}
+
+.fa-bolt { composes: icon-bolt; }
+.fa-spinner { composes: icon-spinner; }
+.fa-spin { animation: icon-spin 0.8s linear infinite; }
+.fa-check-circle { composes: icon-check-circle; }
+.fa-exclamation-triangle { composes: icon-warning; }
+.fa-pause { composes: icon-pause; }
+.fa-play { composes: icon-play; }
+.fa-calendar-check { composes: icon-calendar; }
+.fa-bug { composes: icon-bug; }
+.fa-charging-station { composes: icon-charging; }
+.fa-wand-magic-sparkles { composes: icon-magic; }
+.fa-camera { composes: icon-camera; }
+.fa-sync { composes: icon-sync; }
+.fa-times { composes: icon-times; }
+.fa-history { composes: icon-history; }
+.fa-user { composes: icon-user; }
+.fa-cog { composes: icon-cog; }
+.fa-info-circle { composes: icon-info; }
+.fa-inbox { composes: icon-inbox; }
+
+/* Font Awesome 类名直接实现 */
+.fa-bolt::before { content: "⚡"; }
+.fa-magic::before { content: "✨"; }  /* 魔法图标 */
+.fa-wand-magic-sparkles::before { content: "✨"; }
+.fa-check-circle::before {
+    content: "✓";
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    line-height: 1.2em;
+    text-align: center;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-weight: bold;
+}
+.fa-exclamation-triangle::before { content: "⚠"; }
+.fa-pause::before { content: "❚❚"; letter-spacing: -0.1em; }
+.fa-play::before { content: "▶"; }
+.fa-calendar-check::before { content: "📅"; }
+.fa-bug::before { content: "🐛"; }
+.fa-charging-station::before { content: "🔋"; }
+.fa-camera::before { content: "📷"; }
+.fa-sync::before { content: "↻"; font-size: 1.2em; font-weight: bold; }
+.fa-times::before { content: "×"; font-size: 1.4em; font-weight: bold; line-height: 0.8; }
+.fa-history::before { content: "🕐"; }
+.fa-user::before { content: "👤"; }
+.fa-cog::before { content: "⚙"; }
+.fa-settings::before { content: "⚙"; }
+.fa-info-circle::before {
+    content: "ℹ";
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    line-height: 1.2em;
+    text-align: center;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-weight: bold;
+}
+.fa-inbox::before { content: "📥"; }
+.fa-user-cog::before { content: "👤⚙"; letter-spacing: -0.1em; }  /* 用户设置图标 */
+.fa-id-card::before { content: "🪪"; }  /* 身份证/ID卡图标 */
+.fa-edit::before { content: "✏"; }  /* 编辑图标 */
+.fa-chevron-right::before { content: "›"; font-size: 1.4em; font-weight: bold; }  /* 右箭头 */
+.fa-sign-out-alt::before { content: "🚪"; }  /* 退出登录图标 */
+
+/* fa-spinner 特殊处理 - 使用旋转的圆圈 */
+.fa-spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+}
+
+.fa-spinner::before {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    border-right-color: transparent;
+}

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能填充 - 一念职达</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/simple-icons.css">
     <link rel="stylesheet" href="styles/common.css">
     <link rel="stylesheet" href="styles/fill.css">
 </head>
@@ -52,7 +52,15 @@
             <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
 
             <div class="liquid-cta-container">
-                <div class="liquid-cta-btn"><i class="fas fa-bolt"></i> 一键智能填充</div>
+                <div id="fill-action-btn" class="liquid-cta-btn">
+                    <i class="fas fa-bolt"></i>
+                    <span class="btn-text">一键智能填充</span>
+                </div>
+                <!-- 状态展示框 -->
+                <div id="status-display" class="status-display" style="display: none;">
+                    <i class="status-icon fas fa-spinner fa-spin"></i>
+                    <span class="status-text">正在处理...</span>
+                </div>
             </div>
 
             <div class="plugin-content">
@@ -69,47 +77,47 @@
                         <div class="resume-header">
                             <!-- <img src="https://i.pravatar.cc/150?img=47" class="resume-avatar"> -->
                             <div class="resume-meta">
-                                <div class="resume-name">李艺伟</div>
-                                <div class="resume-type">中文简历 (默认)</div>
+                                <div class="resume-name">姓名</div>
+                                <div class="resume-type">简历名称</div>
                             </div>
                         </div>
 
                         <div class="info-grid-compact">
                             <div class="info-cell">
                                 <div class="info-cell-label">学校</div>
-                                <div class="info-cell-value">清华大学</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell">
                                 <div class="info-cell-label">学历</div>
-                                <div class="info-cell-value">硕士</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell">
                                 <div class="info-cell-label">专业</div>
-                                <div class="info-cell-value">计算机科学</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell">
                                 <div class="info-cell-label">毕业年份</div>
-                                <div class="info-cell-value">2026</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell">
                                 <div class="info-cell-label">手机</div>
-                                <div class="info-cell-value">138****9876</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell">
                                 <div class="info-cell-label">邮箱</div>
-                                <div class="info-cell-value">li***@thu.edu</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell">
                                 <div class="info-cell-label">意向岗位</div>
-                                <div class="info-cell-value">数据分析</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell">
                                 <div class="info-cell-label">期望城市</div>
-                                <div class="info-cell-value">北京/上海</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                             <div class="info-cell" style="grid-column: span 2;">
                                 <div class="info-cell-label">核心技能</div>
-                                <div class="info-cell-value">Python, SQL, Tableau, Hadoop</div>
+                                <div class="info-cell-value">-</div>
                             </div>
                         </div>
                     </div>

@@ -1,0 +1,153 @@
+i18n compare 2.5.31 2.5.31
+messageBridge.js:7 ✅ 消息桥接脚本已加载
+messageBridge.js:92 ✅ [消息桥接] postMessage 监听器已注册
+configContent.js:118 Content Script 配置已加载: undefined
+content.js:4451 content.js: 配置已就绪 {API_BASE_URL: 'http://192.168.1.144:8080/api/autofill/', API_AUTH_URL: 'http://192.168.1.144:8080/api/plugin/', API_HISTORY_URL: 'http://192.168.1.144:8080/api/history/', API_RESUME_URL: 'http://192.168.1.144:8080/api/resume/', WEB_DOMAIN: 'http://192.168.1.144', …}
+resumeInterfaceTwo.js:3750 resumeInterfaceTwo.js: 配置已就绪 {API_BASE_URL: 'http://192.168.1.144:8080/api/autofill/', API_AUTH_URL: 'http://192.168.1.144:8080/api/plugin/', API_HISTORY_URL: 'http://192.168.1.144:8080/api/history/', API_RESUME_URL: 'http://192.168.1.144:8080/api/resume/', WEB_DOMAIN: 'http://192.168.1.144', …}
+7114.f79ac3c5.js:2 [why-did-you-update] [cc] schema change {applicationInfoStandardSchema: {…}, attachmentResumeSchema: {…}, resumeStandSchema: {…}, diStandardSchema: {…}, commonSetting: {…}, …}
+2339.2cee24a7.js:2 [[ refresh font! ]]
+2339.2cee24a7.js:2 [[ refresh theme! ]]
+65475.4ba1248b.js:2 Modifying hyperlink type to web for Button: hyperlink
+25475.4ba1248b.js:2 Modifying hyperlink type to web for Image: hyperlink
+
+开始创建简历窗口...
+resumeInterfaceTwo.js:260 正在加载HTML: chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/fill.html
+resumeInterfaceTwo.js:268 ✓ HTML加载成功 (6335 字符)
+resumeInterfaceTwo.js:276 移除 3 个<link>标签
+resumeInterfaceTwo.js:280 清理HTML中的内联事件和危险属性...
+resumeInterfaceTwo.js:285 ✓ 已移除 2 个<script>标签
+resumeInterfaceTwo.js:314 ✓ 已移除 0 个内联事件属性
+resumeInterfaceTwo.js:318 ✓ HTML内容已注入到容器
+resumeInterfaceTwo.js:325 ✓ 容器已添加到Shadow DOM
+resumeInterfaceTwo.js:354 ✓ 全局导航拦截器已启用
+resumeInterfaceTwo.js:361 ✓ 找到.plugin-container元素
+resumeInterfaceTwo.js:365 导航栏按钮数量: 4
+resumeInterfaceTwo.js:377 按钮 1: 填充, 图标: fas fa-magic, href: fill.html
+resumeInterfaceTwo.js:377 按钮 2: 记录, 图标: fas fa-history, href: history.html
+resumeInterfaceTwo.js:377 按钮 3: 我的, 图标: fas fa-user, href: profile.html
+resumeInterfaceTwo.js:377 按钮 4: 设置, 图标: fas fa-cog, href: settings.html
+resumeInterfaceTwo.js:401 ✓ 找到.sidebar元素
+resumeInterfaceTwo.js:402   sidebar子元素数量: 4
+resumeInterfaceTwo.js:1218 开始加载样式...
+resumeInterfaceTwo.js:1229 验证 CSS 文件路径:
+resumeInterfaceTwo.js:1232   - popup/styles/font-awesome.all.min.css → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/font-awesome.all.min.css
+resumeInterfaceTwo.js:1232   - popup/styles/common.css → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/common.css
+resumeInterfaceTwo.js:1232   - popup/styles/fill.css → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/fill.css
+resumeInterfaceTwo.js:1292 ✓ CSS变量已注入Shadow DOM
+resumeInterfaceTwo.js:1298 正在加载 CSS: popup/styles/font-awesome.all.min.css
+resumeInterfaceTwo.js:1307 ✓ CSS内容已获取: popup/styles/font-awesome.all.min.css (101965 字符)
+resumeInterfaceTwo.js:1311 正在转换 Font Awesome 字体路径...
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-brands-400.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-brands-400.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-brands-400.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-brands-400.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-regular-400.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-regular-400.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-regular-400.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-regular-400.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-solid-900.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-solid-900.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-solid-900.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-solid-900.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-brands-400.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-brands-400.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-brands-400.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-brands-400.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-solid-900.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-solid-900.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-solid-900.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-solid-900.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-regular-400.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-regular-400.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-regular-400.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-regular-400.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-solid-900.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-solid-900.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-solid-900.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-solid-900.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-brands-400.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-brands-400.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-brands-400.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-brands-400.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-regular-400.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-regular-400.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-regular-400.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-regular-400.ttf
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-v4compatibility.woff2 → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-v4compatibility.woff2
+resumeInterfaceTwo.js:1319   - 转换字体路径: webfonts/fa-v4compatibility.ttf → chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/fa-v4compatibility.ttf
+resumeInterfaceTwo.js:1323 ✓ Font Awesome 字体路径已转换为完整URL
+resumeInterfaceTwo.js:1327 🔧 修复Unicode转义字符...
+resumeInterfaceTwo.js:1330   ✓ 已转换反斜杠: 1856 个字符增加
+resumeInterfaceTwo.js:1335 📝 转换后的 fa-info-circle 规则:
+resumeInterfaceTwo.js:1336 .fa-info-circle:before{content:"\\f05a"}
+resumeInterfaceTwo.js:1344 📝 找到的示例图标规则:
+resumeInterfaceTwo.js:1345 .fa-fill-drip:before{content:"\\f576"}
+resumeInterfaceTwo.js:1355 ✓ CSS已注入: popup/styles/font-awesome.all.min.css
+resumeInterfaceTwo.js:1298 正在加载 CSS: popup/styles/common.css
+resumeInterfaceTwo.js:1307 ✓ CSS内容已获取: popup/styles/common.css (15217 字符)
+resumeInterfaceTwo.js:1355 ✓ CSS已注入: popup/styles/common.css
+resumeInterfaceTwo.js:1298 正在加载 CSS: popup/styles/fill.css
+resumeInterfaceTwo.js:1307 ✓ CSS内容已获取: popup/styles/fill.css (10787 字符)
+resumeInterfaceTwo.js:1355 ✓ CSS已注入: popup/styles/fill.css
+resumeInterfaceTwo.js:1362 ✓ 本地CSS样式已加载到Shadow DOM
+resumeInterfaceTwo.js:1365 🔍 验证字体加载情况...
+resumeInterfaceTwo.js:1375 📥 预加载字体: fa-solid-900.woff2
+resumeInterfaceTwo.js:1382   ✓ 字体文件可访问: fa-solid-900.woff2 (150124 bytes)
+resumeInterfaceTwo.js:1375 📥 预加载字体: fa-regular-400.woff2
+resumeInterfaceTwo.js:1382   ✓ 字体文件可访问: fa-regular-400.woff2 (24948 bytes)
+resumeInterfaceTwo.js:1375 📥 预加载字体: fa-brands-400.woff2
+resumeInterfaceTwo.js:1382   ✓ 字体文件可访问: fa-brands-400.woff2 (108020 bytes)
+resumeInterfaceTwo.js:1393 ✓ 字体验证完成，CSS已准备就绪
+resumeInterfaceTwo.js:1396 📦 手动添加 @font-face 规则到 Shadow DOM...
+resumeInterfaceTwo.js:1450 ✓ @font-face 规则和测试图标规则已手动添加到 Shadow DOM
+resumeInterfaceTwo.js:1451   字体基础URL: chrome-extension://mgpcanncgjlkdiedfhngmgkfcellagla/popup/styles/webfonts/
+resumeInterfaceTwo.js:1687 ✓ Logo和容器样式已注入
+resumeInterfaceTwo.js:1690 ✓ Font Awesome 本地文件已在 loadStyles() 中加载
+resumeInterfaceTwo.js:1694 ✓ 样式加载完成，共注入 6 个<style>标签到Shadow DOM
+resumeInterfaceTwo.js:1783 ✓ Font Awesome 本地文件已就绪
+resumeInterfaceTwo.js:1014 绑定页面特定事件: fill.html
+resumeInterfaceTwo.js:731 开始初始化状态弹窗...
+resumeInterfaceTwo.js:741 🔍 元素查找结果: {fillButton: true, statusPopup: true, statusMessage: true, btnIcon: true, btnText: true, …}
+resumeInterfaceTwo.js:1002 ✓ 状态弹窗初始化完成
+resumeInterfaceTwo.js:1003 💡 测试方法: window.testStatusPopup.processing("测试消息")
+resumeInterfaceTwo.js:1004 💡 查看元素: window.testStatusPopup.getElements()
+resumeInterfaceTwo.js:1032 ✓ 填充按钮事件已绑定（已移除旧事件）
+resumeInterfaceTwo.js:3083 [initResumeData] 开始初始化简历数据
+resumeInterfaceTwo.js:2671 [apiRequestForGet] 请求URL: http://192.168.1.144:8080/api/autofill/resume/list
+resumeInterfaceTwo.js:2692 [fetchWithJwt] 发送请求到background: {url: 'http://192.168.1.144:8080/api/autofill/resume/list', options: {…}}
+resumeInterfaceTwo.js:1210 ✓ 右上角按钮事件已绑定
+resumeInterfaceTwo.js:68 UI初始化完成
+resumeInterfaceTwo.js:2700 [fetchWithJwt] 收到background响应: {total: 9, success: true, list: Array(9), message: '获取成功'}
+resumeInterfaceTwo.js:2846 [getResumeList] API响应数据: {total: 9, success: true, list: Array(9), message: '获取成功'}
+resumeInterfaceTwo.js:2851 [getResumeList] 处理后的简历列表: (9) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+resumeInterfaceTwo.js:2971 [renderResumeData] 开始渲染简历数据: {id: 118, name: '呼圣博', resumeName: 'CV_呼圣博', school: '香港中文大学', educationDegreeText: '硕士', …}
+content.js:4432 [updateCurrentResumeId] 简历ID已更新: 118
+resumeInterfaceTwo.js:3413 [getCurrentCompanyName] 当前URL: https://jobs.bytedance.com/experienced/resume/edit
+resumeInterfaceTwo.js:3414 [getCurrentCompanyName] 域名: jobs.bytedance.com
+resumeInterfaceTwo.js:3503 [getCurrentCompanyName] 使用通用提取策略
+resumeInterfaceTwo.js:3617 [trySelectorsInOrder] 所有选择器都未找到有效内容
+resumeInterfaceTwo.js:3523 [getCurrentCompanyName] 尝试从标题提取: 编辑简历
+resumeInterfaceTwo.js:3567 [getCurrentCompanyName] ⚠ 无法获取有效的公司名称，使用域名作为降级方案
+getCurrentCompanyName @ resumeInterfaceTwo.js:3567
+renderResumeData @ resumeInterfaceTwo.js:3026
+initResumeData @ resumeInterfaceTwo.js:3097
+await in initResumeData
+bindPageSpecificEvents @ resumeInterfaceTwo.js:1036
+bindEvents @ resumeInterfaceTwo.js:1875
+init @ resumeInterfaceTwo.js:57
+await in init
+(anonymous) @ resumeInterfaceTwo.js:3856
+await in (anonymous)
+(anonymous) @ resumeInterfaceTwo.js:3864
+(anonymous) @ resumeInterfaceTwo.js:3865
+resumeInterfaceTwo.js:3575 [getCurrentCompanyName] ✓ 使用域名作为公司名称: jobs.bytedance.com
+resumeInterfaceTwo.js:3046 [renderResumeData] 简历数据渲染完成，简历ID: 118
+resumeInterfaceTwo.js:3047 [renderResumeData] resumeData已更新: {status: 'ok', detail: 118, resumeId: 118, company: 'jobs.bytedance.com', position: '行研实习生', …}
+resumeInterfaceTwo.js:3135 [bindResumeSwitchEvents] 简历切换事件已绑定
+resumeInterfaceTwo.js:3102 [initResumeData] 简历数据初始化完成，共 9 份简历
+resumeInterfaceTwo.js:1842 auth====> {refreshToken: 'eyJhbGciOiJIUzM4NCJ9.eyJ0b2tlblR5cGUiOiJyZWZyZXNoI…bK_p6SUZ52PgvmOG7QdjAMXH6EdlGX5z6RUm_eKO58KdoDbix', token: 'eyJhbGciOiJIUzM4NCJ9.eyJvcGVuaWQiOiJvSEZINTJEZVEwR…3UZHzpV9K-jcDYN3fPhK3CRZRzskQtctOrCzJaBnA3b95K4fK', userInfo: {…}}
+resumeInterfaceTwo.js:2502 🎯 setStateText 被调用: text="一念职达已准备，等待启动", displayMode="show"
+resumeInterfaceTwo.js:2520   检测到状态类型: idle
+resumeInterfaceTwo.js:2525   ✓ 调用 window.updateStatusPopup("一念职达已准备，等待启动", "idle")
+resumeInterfaceTwo.js:896 📢 updateStatusText 被调用: text="一念职达已准备，等待启动", type="idle"
+resumeInterfaceTwo.js:918 ✓ 状态消息已更新 {messageText: '一念职达已准备，等待启动', messageClasses: 'status-message'}
+resumeInterfaceTwo.js:833 🔄 更新状态展示框: type=idle, text=一念职达已准备，等待启动
+resumeInterfaceTwo.js:888 ✓ 状态展示框已隐藏
+resumeInterfaceTwo.js:877 ✓ 状态展示框已隐藏
+resumeInterfaceTwo.js:2570 [fill.html] 忽略 displayMode="show"，使用新的悬浮按钮设计
+resumeInterfaceTwo.js:1698 🔍 检查图标元素状态...
+resumeInterfaceTwo.js:1700   找到 10 个Font Awesome图标元素
+resumeInterfaceTwo.js:1705   第一个图标元素:
+resumeInterfaceTwo.js:1706     类名: fas fa-info-circle
+resumeInterfaceTwo.js:1707     font-family: "Font Awesome 6 Free"
+resumeInterfaceTwo.js:1708     font-weight: 900
+resumeInterfaceTwo.js:1709     content: ""
+resumeInterfaceTwo.js:1710     display: inline
+resumeInterfaceTwo.js:1714     所有字体: ['Font Awesome 6 Free']
+resumeInterfaceTwo.js:1717   检查Shadow DOM中的样式表:
+resumeInterfaceTwo.js:1719     找到 6 个样式表
+resumeInterfaceTwo.js:1730   ✓ 找到 fa-info-circle 规则:
+resumeInterfaceTwo.js:1731     选择器: .fa-circle-info::before, .fa-info-circle::before
+resumeInterfaceTwo.js:1732     CSS文本: .fa-circle-info::before, .fa-info-circle::before { content: "\\f05a"; }

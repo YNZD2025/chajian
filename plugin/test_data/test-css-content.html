@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CSS Content Test</title>
+</head>
+<body>
+    <h1>CSS Content 测试</h1>
+    <p>打开控制台查看结果</p>
+
+    <script>
+        async function testCSSContent() {
+            const cssUrl = chrome.runtime.getURL('popup/styles/font-awesome.all.min.css');
+            console.log('加载CSS:', cssUrl);
+
+            const response = await fetch(cssUrl);
+            const cssText = await response.text();
+
+            console.log('CSS文件大小:', cssText.length, '字符');
+
+            // 查找 fa-info-circle 规则
+            const infoCircleMatch = cssText.match(/.fa-(circle-)?info-circle[^}]{0,100}/);
+            if (infoCircleMatch) {
+                console.log('找到 fa-info-circle 规则:');
+                console.log(infoCircleMatch[0]);
+            } else {
+                console.log('未找到 fa-info-circle');
+            }
+
+            // 查找任意包含 content 的规则
+            const contentMatch = cssText.match(/.fa-[a-z]+:before\{content:"[^"]*"\}/);
+            if (contentMatch) {
+                console.log('找到示例 content 规则:');
+                console.log(contentMatch[0]);
+
+                // 检查content值
+                const contentValue = contentMatch[0].match(/content:"([^"]*)"/);
+                if (contentValue) {
+                    console.log('Content值:', contentValue[1]);
+                    console.log('Content值长度:', contentValue[1].length);
+                    console.log('Content值字符码:', Array.from(contentValue[1]).map(c => c.charCodeAt(0).toString(16)));
+                }
+            } else {
+                console.log('未找到任何 content 规则');
+            }
+
+            // 测试注入到style标签
+            const style = document.createElement('style');
+            style.textContent = cssText;
+            document.head.appendChild(style);
+            console.log('CSS已注入到页面');
+
+            // 检查注入后的规则
+            const sheets = document.styleSheets;
+            console.log('样式表数量:', sheets.length);
+
+            for (let i = 0; i < sheets.length; i++) {
+                try {
+                    const rules = sheets[i].cssRules;
+                    for (let j = 0; j < Math.min(rules.length, 5000); j++) {
+                        const rule = rules[j];
+                        if (rule.selectorText && rule.selectorText.includes('fa-info-circle')) {
+                            console.log('在样式表中找到 fa-info-circle:');
+                            console.log('  选择器:', rule.selectorText);
+                            console.log('  CSS文本:', rule.cssText);
+                        }
+                    }
+                } catch (e) {
+                    // 跳过无法访问的样式表
+                }
+            }
+        }
+
+        // 等待扩展加载
+        setTimeout(testCSSContent, 100);
+    </script>
+</body>
+</html>

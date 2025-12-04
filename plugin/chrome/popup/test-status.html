@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>状态提示系统测试</title>
+    <link rel="stylesheet" href="styles/simple-icons.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/fill.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .test-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .test-panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .test-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .test-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .test-btn.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .test-btn.danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .test-btn.info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .info-box code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .info-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .info-box li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .button-demo {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .button-demo .liquid-cta-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 状态弹窗 -->
+    <div id="status-popup" class="status-popup">
+        <div class="status-popup-header">
+            <span class="status-popup-title">
+                <i class="fas fa-info-circle"></i>
+                任务状态
+            </span>
+            <button class="status-popup-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="status-popup-content">
+            <div class="status-message" id="status-message">准备就绪</div>
+        </div>
+    </div>
+
+    <div class="test-panel">
+        <h2><i class="fas fa-flask"></i> 状态提示系统测试面板</h2>
+
+        <div class="test-buttons">
+            <button class="test-btn primary" onclick="statusTest.fullProcess()">
+                <i class="fas fa-play"></i> 完整流程
+            </button>
+            <button class="test-btn primary" onclick="statusTest.setStateText()">
+                <i class="fas fa-code"></i> 测试 setStateText
+            </button>
+            <button class="test-btn success" onclick="statusTest.success()">
+                <i class="fas fa-check"></i> 成功状态
+            </button>
+            <button class="test-btn danger" onclick="statusTest.error()">
+                <i class="fas fa-exclamation-triangle"></i> 错误状态
+            </button>
+            <button class="test-btn info" onclick="statusTest.processing()">
+                <i class="fas fa-spinner"></i> 处理中
+            </button>
+            <button class="test-btn info" onclick="statusTest.allStates()">
+                <i class="fas fa-redo"></i> 循环测试
+            </button>
+        </div>
+
+        <div class="info-box">
+            <h3>📝 使用说明</h3>
+            <ul>
+                <li>点击上方按钮测试不同的状态效果</li>
+                <li>观察下方按钮的变化（颜色、图标、文字）</li>
+                <li>右键点击按钮查看详细状态弹窗</li>
+                <li>处理中状态会显示呼吸动画</li>
+                <li>错误状态会有抖动效果</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h3>🎯 按钮显示格式</h3>
+            <ul>
+                <li><strong>处理中：</strong><code>⏸️ 暂停填充：正在扫描网站...</code></li>
+                <li><strong>成功：</strong><code>✅ 填充完成</code></li>
+                <li><strong>错误：</strong><code>⚠️ 错误消息内容</code></li>
+                <li><strong>空闲：</strong><code>⚡ 一键智能填充</code></li>
+            </ul>
+        </div>
+
+        <div class="button-demo">
+            <h3 style="color: #667eea; margin-bottom: 20px;">
+                <i class="fas fa-hand-pointer"></i> 实际按钮效果
+            </h3>
+            <div class="liquid-cta-container">
+                <div id="fill-action-btn" class="liquid-cta-btn">
+                    <i class="fas fa-bolt"></i>
+                    <span class="btn-text">一键智能填充</span>
+                </div>
+            </div>
+            <p style="color: #6c757d; font-size: 13px;">
+                💡 右键点击按钮查看状态详情
+            </p>
+        </div>
+    </div>
+
+    <script src="scripts/transitions.js"></script>
+    <script src="scripts/statusPopup.js"></script>
+    <script src="scripts/statusTest.js"></script>
+
+    <script>
+        // 创建一个模拟的 resumeWindow
+        window.resumeWindow = window;
+
+        console.log('%c🎉 测试页面加载完成！', 'color: #667eea; font-size: 16px; font-weight: bold;');
+        console.log('%c打开控制台可以手动调用测试函数', 'color: #666; font-size: 14px;');
+        console.log('%c例如: statusTest.fullProcess()', 'color: #11998e; font-size: 14px;');
+    </script>
+</body>
+</html>

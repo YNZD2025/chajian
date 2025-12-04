@@ -2,7 +2,7 @@
 
 /**
  * ============================================================================
- * 求职方舟 (Job Ark) - Background Service Worker
+ * 一念职达  - Background Service Worker
  * ============================================================================
  *
  * 此文件是 Chrome 扩展的后台服务工作线程 (Service Worker)
@@ -14,7 +14,7 @@
  * - 用户行为学习数据收集
  * - 投递历史记录管理
  *
- * @author 求职方舟团队
+ * @author 一念职达团队
  * @version 基于 Manifest V3 规范
  */
 
@@ -99,14 +99,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         // 登录/登出（来自 messageBridge.js 的转发）
         login: () => {
-            console.log("📨 [Background] 收到来自桥接脚本的登录消息");
+
             AuthModule.handleExternalLogin(message, sendResponse)
                 .catch((error) => sendResponse({ error: error.message }));
         },
         logout: () => {
-            console.log("📨 [Background] 收到来自桥接脚本的登出消息");
+
             AuthModule.handleExternalLogout(sendResponse)
                 .catch((error) => sendResponse({ error: error.message }));
+        },
+
+        // 打开新标签页
+        openTab: () => {
+
+            if (message.url) {
+                chrome.tabs.create({ url: message.url })
+                    .then(() => {
+
+                        sendResponse({ success: true });
+                    })
+                    .catch((error) => {
+                        console.error("✗ 创建新标签页失败:", error);
+                        sendResponse({ success: false, error: error.message });
+                    });
+            } else {
+                console.error("✗ 缺少 URL 参数");
+                sendResponse({ success: false, error: "缺少 URL 参数" });
+            }
         }
     };
 
@@ -127,7 +146,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * 用于登录状态同步
  */
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-    console.log("收到来自外部网站的消息:", message);
+
     if (message.type === "login") {
         // 处理登录同步
         AuthModule.handleExternalLogin(message, sendResponse)
@@ -261,11 +280,11 @@ const AuthModule = {
      */
     async handleMessage(message, sender, sendResponse) {
         try {
-            console.log("[AuthModule] 收到fetchWithJwt请求:", message.url, message.options);
+
             const response = await this.fetchWithJwt(message.url, message.options);
-            console.log("[AuthModule] 请求成功，状态:", response.status);
+
             const jsonData = await response.json();
-            console.log("[AuthModule] 响应数据:", jsonData);
+
             sendResponse(jsonData);
         } catch (error) {
             console.error("[AuthModule] 请求失败:", error.message);
@@ -319,11 +338,9 @@ const AuthModule = {
      * @throws {Error} - 未登录或请求失败时抛出错误
      */
     async fetchWithJwt(url, options = {}) {
-        console.log("[AuthModule.fetchWithJwt] 开始处理请求:", url);
 
         // 获取存储的认证信息
         const { auth } = await chrome.storage.local.get(["auth"]);
-        console.log("[AuthModule.fetchWithJwt] Token状态:", auth?.token ? "存在" : "不存在");
 
         if (!auth?.token) {
             console.error("[AuthModule.fetchWithJwt] 未登录");
@@ -335,8 +352,6 @@ const AuthModule = {
          * @param {string} token - JWT Token
          */
         const executeRequest = async (token) => {
-            console.log("[AuthModule.fetchWithJwt] 执行fetch请求:", url);
-            console.log("[AuthModule.fetchWithJwt] 请求选项:", { ...options, headers: { ...options.headers, Authorization: "Bearer ***" } });
 
             return await fetch(url, {
                 ...options,
@@ -349,9 +364,8 @@ const AuthModule = {
 
         try {
             // 首次请求
-            console.log("[AuthModule.fetchWithJwt] 发起首次请求...");
+
             let response = await executeRequest(auth.token);
-            console.log("[AuthModule.fetchWithJwt] 首次请求完成，状态码:", response.status);
 
             // 处理 401 未授权（Token 过期）
             if (response.status === 401) {

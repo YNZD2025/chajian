@@ -27,6 +27,8 @@
     let resumeWindow = null;        // n - 简历窗口主容器
     let resumeWindowContainer = null; // 简历窗口容器
     let resumeData = null;          // o - 简历数据对象
+    let currentPage = 'fill.html';  // 当前页面（默认为fill.html）
+    let previousPage = '';          // 上一个页面（用于页面切换动画）
 
     // ============================================================================
     // 初始化函数
@@ -38,7 +40,6 @@
      */
     async function init() {
         try {
-            console.log("init====>", init);
             // 创建DOM结构
             await createDomStructure();
 
@@ -62,8 +63,6 @@
 
             // 监听窗口大小变化
             window.addEventListener("resize", debounce(adjustWindowHeight, 200));
-
-            console.log("UI初始化完成");
         } catch (error) {
             console.error("初始化错误:", error);
         }
@@ -248,14 +247,12 @@
      * @returns {HTMLElement} 简历窗口元素
      */
     async function createResumeWindow() {
-        console.log("开始创建简历窗口...");
         const container = document.createElement("div");
         container.id = "resume-window-container";
 
         try {
             // 加载HTML模板 - 改为引用 fill.html
             const url = chrome.runtime.getURL("popup/fill.html");
-            console.log(`正在加载HTML: ${url}`);
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -263,7 +260,6 @@
             }
 
             const html = await response.text();
-            console.log(`✓ HTML加载成功 (${html.length} 字符)`);
 
             // 将HTML解析为DOM，移除head中的样式链接（我们已在loadStyles中处理）
             const parser = new DOMParser();
@@ -271,17 +267,12 @@
 
             // 移除head中的link标签（避免重复加载）
             const links = doc.querySelectorAll("head link");
-            console.log(`移除 ${links.length} 个<link>标签`);
             links.forEach(link => link.remove());
 
             // ⚠️ 关键修复：在注入前移除所有可能导致页面跳转的属性和事件
-            console.log("清理HTML中的内联事件和危险属性...");
-
             // 1. 先移除所有script标签
             const scripts = doc.body.querySelectorAll('script');
             scripts.forEach(script => script.remove());
-            console.log(`✓ 已移除 ${scripts.length} 个<script>标签`);
-
             // 2. 清理所有元素的内联事件
             const allElements = doc.body.querySelectorAll('*');
             let removedCount = 0;
@@ -289,7 +280,6 @@
                 // 移除所有on*事件属性
                 Array.from(el.attributes).forEach(attr => {
                     if (attr.name.startsWith('on')) {
-                        console.log(`  移除 ${el.tagName}.${attr.name} = "${attr.value}"`);
                         el.removeAttribute(attr.name);
                         removedCount++;
                     }
@@ -309,19 +299,14 @@
                     el.setAttribute('type', 'button');
                 }
             });
-            console.log(`✓ 已移除 ${removedCount} 个内联事件属性`);
-
             // 只取body内容
             container.innerHTML = doc.body.innerHTML;
-            console.log("✓ HTML内容已注入到容器");
         } catch (error) {
             console.error("✗ 加载简历窗口失败:", error);
             return null;
         }
 
         shadowRoot.appendChild(container);
-        console.log("✓ 容器已添加到Shadow DOM");
-
         // 保存容器引用
         resumeWindowContainer = container;
 
@@ -349,22 +334,16 @@
                 e.stopPropagation();
             }
         }, true); // 使用捕获阶段，优先拦截
-        console.log("✓ 全局导航拦截器已启用");
-
         const window = container.querySelector(".plugin-container");
         if (!window) {
             console.error("✗ 未找到 .plugin-container 元素");
             return null;
         }
-        console.log("✓ 找到.plugin-container元素");
-
         // 调试：检查导航栏按钮
         const navItems = container.querySelectorAll(".nav-item");
-        console.log(`导航栏按钮数量: ${navItems.length}`);
-
         if (navItems.length === 0) {
             console.error("✗ 警告：没有找到任何导航按钮！");
-            console.log("容器HTML:", container.innerHTML.substring(0, 500));
+            
         }
 
         navItems.forEach((item, index) => {
@@ -372,8 +351,6 @@
             const icon = item.querySelector(".nav-icon-box i");
             // 优先读取data-href（如果已经处理过），否则读取原始href
             const originalHref = item.getAttribute('data-href') || item.getAttribute('href');
-            console.log(`按钮 ${index + 1}: ${label ? label.textContent : '无标签'}, 图标: ${icon ? icon.className : '无图标'}, href: ${originalHref}`);
-
             // 阻止导航链接的默认跳转行为，改为页面切换
             if (item.tagName === 'A' && originalHref && originalHref !== 'javascript:void(0)') {
                 // 保存原始href到data属性（如果还没有），然后替换href防止跳转
@@ -387,7 +364,6 @@
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log(`点击了导航按钮: ${label ? label.textContent : '无标签'}, 切换到: ${targetPage}`);
                     navigateToPage(targetPage);
                 });
             }
@@ -396,8 +372,6 @@
         // 验证sidebar是否存在
         const sidebar = container.querySelector(".sidebar");
         if (sidebar) {
-            console.log("✓ 找到.sidebar元素");
-            console.log(`  sidebar子元素数量: ${sidebar.children.length}`);
         } else {
             console.error("✗ 未找到.sidebar元素");
         }
@@ -406,11 +380,72 @@
     }
 
     /**
+     * 获取页面切换动画方向
+     * @param {string} fromPage - 来源页面
+     * @param {string} toPage - 目标页面
+     * @returns {string} 动画方向类名
+     */
+    function getPageAnimationDirection(fromPage, toPage) {
+        // 导航栏页面顺序（从上到下）
+        const navOrder = ['fill.html', 'history.html', 'profile.html', 'settings.html'];
+
+        // 子页面（通过 > 按钮进入的页面）
+        const subPages = [
+            'edit-resume.html',
+            'change-password.html',
+            'privacy-settings.html',
+            'about.html',
+            'help.html',
+            'feedback.html'
+        ];
+
+        // 没有上一页，使用默认动画
+        if (!fromPage) {
+            return 'animate-from-bottom';
+        }
+
+        const fromNavIndex = navOrder.indexOf(fromPage);
+        const toNavIndex = navOrder.indexOf(toPage);
+        const isFromSubPage = subPages.includes(fromPage);
+        const isToSubPage = subPages.includes(toPage);
+
+        // 当前页面是子页面（从主页面进入子页面）
+        if (isToSubPage && !isFromSubPage) {
+            return 'animate-from-right';
+        }
+
+        // 从子页面返回主页面
+        if (!isToSubPage && isFromSubPage) {
+            return 'animate-from-left';
+        }
+
+        // 子页面之间切换
+        if (isToSubPage && isFromSubPage) {
+            return 'animate-from-right';
+        }
+
+        // 导航栏页面之间切换
+        if (fromNavIndex !== -1 && toNavIndex !== -1) {
+            if (toNavIndex > fromNavIndex) {
+                // 向下导航（从上面的页面到下面的页面）
+                return 'animate-from-bottom';
+            } else if (toNavIndex < fromNavIndex) {
+                // 向上导航（从下面的页面到上面的页面）
+                return 'animate-from-top';
+            }
+        }
+
+        // 默认动画
+        return 'animate-from-bottom';
+    }
+
+    /**
      * 页面导航函数 - 在Shadow DOM内切换页面
      * @param {string} pageHtml - 页面HTML文件名（如 fill.html, profile.html）
      */
     async function navigateToPage(pageHtml) {
-        console.log(`开始导航到页面: ${pageHtml}`);
+        // 记录即将离开的页面
+        const leavingPage = currentPage;
 
         // 验证参数
         if (!pageHtml || pageHtml === 'javascript:void(0)' || pageHtml === '#') {
@@ -426,8 +461,6 @@
         try {
             // 加载新页面HTML
             const url = chrome.runtime.getURL(`popup/${pageHtml}`);
-            console.log(`正在加载页面: ${url}`);
-
             // 验证URL是否有效
             if (!url || url.includes('invalid')) {
                 console.error(`✗ 生成的URL无效: ${url}`);
@@ -441,7 +474,6 @@
             }
 
             const html = await response.text();
-            console.log(`✓ 页面加载成功 (${html.length} 字符)`);
 
             // 解析HTML
             const parser = new DOMParser();
@@ -456,13 +488,9 @@
             const styleContents = Array.from(inlineStyles).map(style => style.textContent).join('\n');
 
             // ⚠️ 关键修复：在注入前移除所有可能导致页面跳转的属性和事件
-            console.log("清理页面HTML中的内联事件和危险属性...");
-
             // 1. 先移除所有script标签
             const scripts = doc.body.querySelectorAll('script');
             scripts.forEach(script => script.remove());
-            console.log(`✓ 已移除 ${scripts.length} 个<script>标签`);
-
             // 2. 清理所有元素的内联事件
             const allElements = doc.body.querySelectorAll('*');
             let removedCount = 0;
@@ -470,7 +498,6 @@
                 // 移除所有on*事件属性
                 Array.from(el.attributes).forEach(attr => {
                     if (attr.name.startsWith('on')) {
-                        console.log(`  移除 ${el.tagName}.${attr.name} = "${attr.value}"`);
                         el.removeAttribute(attr.name);
                         removedCount++;
                     }
@@ -490,24 +517,25 @@
                     el.setAttribute('type', 'button');
                 }
             });
-            console.log(`✓ 已移除 ${removedCount} 个内联事件属性`);
-
             // 获取清理后的body内容
             const bodyContent = doc.body.innerHTML;
 
             // 清空当前容器并注入新内容
             resumeWindowContainer.innerHTML = bodyContent;
 
+            // 移除之前页面的内联样式（避免样式累积）
+            const oldPageStyles = shadowRoot.querySelectorAll('style[data-page-style]');
+            oldPageStyles.forEach(style => style.remove());
+            if (oldPageStyles.length > 0) {
+            }
+
             // 如果有内联样式，注入到Shadow DOM
             if (styleContents) {
                 const pageStyle = document.createElement("style");
+                pageStyle.setAttribute('data-page-style', pageHtml); // 标记样式来源
                 pageStyle.textContent = styleContents;
                 shadowRoot.appendChild(pageStyle);
-                console.log("✓ 页面内联样式已注入");
             }
-
-            console.log("✓ 页面内容已更新");
-
             // ⚠️ 验证：确保所有危险的属性都被移除
             const dangerousElements = resumeWindowContainer.querySelectorAll('[onclick], [onload]');
             if (dangerousElements.length > 0) {
@@ -524,6 +552,30 @@
             // 更新导航按钮的active状态
             updateActiveNav(pageHtml);
 
+            // 应用页面切换动画（只对内容区域应用动画，背景保持固定）
+            const pluginContent = resumeWindowContainer.querySelector('.plugin-content');
+            if (pluginContent) {
+                // 移除所有旧的动画类
+                pluginContent.classList.remove('animate-from-bottom', 'animate-from-top', 'animate-from-right', 'animate-from-left');
+
+                // 确定动画方向
+                const animationClass = getPageAnimationDirection(leavingPage, pageHtml);
+
+                // 强制重绘，确保动画类被移除
+                void pluginContent.offsetHeight;
+
+                // 添加新的动画类
+                pluginContent.classList.add(animationClass);
+
+                // 动画结束后移除动画类，避免影响后续交互
+                setTimeout(() => {
+                    pluginContent.classList.remove(animationClass);
+                }, 400); // 与 CSS 动画时长一致
+            }
+
+            // 更新当前页面变量
+            previousPage = leavingPage;
+            currentPage = pageHtml;
             // 重新绑定导航按钮事件（因为DOM已更新）
             rebindNavigationEvents();
 
@@ -541,17 +593,6 @@
                 if (infoGrid) {
                     // 强制浏览器重新计算布局
                     void infoGrid.offsetHeight;
-
-                    // 调试信息
-                    console.log('=== 填充页面布局信息 ===');
-                    console.log(`  .book-wrapper 高度: ${bookWrapper ? bookWrapper.offsetHeight : 'N/A'}px`);
-                    console.log(`  .resume-page-current 高度: ${resumePageCurrent ? resumePageCurrent.offsetHeight : 'N/A'}px`);
-                    console.log(`  .resume-header 高度: ${resumeHeader ? resumeHeader.offsetHeight : 'N/A'}px`);
-                    console.log(`  .info-grid-compact 高度: ${infoGrid.offsetHeight}px`);
-                    console.log(`  .info-grid-compact scrollHeight: ${infoGrid.scrollHeight}px`);
-                    console.log(`  .info-grid-compact overflow-y: ${window.getComputedStyle(infoGrid).overflowY}`);
-                    console.log(`  需要滚动: ${infoGrid.scrollHeight > infoGrid.offsetHeight ? '是' : '否'}`);
-                    console.log('========================');
                 }
             }
 
@@ -573,7 +614,6 @@
             const href = item.getAttribute('data-href') || item.getAttribute('href');
             if (href === pageHtml) {
                 item.classList.add('active');
-                console.log(`✓ 设置active: ${href}`);
             } else {
                 item.classList.remove('active');
             }
@@ -587,8 +627,6 @@
         if (!resumeWindowContainer) return;
 
         const navItems = resumeWindowContainer.querySelectorAll(".nav-item");
-        console.log(`重新绑定 ${navItems.length} 个导航按钮事件`);
-
         navItems.forEach((item, index) => {
             const label = item.querySelector(".nav-label");
             // 优先读取data-href，然后才是href
@@ -612,13 +650,265 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const labelText = newItem.querySelector(".nav-label")?.textContent || '无标签';
-                    console.log(`导航按钮点击: ${labelText} -> ${targetPage}`);
                     navigateToPage(targetPage);
                 });
             }
         });
+    }
 
-        console.log("✓ 导航事件重新绑定完成");
+    /**
+     * 初始化状态弹窗功能（在Shadow DOM中）
+     */
+    function initStatusPopup() {
+        if (!resumeWindowContainer) {
+            console.error("✗ Shadow DOM容器未初始化");
+            return;
+        }
+
+        // 检查是否已经初始化过
+        if (window.updateStatusPopup) {
+            return;
+        }
+        // 获取Shadow DOM中的元素
+        const fillButton = resumeWindowContainer.querySelector('#fill-action-btn');
+        const statusPopup = resumeWindowContainer.querySelector('#status-popup');
+        const closeButton = statusPopup?.querySelector('.status-popup-close');
+        const statusMessage = resumeWindowContainer.querySelector('#status-message');
+        const btnIcon = fillButton?.querySelector('i');
+        const btnText = fillButton?.querySelector('.btn-text');
+        if (!fillButton || !statusPopup || !statusMessage) {
+            console.error("✗ 状态弹窗元素未找到", {
+                fillButton,
+                statusPopup,
+                statusMessage
+            });
+            return;
+        }
+
+        if (!btnIcon || !btnText) {
+            console.error("✗ 按钮内部元素未找到", {
+                btnIcon,
+                btnText,
+                fillButtonHTML: fillButton.innerHTML
+            });
+            return;
+        }
+
+        // 弹窗状态
+        let isPopupOpen = false;
+        let currentStatus = 'idle';
+
+        /**
+         * 切换弹窗显示状态
+         */
+        function togglePopup() {
+            isPopupOpen = !isPopupOpen;
+            if (isPopupOpen) {
+                statusPopup.classList.add('show');
+            } else {
+                statusPopup.classList.remove('show');
+            }
+        }
+
+        /**
+         * 关闭弹窗
+         */
+        function closePopup() {
+            isPopupOpen = false;
+            statusPopup.classList.remove('show');
+        }
+
+        /**
+         * 重置按钮到初始状态
+         */
+        function resetButton() {
+            // 每次重置时重新获取元素引用
+            const currentFillButton = resumeWindowContainer?.querySelector('#fill-action-btn');
+            const currentBtnIcon = currentFillButton?.querySelector('i');
+            const currentBtnText = currentFillButton?.querySelector('.btn-text');
+
+            if (!currentFillButton || !currentBtnIcon || !currentBtnText) {
+                console.warn('⚠️ 重置按钮时元素未找到');
+                return;
+            }
+
+            currentBtnIcon.className = 'fas fa-bolt';
+            currentBtnText.textContent = '一键智能填充';
+            currentFillButton.classList.remove('btn-processing', 'btn-success', 'btn-error', 'btn-idle');
+            currentFillButton.style.pointerEvents = 'auto';
+            currentStatus = 'idle';
+        }
+
+        /**
+         * 更新状态展示框
+         */
+        function updateStatusDisplay(type, text) {
+            // 获取状态展示框元素
+            const statusDisplay = resumeWindowContainer?.querySelector('#status-display');
+            const statusIcon = statusDisplay?.querySelector('.status-icon');
+            const statusText = statusDisplay?.querySelector('.status-text');
+
+            if (!statusDisplay || !statusIcon || !statusText) {
+                console.error('✗ 状态展示框元素未找到', {
+                    statusDisplay: !!statusDisplay,
+                    statusIcon: !!statusIcon,
+                    statusText: !!statusText,
+                    resumeWindowContainer: !!resumeWindowContainer
+                });
+                return;
+            }
+            // 移除所有状态类
+            statusDisplay.classList.remove('status-success', 'status-error');
+
+            // 根据状态设置图标和样式
+            switch(type) {
+                case 'processing':
+                    statusIcon.className = 'status-icon fas fa-spinner fa-spin';
+                    statusText.textContent = text || '正在处理...';
+                    statusDisplay.style.display = 'flex';
+                    break;
+                case 'success':
+                    statusIcon.className = 'status-icon fas fa-check-circle';
+                    statusText.textContent = text || '填充完成';
+                    statusDisplay.classList.add('status-success');
+                    statusDisplay.style.display = 'flex';
+                    // 3秒后自动隐藏
+                    setTimeout(() => {
+                        if (currentStatus === 'success') {
+                            hideStatusDisplay();
+                        }
+                    }, 3000);
+                    break;
+                case 'error':
+                    statusIcon.className = 'status-icon fas fa-exclamation-triangle';
+                    statusText.textContent = text || '出错了';
+                    statusDisplay.classList.add('status-error');
+                    statusDisplay.style.display = 'flex';
+                    // 5秒后自动隐藏
+                    setTimeout(() => {
+                        if (currentStatus === 'error') {
+                            hideStatusDisplay();
+                        }
+                    }, 5000);
+                    break;
+                case 'idle':
+                default:
+                    hideStatusDisplay();
+            }
+        }
+
+        /**
+         * 隐藏状态展示框
+         */
+        function hideStatusDisplay() {
+            const statusDisplay = resumeWindowContainer?.querySelector('#status-display');
+            if (statusDisplay) {
+                statusDisplay.style.display = 'none';
+            }
+        }
+
+        /**
+         * 更新状态消息（主函数）
+         */
+        function updateStatusText(text, type = 'processing') {
+            if (!statusMessage) {
+                console.error('✗ statusMessage 元素未找到');
+                return;
+            }
+
+            currentStatus = type;
+
+            // 更新消息内容
+            statusMessage.textContent = text || '准备就绪';
+
+            // 根据状态类型更新样式
+            statusMessage.className = 'status-message';
+            if (type === 'error') {
+                statusMessage.classList.add('status-error');
+            } else if (type === 'success') {
+                statusMessage.classList.add('status-success');
+            } else if (type === 'processing') {
+                statusMessage.classList.add('status-processing');
+            }
+            // 更新状态展示框（新方案：在按钮旁边显示状态）
+            updateStatusDisplay(type, text);
+
+            // 添加动画效果
+            statusMessage.style.animation = 'none';
+            setTimeout(() => {
+                statusMessage.style.animation = 'messageSlideIn 0.4s ease';
+            }, 10);
+
+            // 🔧 修复：不自动打开弹窗，只更新按钮状态
+            // 用户可以通过右键点击按钮来查看详细状态
+            // 注释掉自动弹窗逻辑，只保留按钮状态变化
+            /*
+            if (!isPopupOpen) {
+                togglePopup();
+
+                const autoCloseDelay = type === 'error' ? 10000 : 5000;
+                setTimeout(() => {
+                    if (isPopupOpen && !statusPopup.matches(':hover')) {
+                        closePopup();
+                    }
+                }, autoCloseDelay);
+            }
+            */
+        }
+
+        // 绑定填充按钮右键点击事件
+        fillButton.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePopup();
+        });
+
+        // 添加悬停提示
+        fillButton.addEventListener('mouseenter', () => {
+            fillButton.title = '右键查看详细状态';
+        });
+
+        // 绑定关闭按钮点击事件
+        if (closeButton) {
+            closeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePopup();
+            });
+        }
+
+        // 点击容器外部关闭弹窗
+        resumeWindowContainer.addEventListener('click', (e) => {
+            if (isPopupOpen && !statusPopup.contains(e.target) && !fillButton.contains(e.target)) {
+                closePopup();
+            }
+        });
+
+        // 阻止弹窗内部点击事件冒泡
+        statusPopup.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // 暴露全局接口
+        window.updateStatusPopup = updateStatusText;
+
+        // 暴露测试接口（用于调试）
+        window.testStatusPopup = {
+            processing: (text) => updateStatusText(text || '正在处理中...', 'processing'),
+            success: (text) => updateStatusText(text || '操作成功完成', 'success'),
+            error: (text) => updateStatusText(text || '发生错误', 'error'),
+            idle: () => updateStatusText('准备就绪', 'idle'),
+            getElements: () => ({
+                fillButton,
+                statusPopup,
+                statusMessage,
+                btnIcon,
+                btnText,
+                buttonClasses: fillButton?.className,
+                iconClasses: btnIcon?.className,
+                buttonText: btnText?.textContent
+            })
+        };
+        
     }
 
     /**
@@ -627,11 +917,11 @@
      */
     function bindPageSpecificEvents(pageHtml) {
         if (!resumeWindowContainer) return;
-
-        console.log(`绑定页面特定事件: ${pageHtml}`);
-
         // fill.html - 填充页面
         if (pageHtml === 'fill.html') {
+            // 初始化状态弹窗功能
+            initStatusPopup();
+
             const fillBtn = resumeWindowContainer.querySelector(".liquid-cta-btn");
             if (fillBtn) {
                 // 使用克隆节点移除旧的事件监听器，防止重复绑定
@@ -640,10 +930,8 @@
 
                 // 绑定新的事件监听器
                 newFillBtn.addEventListener("click", () => {
-                    console.log("一键智能填充按钮被点击");
                     startFilling();
                 });
-                console.log("✓ 填充按钮事件已绑定（已移除旧事件）");
             }
 
             // 初始化简历数据
@@ -652,6 +940,9 @@
 
         // profile.html - 个人页面
         if (pageHtml === 'profile.html') {
+            // 加载用户信息（昵称和头像）
+            loadUserInfo();
+
             // 初始化简历数据（会自动调用bindResumeSwitchEvents）
             // 等待初始化完成后再绑定编辑按钮事件
             initResumeData().then(() => {
@@ -663,14 +954,10 @@
                     editResumeBtn.addEventListener("click", (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log("编辑简历按钮被点击");
-
                         // 打开外部Web页面进行简历编辑
                         const resumeUrl = window.config?.WEB_URL || 'http://localhost:3000/resume';
-                        console.log(`打开简历编辑页面: ${resumeUrl}`);
                         window.open(resumeUrl, '_blank');
                     });
-                    console.log("✓ 编辑简历按钮事件已绑定（打开外部Web页面）");
                 }
             });
         }
@@ -679,6 +966,102 @@
         if (pageHtml === 'history.html') {
             // 加载并渲染投递记录
             loadApplicationRecords();
+        }
+
+        // settings.html - 设置页面
+        if (pageHtml === 'settings.html') {
+            // 绑定"修改简历信息"按钮
+            // 先尝试多种选择器
+            let editResumeLink = resumeWindowContainer.querySelector('a[href="edit-resume.html"]');
+            if (!editResumeLink) {
+                editResumeLink = resumeWindowContainer.querySelector('.settings-item');
+            }
+            if (editResumeLink) {
+                // 移除原有的href属性，防止页面跳转
+                editResumeLink.removeAttribute('href');
+                editResumeLink.setAttribute('href', 'javascript:void(0)');
+
+                // 使用克隆节点移除旧的事件监听器，防止重复绑定
+                const newEditResumeLink = editResumeLink.cloneNode(true);
+                editResumeLink.parentNode.replaceChild(newEditResumeLink, editResumeLink);
+
+                newEditResumeLink.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // 使用配置文件中的 WEB_URL（已经包含 /resume 路径）
+                    const resumeUrl = window.config?.WEB_URL || 'http://localhost:3000/resume';
+                    // 方式1: 通过 background script 打开新标签页
+                    try {
+                        const response = await chrome.runtime.sendMessage({
+                            type: 'openTab',
+                            url: resumeUrl
+                        });
+
+                        if (response?.success) {
+
+                        } else {
+                            throw new Error('background 返回失败');
+                        }
+                    } catch (error) {
+                        console.error('✗ 通过 background 打开失败:', error);
+
+                        // 方式2: 降级到直接使用 window.open
+                        try {
+                            const newWindow = window.open(resumeUrl, '_blank');
+                            if (newWindow) {
+                                
+                            } else {
+                                console.error('✗ 新标签页被阻止');
+                                alert('请允许浏览器弹出窗口以打开简历编辑页面');
+                            }
+                        } catch (err) {
+                            console.error('✗ window.open 也失败:', err);
+                            alert('无法打开简历编辑页面，请手动访问：\n' + resumeUrl);
+                        }
+                    }
+                });
+            } else {
+                console.error('✗ 未找到修改简历信息按钮');
+            }
+
+            // 绑定退出登录按钮
+            const logoutBtn = resumeWindowContainer.querySelector('.btn-danger');
+            if (logoutBtn) {
+                // 移除原有的内联onclick属性
+                logoutBtn.removeAttribute('onclick');
+
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // 确认对话框
+                    if (!confirm('确定要退出登录吗？')) {
+                        return;
+                    }
+
+                    try {
+                        // 发送退出登录消息到 background.js
+                        const response = await chrome.runtime.sendMessage({
+                            type: 'logout'
+                        });
+
+                        if (response?.status === 'success') {
+                            alert('已成功退出登录');
+
+                            // 关闭插件窗口
+                            toggleWindow(false);
+
+                            // 可选：刷新当前页面
+                            // window.location.reload();
+                        } else {
+                            console.error('退出登录失败:', response);
+                            alert('退出登录失败，请重试');
+                        }
+                    } catch (error) {
+                        console.error('退出登录异常:', error);
+                        alert('退出登录出错，请重试');
+                    }
+                });
+            }
         }
 
         // 绑定右上角设置按钮（或关闭按钮）
@@ -692,21 +1075,16 @@
             settingsBtn.addEventListener("click", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("右上角按钮被点击");
-
                 // 判断按钮图标类型
                 const icon = settingsBtn.querySelector('i');
                 if (icon && icon.classList.contains('fa-times')) {
                     // 关闭图标 - 关闭整个窗口
-                    console.log("关闭按钮 - 关闭窗口");
                     toggleWindow(false);
                 } else {
                     // 设置图标 - 跳转到设置页面
-                    console.log("设置按钮 - 跳转到设置页面");
                     navigateToPage('settings.html');
                 }
             });
-            console.log("✓ 右上角按钮事件已绑定");
         }
     }
 
@@ -714,35 +1092,19 @@
      * 加载CSS样式
      */
     async function loadStyles() {
-        console.log("开始加载样式...");
         try {
-            // 1. 首先加载本地 CSS 文件（fetch 方式，最可靠）
+            // 1. 加载本地 CSS 文件（fetch 方式，最可靠）
             const cssFiles = [
+                "popup/styles/simple-icons.css",  // 简单图标系统（Unicode字符 + CSS）
                 "popup/styles/common.css",
                 "popup/styles/fill.css"
                 // 移除 resumeInterface.css，因为它是为旧的深色主题设计的，会与新设计冲突
             ];
 
-            const fetchPromises = cssFiles.map(async (file) => {
-                try {
-                    const url = chrome.runtime.getURL(file);
-                    console.log(`正在加载CSS: ${file}`);
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        const content = await response.text();
-                        console.log(`✓ CSS加载成功: ${file} (${content.length} 字符)`);
-                        return content;
-                    } else {
-                        console.error(`✗ CSS加载失败: ${file}, 状态: ${response.status}`);
-                        return "";
-                    }
-                } catch (error) {
-                    console.error(`✗ CSS加载异常: ${file}`, error);
-                    return "";
-                }
+            // 验证 CSS 文件是否可访问
+            cssFiles.forEach((file) => {
+                const url = chrome.runtime.getURL(file);
             });
-
-            const cssContents = await Promise.all(fetchPromises);
 
             // 首先定义CSS变量（在Shadow DOM中，:root不工作，需要用:host或*）
             const cssVariables = document.createElement("style");
@@ -801,14 +1163,31 @@
                 }
             `;
             shadowRoot.appendChild(cssVariables);
-            console.log("✓ CSS变量已注入Shadow DOM");
+            // 使用 adoptedStyleSheets API 加载 CSS（保持 Unicode 转义序列）
+            const styleSheets = [];
 
-            // 创建内联样式标签
-            const inlineStyle = document.createElement("style");
-            inlineStyle.textContent = cssContents.join("\n\n");
-            shadowRoot.appendChild(inlineStyle);
-            console.log("✓ 本地CSS样式已注入Shadow DOM");
+            for (const file of cssFiles) {
+                try {
+                    const url = chrome.runtime.getURL(file);
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        console.error(`❌ 加载CSS失败: ${file} - ${response.status}`);
+                        continue;
+                    }
 
+                    let cssText = await response.text();
+
+                    // 使用 adoptedStyleSheets API 加载样式
+                    const sheet = new CSSStyleSheet();
+                    await sheet.replace(cssText);
+                    styleSheets.push(sheet);
+                } catch (error) {
+                    console.error(`❌ 加载CSS时出错: ${file}`, error);
+                }
+            }
+
+            // 将所有样式表应用到 Shadow DOM
+            shadowRoot.adoptedStyleSheets = styleSheets;
             // 添加Logo按钮和窗口容器的样式（从 resumeInterface.css 提取）
             const logoAndContainerStyle = document.createElement("style");
             logoAndContainerStyle.textContent = `
@@ -872,9 +1251,9 @@
                     width: 100%;
                     height: 100%;
                     border-radius: 20px;
-                    background: rgba(255, 255, 255, 0.95);
-                    backdrop-filter: blur(10px);
-                    -webkit-backdrop-filter: blur(10px);
+                    background: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
                     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2), 0 0 40px rgba(0, 0, 0, 0.1);
                 }
 
@@ -889,7 +1268,7 @@
                     padding: 30px 0;
                     gap: 18px;
                     flex-shrink: 0;
-                    border-radius: 0 13px 13px 0;
+                    border-radius: 20px;
                     box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2);
                 }
 
@@ -898,6 +1277,10 @@
                     height: 100%;
                     position: relative;
                     overflow: hidden;
+                    border-radius: 0 20px 20px 0;
+                    background: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
                 }
 
                 /* 悬浮标题（玻璃效果） */
@@ -1043,57 +1426,55 @@
                 }
             `;
             shadowRoot.appendChild(logoAndContainerStyle);
-            console.log("✓ Logo和容器样式已注入");
-
-            // 2. 加载 Font Awesome - 直接使用备用emoji方案（避免CDN CSP问题）
-            console.log("使用emoji图标方案（避免CDN CSP问题）");
-            const iconStyle = document.createElement("style");
-            iconStyle.textContent = `
-                /* 图标基础样式 */
-                .fas, .far, .fab, .fa {
-                    display: inline-block;
-                    font-style: normal;
-                    font-variant: normal;
-                    text-rendering: auto;
-                    line-height: 1;
-                }
-
-                /* Emoji图标映射 */
-                .fa-rocket::before { content: "🚀"; font-size: 1.2em; }
-                .fa-magic::before { content: "✨"; font-size: 1.2em; }
-                .fa-bolt::before { content: "⚡"; font-size: 1.2em; }
-                .fa-history::before { content: "🕐"; font-size: 1.2em; }
-                .fa-user::before { content: "👤"; font-size: 1.2em; }
-                .fa-cog::before { content: "⚙️"; font-size: 1.2em; }
-                .fa-info-circle::before { content: "ℹ️"; font-size: 1.2em; }
-                .fa-times::before { content: "✖"; font-size: 1.2em; }
-                .fa-edit::before { content: "✏️"; font-size: 1.2em; }
-                .fa-pause::before { content: "⏸"; font-size: 1.2em; }
-                .fa-play::before { content: "▶️"; font-size: 1.2em; }
-                .fa-calendar-check::before { content: "✅"; font-size: 1.2em; }
-                .fa-sync::before { content: "🔄"; font-size: 1.2em; }
-                .fa-spinner::before { content: "⏳"; font-size: 1.2em; }
-                .fa-inbox::before { content: "📥"; font-size: 1.2em; }
-                .fa-bug::before { content: "🐛"; font-size: 1.2em; }
-                .fa-charging-station::before { content: "🔋"; font-size: 1.2em; }
-                .fa-wand-magic-sparkles::before { content: "🪄"; font-size: 1.2em; }
-
-                /* Spinner 动画 */
-                .fa-spin {
-                    animation: fa-spin 2s infinite linear;
-                }
-
-                @keyframes fa-spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `;
-            shadowRoot.appendChild(iconStyle);
-            console.log("✓ Emoji图标样式已注入");
+            // 2. Font Awesome 已在 loadStyles() 中加载，这里不需要额外处理
 
             // 验证样式是否成功注入
             const styleCount = shadowRoot.querySelectorAll('style').length;
-            console.log(`✓ 样式加载完成，共注入 ${styleCount} 个<style>标签到Shadow DOM`);
+            // 调试：检查图标元素的实际状态
+            setTimeout(() => {
+                const iconElements = shadowRoot.querySelectorAll('.fas, .far, .fab');
+                if (iconElements.length > 0) {
+                    const firstIcon = iconElements[0];
+                    const computedStyle = window.getComputedStyle(firstIcon, '::before');
+                    // 检查是否有多个font-family回退
+                    const allFonts = computedStyle.fontFamily.split(',').map(f => f.trim().replace(/['"]/g, ''));
+                    // 检查CSS规则是否存在
+                    const styleSheets = Array.from(shadowRoot.styleSheets || []);
+                    // 尝试找到 fa-info-circle 的规则
+                    let foundRule = false;
+                    for (const sheet of styleSheets) {
+                        try {
+                            const rules = Array.from(sheet.cssRules || []);
+                            const iconRule = rules.find(rule =>
+                                rule.selectorText && rule.selectorText.includes('fa-info-circle')
+                            );
+                            if (iconRule) {
+                                foundRule = true;
+                                break;
+                            }
+                        } catch (e) {
+                            // 某些样式表可能无法访问
+                        }
+                    }
+
+                    if (!foundRule) {
+                        console.warn("  ⚠️ 未找到 fa-info-circle 的CSS规则！");
+
+                        // 检查样式表的内容
+                        const styles = shadowRoot.querySelectorAll('style');
+                        for (let i = 0; i < Math.min(styles.length, 3); i++) {
+                            const content = styles[i].textContent;
+                            const hasIconRules = content.includes('.fa-') && content.includes(':before');
+                            if (hasIconRules) {
+                                // 查找一个示例规则
+                                const match = content.match(/\.fa-[a-z-]+:before\{content:"[^"]+"\}/);
+                                if (match) {
+                                }
+                            }
+                        }
+                    }
+                }
+            }, 1000);
 
         } catch (error) {
             console.error("✗ 加载样式时出错:", error);
@@ -1102,19 +1483,18 @@
 
     /**
      * 加载Font Awesome字体
-     * 注意：Font Awesome 的字体由 CDN CSS 自动处理
+     * 注意：Font Awesome 的字体由本地 CSS 文件自动处理
      */
     async function loadFontAwesome() {
         try {
-            // Font Awesome CDN 会自动处理字体加载
-            // 我们只需要确保 CDN CSS 已加载（在 loadStyles 中处理）
+            // Font Awesome 本地文件会自动处理字体加载
+            // 字体文件路径在 font-awesome.all.min.css 中配置为 ../webfonts/
+            // 我们只需要等待 CSS 加载完成（在 loadStyles 中已处理）
 
-            // 等待一小段时间确保 CDN CSS 加载完成
+            // 等待一小段时间，确保字体文件开始加载
             await new Promise(resolve => setTimeout(resolve, 100));
-
-            console.log("Font Awesome CDN 已就绪");
         } catch (error) {
-            console.error("Font Awesome 初始化失败:", error);
+            console.error("✗ Font Awesome 初始化失败:", error);
         }
     }
 
@@ -1171,7 +1551,6 @@
         // Logo按钮点击 - 打开/关闭窗口
         logoBtn.addEventListener("click", async () => {
             const { auth } = await chrome.storage.local.get(["auth"]);
-            console.log("auth====>", auth);
             if (auth) {
                 toggleWindow(true);
             } else {
@@ -1189,7 +1568,6 @@
             resumeWindowContainer.addEventListener("click", (e) => {
                 // 如果点击的是容器本身（而不是窗口内容），则关闭窗口
                 if (e.target === resumeWindowContainer) {
-                    console.log("点击窗口外部，关闭窗口");
                     toggleWindow(false);
                 }
             });
@@ -1198,7 +1576,6 @@
         // 绑定ESC键关闭窗口
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape" && resumeWindowContainer && resumeWindowContainer.style.display === "block") {
-                console.log("按下ESC键，关闭窗口");
                 toggleWindow(false);
             }
         });
@@ -1307,9 +1684,9 @@
 
             // 更新状态提示
             if (canStart()) {
-                window.setStateText("方舟已就位，等待启动", "show");
+                window.setStateText("一念职达已准备，等待启动", "show");
             } else {
-                window.setStateText("方舟准备中，请先填写公司和职位", "show");
+                window.setStateText("一念职达准备中，请先填写公司和职位", "show");
                 await delay(600);
                 // TODO: 焦点处理需要根据fill.html的实际元素调整
                 // resumeWindow.querySelector("#company-name").focus();
@@ -1361,7 +1738,7 @@
      * @param {Object} data - 简历数据
      */
     function fillFormData(data) {
-        console.log("填充表单数据。。。。")
+        
         // TODO: 根据fill.html的实际表单元素实现
         // const companyInput = resumeWindow.querySelector("#company-name");
         // const positionInput = resumeWindow.querySelector("#position-name");
@@ -1415,28 +1792,46 @@
      * 开始填充流程
      */
     async function startFilling() {
-        console.log(`[startFilling] 当前状态: ${fillState}, 编辑器状态: ${editorState}`);
-
         if (editorState !== "success") {
-            console.log("[startFilling] 编辑器未就绪，退出");
             return;
         }
 
         // 检查是否可以开始
         if (!canStart()) {
             alert("要先填写公司和职位，才能生成专岗美化简历哦！");
-            window.setStateText("方舟准备中，请先填写公司和职位", "show");
+            window.setStateText("一念职达准备中，请先填写公司和职位", "show");
             // TODO: 焦点处理
             return;
         }
 
         // 只有在特定状态下才能开始
         if (["ready", "success", "error", "quota"].includes(fillState)) {
-            console.log("[startFilling] 开始新的填充流程");
+            // 检查登录状态
+            const { auth } = await chrome.storage.local.get(["auth"]);
+            if (!auth || !auth.token) {
+                const shouldLogin = confirm("暂未登录，请先登录。是否立即前往登录页面？");
+                if (shouldLogin) {
+                    window.open(window.config.LOGIN_URL, "_blank");
+                }
+                return;
+            }
+
+            // 检查简历数据是否为空
+            if (!resumeList || resumeList.length === 0) {
+                const shouldUpload = confirm(
+                    "您还没有上传简历，无法使用智能填充功能。\n" +
+                    "是否立即前往上传简历？"
+                );
+                if (shouldUpload) {
+                    const resumeUrl = window.config?.WEB_URL || 'http://localhost:3000/resume';
+                    window.open(resumeUrl, "_blank");
+                }
+                return;
+            }
+
             // todo 检查配额接口
             // 检查配额
             const quotaResult = await apiRequestForGet("quota", {},false);
-            console.log("[startFilling] 检查配额结果:", quotaResult);
             // const quotaResult = { remainQuota: 9999 };
             if (quotaResult.quota <= 0) {
                 const goToPricing = confirm(
@@ -1457,27 +1852,31 @@
 
             // 锁定简历，防止填充过程中切换
             isResumeLocked = true;
-            console.log("[startFilling] 简历已锁定");
+            // 锁定任务背景输入框
+            lockTaskInput();
 
             // 开始运行
             changeState("running");
 
-            // TODO: 从fill.html获取表单数据
+            // 从fill.html获取表单数据
             // 如果 resumeData 中没有公司名称，尝试重新获取
             let company = resumeData?.company;
             if (!company || company.trim() === '') {
                 company = getCurrentCompanyName();
-                console.log("[startFilling] resumeData中公司名称为空，重新获取:", company);
             }
             const position = resumeData?.position;
             const resumeId = resumeData?.resumeId;
 
-            console.log("[startFilling] 填充参数 - 公司:", company, "职位:", position, "简历ID:", resumeId);
-
+            // 获取任务背景
+            let taskContent = '';
+            const taskInput = resumeWindowContainer?.querySelector('.task-input');
+            if (taskInput) {
+                taskContent = taskInput.value.trim();
+            } else {
+            }
             // 调用填充函数
             if (typeof window.runFillResume === 'function') {
-                window.runFillResume(company, position, resumeId, false, (result) => {
-                    console.log("[startFilling] 填充完成，结果:", result);
+                window.runFillResume(company, position, resumeId, taskContent, false, (result) => {
                     if (result.status === "success") {
                         changeState("success");
                         // 保存投递记录
@@ -1507,7 +1906,6 @@
                     }
                     // 填充完成后解锁简历
                     isResumeLocked = false;
-                    console.log("[startFilling] 填充完成，简历已解锁");
                 });
             } else {
                 console.error("[startFilling] window.runFillResume 函数未定义！");
@@ -1520,11 +1918,9 @@
             }
         } else if (fillState === "running") {
             // 暂停
-            console.log("[startFilling] 暂停填充");
             changeState("pause");
         } else if (fillState === "pause") {
             // 继续
-            console.log("[startFilling] 继续填充");
             changeState("running");
         }
     }
@@ -1535,18 +1931,17 @@
      * @param {string} errorMessage - 错误消息（仅在state为"error"时使用）
      */
     function changeState(state, errorMessage = null) {
-        console.log(`[changeState] 状态变化: ${fillState} -> ${state}`);
         if (errorMessage) {
-            console.log(`[changeState] 错误信息:`, errorMessage);
         }
         fillState = state;
 
-        // 在结束状态时解锁简历
+        // 在结束状态时解锁简历和任务背景输入框
         if (["ready", "success", "error", "quota"].includes(state)) {
             if (isResumeLocked) {
                 isResumeLocked = false;
-                console.log(`[changeState] 状态变为${state}，简历已解锁`);
             }
+            // 解锁任务背景输入框
+            unlockTaskInput();
         }
 
         // TODO: 根据fill.html的按钮实现状态变化
@@ -1566,7 +1961,6 @@
                 // 移除刷新按钮（如果存在）
                 const runningRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
                 if (runningRefreshBtn) runningRefreshBtn.remove();
-                console.log("[changeState] 按钮已更新为: 暂停填充");
                 break;
             case "pause":
                 startButton.innerHTML = '<i class="fas fa-play"></i> 继续填充';
@@ -1575,7 +1969,6 @@
                 // 移除刷新按钮（如果存在）
                 const pauseRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
                 if (pauseRefreshBtn) pauseRefreshBtn.remove();
-                console.log("[changeState] 按钮已更新为: 继续填充");
                 break;
             case "success":
                 startButton.innerHTML = '<i class="fas fa-calendar-check"></i> 填充完成';
@@ -1625,8 +2018,6 @@
                     // 刷新按钮点击事件 - 重置所有状态
                     refreshBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        console.log("[changeState] 刷新按钮被点击，重置状态");
-
                         // 移除刷新按钮
                         refreshBtn.remove();
 
@@ -1635,14 +2026,10 @@
 
                         // 更新UI状态
                         changeState("ready");
-
-                        console.log("[changeState] 状态已重置为 ready");
                     });
 
                     buttonContainer.appendChild(refreshBtn);
-                    console.log("[changeState] 刷新按钮已添加到DOM");
                 }
-                console.log("[changeState] 按钮已更新为: 填充完成，已添加刷新按钮");
                 break;
             case "error":
                 startButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 填充错误';
@@ -1692,8 +2079,6 @@
                     // 刷新按钮点击事件 - 重置所有状态并重新填充
                     errorRefreshBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        console.log("[changeState] 刷新按钮被点击，重置状态并重新填充");
-
                         // 移除刷新按钮
                         errorRefreshBtn.remove();
 
@@ -1705,15 +2090,12 @@
 
                         // 延迟一小段时间后自动开始填充
                         setTimeout(() => {
-                            console.log("[changeState] 自动重新开始填充");
                             startFilling();
                         }, 300);
                     });
 
                     buttonContainer.appendChild(errorRefreshBtn);
-                    console.log("[changeState] 错误刷新按钮已添加到DOM");
                 }
-                console.log("[changeState] 按钮已更新为: 填充错误，已添加刷新按钮");
                 break;
             case "quota":
                 startButton.innerHTML = '<i class="fas fa-charging-station"></i> 配额已用完';
@@ -1723,7 +2105,6 @@
                 // 移除刷新按钮（如果存在）
                 const quotaRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
                 if (quotaRefreshBtn) quotaRefreshBtn.remove();
-                console.log("[changeState] 按钮已更新为: 配额已用完");
                 break;
             case "learning":
                 startButton.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> 学习中';
@@ -1732,10 +2113,8 @@
                 // 移除刷新按钮（如果存在）
                 const learningRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
                 if (learningRefreshBtn) learningRefreshBtn.remove();
-                console.log("[changeState] 按钮已更新为: 学习中");
                 break;
             default:
-                console.log("[changeState] 按钮已更新为: 一键智能填充");
                 startButton.innerHTML = '<i class="fas fa-bolt"></i> 一键智能填充';
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
@@ -1800,39 +2179,71 @@
     /**
      * 设置状态文字（带打字机效果）
      * @param {string} text - 状态文字
-     * @param {string|null} displayMode - 显示模式
+     * @param {string|null} displayMode - 显示模式（fill.html 页面会忽略此参数）
      */
     function setStateText(text, displayMode = null) {
-        // TODO: 根据fill.html的状态显示元素实现
-        const stateTextEl = resumeWindow.querySelector("#status-message");
-        if (!stateTextEl) return;
+        // 根据文本内容判断状态类型
+        let statusType = 'processing';
 
-        if (stateTextEl.textContent === text) return;
-
-        // 清除之前的定时器
-        if (stateTextTimer) {
-            clearTimeout(stateTextTimer);
+        // 检测错误状态
+        if (/(错误|失败|糟糕|不行了|用完|刷新)/.test(text)) {
+            statusType = 'error';
+        }
+        // 检测成功状态
+        else if (/(完成|成功|已就位|已保存)/.test(text)) {
+            statusType = 'success';
+        }
+        // 检测准备就绪状态
+        else if (/(等待|准备中)/.test(text)) {
+            statusType = 'idle';
+        }
+        // 更新状态弹窗（如果存在）
+        // 直接使用 window.updateStatusPopup，因为它在 initStatusPopup 中被暴露
+        if (typeof window.updateStatusPopup === 'function') {
+            window.updateStatusPopup(text, statusType);
+        } else {
+            console.error('  ✗ window.updateStatusPopup 函数不存在！');
         }
 
-        let index = 0;
-        stateTextEl.textContent = "";
+        // 更新 #status-message 元素（保留原有功能）
+        const stateTextEl = resumeWindow?.querySelector("#status-message");
+        if (stateTextEl) {
+            // 🔧 移除文本相同时的提前返回，确保后续逻辑正常执行
+            // if (stateTextEl.textContent === text) return;
 
-        // 打字机效果
-        const typeChar = () => {
-            if (index < text.length) {
-                stateTextEl.textContent += text.charAt(index);
-                index++;
-                stateTextTimer = setTimeout(typeChar, 500 / text.length);
-            } else {
-                stateTextTimer = null;
+            // 清除之前的定时器
+            if (stateTextTimer) {
+                clearTimeout(stateTextTimer);
             }
-        };
 
-        typeChar();
+            let index = 0;
+            stateTextEl.textContent = "";
 
-        // 切换显示模式
-        if (displayMode) {
+            // 打字机效果
+            const typeChar = () => {
+                if (index < text.length) {
+                    stateTextEl.textContent += text.charAt(index);
+                    index++;
+                    stateTextTimer = setTimeout(typeChar, 500 / text.length);
+                } else {
+                    stateTextTimer = null;
+                }
+            };
+
+            typeChar();
+        }
+
+        // 🔧 修复：fill.html 使用新的悬浮按钮设计，不需要隐藏/显示内容区域
+        // 对于 fill.html，我们只更新按钮状态，不切换显示模式
+        // 因为按钮是悬浮在内容上方的，不需要收起内容
+        const isFillPage = currentPage === 'fill.html';
+
+        if (displayMode && !isFillPage) {
+            // 只有非 fill.html 页面才执行显示模式切换
             toggleDisplay(displayMode);
+        }
+
+        if (isFillPage && displayMode) {
         }
     }
 
@@ -1932,9 +2343,7 @@
                 const queryString = new URLSearchParams(params).toString();
                 url += `?${queryString}`;
             }
-
-            console.log("[apiRequestForGet] 请求URL:", url);
-
+            console.log("url===>",url)
             const response = await fetchWithJwt(url, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" }
@@ -1954,24 +2363,59 @@
      */
     async function fetchWithJwt(url, options = {}) {
         try {
-            console.log("[fetchWithJwt] 发送请求到background:", { url, options });
-
             const response = await chrome.runtime.sendMessage({
                 type: "fetchWithJwt",
                 url: url,
                 options: options
             });
-
-            console.log("[fetchWithJwt] 收到background响应:", response);
-
             if (response.error) {
                 console.error("[fetchWithJwt] 请求返回错误:", response.error);
+
+                // 只在刷新token失败时才清空Auth并引导登录
+                const errorMsg = response.error.toLowerCase();
+                const isRefreshTokenError = errorMsg.includes('刷新token失败');
+
+                if (isRefreshTokenError) {
+                    console.warn("[fetchWithJwt] Token刷新失败，清空Auth并引导重新登录");
+
+                    // 清空Auth
+                    try {
+                        await chrome.storage.local.remove(["auth"]);
+                    } catch (clearError) {
+                        console.error("[fetchWithJwt] 清空Auth失败:", clearError);
+                    }
+
+                    // 提示用户并引导重新登录
+                    alert("登录已失效，请重新登录");
+                    window.open(window.config.LOGIN_URL, "_blank");
+                }
+
                 throw new Error(response.error);
             }
 
             return response;
         } catch (error) {
             console.error("[fetchWithJwt] 捕获到异常:", error);
+
+            // 只在刷新token失败时才清空Auth并引导登录
+            const errorMsg = error.message?.toLowerCase() || '';
+            const isRefreshTokenError = errorMsg.includes('刷新token失败');
+
+            if (isRefreshTokenError) {
+                console.warn("[fetchWithJwt] Token刷新失败（异常），清空Auth并引导重新登录");
+
+                // 清空Auth
+                try {
+                    await chrome.storage.local.remove(["auth"]);
+                } catch (clearError) {
+                    console.error("[fetchWithJwt] 清空Auth失败:", clearError);
+                }
+
+                // 提示用户并引导重新登录
+                alert("登录已失效，请重新登录");
+                window.open(window.config.LOGIN_URL, "_blank");
+            }
+
             throw error;
         }
     }
@@ -2066,12 +2510,9 @@
             // todo 简历接口
             // 调用后端API获取简历列表
             const response = await apiRequestForGet("resume/list", {}, false);
-            console.log("[getResumeList] API响应数据:", response);
-
             // 检查响应是否成功，并且有列表数据
             if (response && response.success && response.list && Array.isArray(response.list)) {
                 const processedList = processResumeList(response.list);
-                console.log("[getResumeList] 处理后的简历列表:", processedList);
                 return processedList;
             }
 
@@ -2154,7 +2595,6 @@
         }
 
         currentResumeIndex = (currentResumeIndex + 1) % resumeList.length;
-        console.log(`[switchToNextResume] 切换到简历 ${currentResumeIndex + 1}/${resumeList.length}`);
         renderResumeData();
     }
 
@@ -2172,7 +2612,6 @@
         }
 
         currentResumeIndex = (currentResumeIndex - 1 + resumeList.length) % resumeList.length;
-        console.log(`[switchToPrevResume] 切换到简历 ${currentResumeIndex + 1}/${resumeList.length}`);
         renderResumeData();
     }
 
@@ -2190,9 +2629,6 @@
             console.warn("[renderResumeData] 没有可用的简历数据");
             return;
         }
-
-        console.log("[renderResumeData] 开始渲染简历数据:", resume);
-
         // 更新姓名 (resume-name)
         const resumeNameEl = resumeWindowContainer.querySelector('.resume-name');
         if (resumeNameEl) {
@@ -2265,9 +2701,6 @@
             expectedCity: resume.expectedCity || '',
             coreSkills: resume.coreSkills || ''
         };
-
-        console.log("[renderResumeData] 简历数据渲染完成，简历ID:", resume.id);
-        console.log("[renderResumeData] resumeData已更新:", resumeData);
     }
 
     /**
@@ -2299,17 +2732,56 @@
     }
 
     /**
+     * 加载用户信息（昵称和头像）
+     */
+    function loadUserInfo() {
+        chrome.storage.local.get(['auth'], function(result) {
+            if (result.auth && result.auth.userInfo) {
+                const userInfo = result.auth.userInfo;
+                const nickname = userInfo.nickname || '未设置昵称';
+                const avatar = userInfo.avatar || 'logo-small.png';
+                // 更新个人信息头像下方的昵称
+                const userNickname = resumeWindowContainer.querySelector('#user-nickname');
+                if (userNickname) {
+                    userNickname.textContent = nickname;
+                } else {
+                    console.warn('⚠ 未找到 #user-nickname 元素');
+                }
+
+                // 更新简历卡片中的昵称
+                const resumeNickname = resumeWindowContainer.querySelector('#resume-nickname');
+                if (resumeNickname) {
+                    resumeNickname.textContent = nickname;
+                } else {
+                    console.warn('⚠ 未找到 #resume-nickname 元素');
+                }
+
+                // 更新头像
+                const userAvatar = resumeWindowContainer.querySelector('#user-avatar');
+                if (userAvatar) {
+                    userAvatar.src = avatar;
+                    userAvatar.style.display = 'block';
+                } else {
+                    console.warn('⚠ 未找到 #user-avatar 元素');
+                }
+            } else {
+                console.warn('⚠ 未找到用户信息，使用默认值');
+            }
+        });
+    }
+
+    /**
      * 初始化简历数据
      */
     async function initResumeData() {
         try {
-            console.log("[initResumeData] 开始初始化简历数据");
-
             // 获取简历列表
             resumeList = await getResumeList();
 
             if (resumeList.length === 0) {
                 console.warn("[initResumeData] 没有可用的简历数据");
+                // 在简历卡片区域显示提示信息
+                showNoResumeMessage();
                 return;
             }
 
@@ -2321,11 +2793,33 @@
 
             // 绑定简历切换事件
             bindResumeSwitchEvents();
-
-            console.log(`[initResumeData] 简历数据初始化完成，共 ${resumeList.length} 份简历`);
         } catch (error) {
             console.error("[initResumeData] 初始化简历数据失败:", error);
         }
+    }
+
+    /**
+     * 显示无简历数据提示信息
+     */
+    function showNoResumeMessage() {
+        if (!resumeWindowContainer) return;
+
+        const resumeNameElement = resumeWindowContainer.querySelector('.resume-name');
+        const resumeTypeElement = resumeWindowContainer.querySelector('.resume-type');
+
+        if (resumeNameElement) {
+            resumeNameElement.textContent = '暂无简历';
+        }
+        if (resumeTypeElement) {
+            resumeTypeElement.textContent = '请先上传简历';
+            resumeTypeElement.style.color = '#ff9a9e';
+        }
+
+        // 清空所有信息单元格
+        const infoCells = resumeWindowContainer.querySelectorAll('.info-cell-value');
+        infoCells.forEach(cell => {
+            cell.textContent = '-';
+        });
     }
 
     /**
@@ -2345,7 +2839,6 @@
                 // 检查点击目标是否是编辑简历按钮或其子元素
                 const editBtn = e.target.closest('.edit-resume-btn');
                 if (editBtn) {
-                    console.log("[bindResumeSwitchEvents] 点击了编辑按钮，不触发切换");
                     return;
                 }
 
@@ -2354,8 +2847,6 @@
                     switchToNextResume();
                 }
             });
-
-            console.log("[bindResumeSwitchEvents] 简历切换事件已绑定");
         }
     }
 
@@ -2376,9 +2867,6 @@
                 time: formatDateTime(new Date()),
                 url: window.location.href
             };
-
-            console.log("[saveApplicationRecord] 保存投递记录:", record);
-
             // 从本地存储读取现有记录
             const { applicationRecords = [] } = await chrome.storage.local.get(['applicationRecords']);
 
@@ -2392,8 +2880,6 @@
 
             // 保存到本地存储
             await chrome.storage.local.set({ applicationRecords });
-
-            console.log("[saveApplicationRecord] 投递记录已保存，当前记录数:", applicationRecords.length);
         } catch (error) {
             console.error("[saveApplicationRecord] 保存投递记录失败:", error);
         }
@@ -2406,7 +2892,6 @@
     async function getApplicationRecords() {
         try {
             const { applicationRecords = [] } = await chrome.storage.local.get(['applicationRecords']);
-            console.log("[getApplicationRecords] 读取到", applicationRecords.length, "条投递记录");
             return applicationRecords;
         } catch (error) {
             console.error("[getApplicationRecords] 读取投递记录失败:", error);
@@ -2506,13 +2991,10 @@
                     e.stopPropagation();
                     const url = btn.getAttribute('data-url');
                     if (url) {
-                        console.log("[loadApplicationRecords] 跳转到:", url);
                         window.open(url, '_blank');
                     }
                 });
             });
-
-            console.log(`✓ 已加载 ${records.length} 条投递记录`);
         } catch (error) {
             console.error("[loadApplicationRecords] 加载投递记录失败:", error);
             container.innerHTML = `
@@ -2573,6 +3055,34 @@
     }
 
     /**
+     * 锁定任务背景输入框
+     */
+    function lockTaskInput() {
+        const taskInput = resumeWindowContainer?.querySelector('.task-input');
+        if (taskInput) {
+            taskInput.disabled = true;
+            taskInput.style.opacity = '0.6';
+            taskInput.style.cursor = 'not-allowed';
+        } else {
+            console.warn("[lockTaskInput] 未找到任务背景输入框");
+        }
+    }
+
+    /**
+     * 解锁任务背景输入框
+     */
+    function unlockTaskInput() {
+        const taskInput = resumeWindowContainer?.querySelector('.task-input');
+        if (taskInput) {
+            taskInput.disabled = false;
+            taskInput.style.opacity = '1';
+            taskInput.style.cursor = 'text';
+        } else {
+            console.warn("[unlockTaskInput] 未找到任务背景输入框");
+        }
+    }
+
+    /**
      * 防抖函数
      * @param {Function} func - 要执行的函数
      * @param {number} wait - 等待时间
@@ -2602,10 +3112,6 @@
         try {
             const url = window.location.href;
             const hostname = window.location.hostname;
-
-            console.log("[getCurrentCompanyName] 当前URL:", url);
-            console.log("[getCurrentCompanyName] 域名:", hostname);
-
             let companyName = '';
 
             // ========================================
@@ -2614,7 +3120,6 @@
 
             // Boss直聘 (www.zhipin.com)
             if (hostname.includes('zhipin.com')) {
-                console.log("[getCurrentCompanyName] 检测到Boss直聘");
                 const selectors = [
                     '.company-name a',
                     '.sider-company .company-name',
@@ -2628,7 +3133,6 @@
 
             // 前程无忧/51job (www.51job.com)
             else if (hostname.includes('51job.com')) {
-                console.log("[getCurrentCompanyName] 检测到前程无忧");
                 const selectors = [
                     '.cname a',
                     '.tCompany a',
@@ -2641,7 +3145,6 @@
 
             // 智联招聘 (www.zhaopin.com)
             else if (hostname.includes('zhaopin.com')) {
-                console.log("[getCurrentCompanyName] 检测到智联招聘");
                 const selectors = [
                     '.company__title',
                     'a.company-text',
@@ -2654,7 +3157,6 @@
 
             // 拉勾网 (www.lagou.com)
             else if (hostname.includes('lagou.com')) {
-                console.log("[getCurrentCompanyName] 检测到拉勾网");
                 const selectors = [
                     '.job-name .company',
                     '.company-name a',
@@ -2667,7 +3169,6 @@
 
             // 猎聘 (www.liepin.com)
             else if (hostname.includes('liepin.com')) {
-                console.log("[getCurrentCompanyName] 检测到猎聘");
                 const selectors = [
                     '.company-name a',
                     '.job-info .company-name',
@@ -2680,7 +3181,6 @@
 
             // 脉脉 (maimai.cn)
             else if (hostname.includes('maimai.cn')) {
-                console.log("[getCurrentCompanyName] 检测到脉脉");
                 const selectors = [
                     '.company-name',
                     '.company-info-name',
@@ -2693,7 +3193,6 @@
             // 通用提取策略（适用于其他招聘网站）
             // ========================================
             else {
-                console.log("[getCurrentCompanyName] 使用通用提取策略");
                 const generalSelectors = [
                     '.company-name',
                     '.company',
@@ -2713,13 +3212,10 @@
                 // 尝试从页面标题提取
                 if (!companyName) {
                     const title = document.title;
-                    console.log("[getCurrentCompanyName] 尝试从标题提取:", title);
-
                     // 常见格式: "职位名称-公司名称-招聘网站"
                     const titleParts = title.split(/[-_|]/);
                     if (titleParts.length >= 2) {
                         companyName = titleParts[1].trim();
-                        console.log("[getCurrentCompanyName] 从标题提取到公司名称:", companyName);
                     }
                 }
 
@@ -2732,7 +3228,6 @@
                                        urlParams.get('co');
                     if (companyParam) {
                         companyName = decodeURIComponent(companyParam);
-                        console.log("[getCurrentCompanyName] 从URL参数提取到公司名称:", companyName);
                     }
                 }
             }
@@ -2749,7 +3244,6 @@
 
                 // 验证公司名称是否有效（长度合理，不是纯数字或特殊字符）
                 if (companyName.length > 0 && companyName.length <= 100 && !/^[\d\s\-_]+$/.test(companyName)) {
-                    console.log("[getCurrentCompanyName] ✓ 成功获取公司名称:", companyName);
                     return companyName;
                 }
             }
@@ -2764,8 +3258,6 @@
                 .replace(/^www\./i, '')  // 去除 www. 前缀
                 .replace(/:\d+$/, '')    // 去除端口号
                 .trim();
-
-            console.log("[getCurrentCompanyName] ✓ 使用域名作为公司名称:", fallbackName);
             return fallbackName;
 
         } catch (error) {
@@ -2777,7 +3269,6 @@
                     .replace(/^www\./i, '')
                     .replace(/:\d+$/, '')
                     .trim();
-                console.log("[getCurrentCompanyName] ✓ 异常处理：使用域名作为公司名称:", fallbackName);
                 return fallbackName;
             } catch (err) {
                 console.error("[getCurrentCompanyName] ✗ 无法获取域名:", err);
@@ -2799,7 +3290,6 @@
                     const text = element.textContent || element.innerText;
                     if (text && text.trim()) {
                         const cleanText = text.trim();
-                        console.log(`[trySelectorsInOrder] 选择器 "${selector}" 找到内容:`, cleanText);
                         return cleanText;
                     }
                 }
@@ -2807,7 +3297,6 @@
                 console.warn(`[trySelectorsInOrder] 选择器 "${selector}" 出错:`, err.message);
             }
         }
-        console.log("[trySelectorsInOrder] 所有选择器都未找到有效内容");
         return '';
     }
 
@@ -2879,14 +3368,11 @@
      * 关闭高亮
      */
     window.closeHighlight = async function () {
-        console.log("[closeHighlight] 开始清除高亮");
         await delay(1000);
 
         // 清除所有高亮样式
         try {
             const highlightedElements = document.querySelectorAll('[class*="ark-color-"]');
-            console.log(`[closeHighlight] 找到 ${highlightedElements.length} 个高亮元素`);
-
             for (const el of highlightedElements) {
                 // 移除所有 ark-color-* 类
                 const classes = Array.from(el.classList);
@@ -2902,8 +3388,6 @@
 
             // 同时也设置 CSS 变量为 0（向后兼容）
             document.documentElement.style.setProperty("--highlight-enabled", "0");
-
-            console.log("[closeHighlight] 高亮已清除");
         } catch (error) {
             console.error("[closeHighlight] 清除高亮失败:", error);
         }
@@ -2939,9 +3423,6 @@
             console.error("resumeInterfaceTwo.js: 配置未加载，window.config 不存在");
             return;
         }
-
-        console.log("resumeInterfaceTwo.js: 配置已就绪", window.config);
-
         /**
          * 检查是否为官网URL
          */
