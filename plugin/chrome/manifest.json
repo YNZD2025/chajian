@@ -49,10 +49,14 @@
         "popup/styles/common.css",
         "popup/styles/fill.css",
         "popup/styles/simple-icons.css",
+        "popup/styles/font-awesome.min.css",
         "popup/scripts/transitions.js",
         "popup/scripts/statusPopup.js",
         "popup/scripts/settingsMini.js",
         "popup/scripts/profileMini.js",
+        "popup/webfonts/fa-solid-900.woff2",
+        "popup/webfonts/fa-regular-400.woff2",
+        "popup/webfonts/fa-brands-400.woff2",
         "case/css/resumeInterface.css",
         "case/data/简历列表数据.json",
         "icons/icon128.png",
@@ -79,7 +83,7 @@
     "type": "module"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' data: https://cdnjs.cloudflare.com;"
   },
   "externally_connectable": {
     "matches": [

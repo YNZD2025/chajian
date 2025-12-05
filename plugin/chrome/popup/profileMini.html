@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>个人中心 - 一念职达</title>
-    <link rel="stylesheet" href="styles/simple-icons.css">
+    <link rel="stylesheet" href="styles/font-awesome.min.css">
     <link rel="stylesheet" href="styles/common.css">
     <style>
         /* profileMini 页面专用样式 - 适配固定尺寸不滚动 */
@@ -247,22 +247,21 @@
             word-break: break-all;
         }
 
-        /* 底部按钮区 */
-        .bottom-buttons {
+        /* 顶部按钮区 */
+        .top-buttons {
             flex-shrink: 0;
             display: flex;
             gap: 12px;
-            margin-top: auto;
-            padding-top: 10px;
-            justify-content: center;
+            padding-bottom: 10px;
+            justify-content: flex-start;
         }
 
         .btn-settings,
         .btn-logout {
-            width: 48px;
-            height: 48px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
             transition: 0.3s;
             display: flex;
@@ -295,6 +294,68 @@
             box-shadow: 0 6px 20px rgba(220,53,69,0.3);
         }
 
+        /* 未登录状态 */
+        .not-logged-in {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .login-prompt {
+            background: white;
+            border-radius: 15px;
+            padding: 30px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .login-prompt-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .login-prompt-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 20px;
+        }
+
+        .btn-login {
+            padding: 12px 30px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-login:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-login i {
+            font-size: 16px;
+        }
+
+        /* 已登录状态 */
+        .logged-in {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
         /* 页脚 */
         .plugin-footer {
             flex-shrink: 0;
@@ -315,80 +376,97 @@
             <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
 
             <div class="plugin-content">
-                <!-- 个人信息区 -->
-                <div class="profile-header">
-                    <img src="logo-small.png" class="profile-avatar" id="user-avatar">
-                    <div class="profile-name" id="user-nickname">加载中...</div>
-                    <div class="profile-status">求职中</div>
-                </div>
-
-                <!-- 简历卡片区 -->
-                <div class="book-wrapper">
-                    <div class="switch-tooltip">切换下一份简历</div>
-                    <div class="resume-page-next">
-                        <div style="text-align:right; font-size:7px; color:var(--primary); font-weight:bold; margin-bottom:4px;">简历 B</div>
-                        <div style="font-size:9px; font-weight:bold; color:#ccc;">加载中...</div>
-                        <div class="skeleton-text"></div>
-                        <div class="skeleton-block"></div>
-                    </div>
-
-                    <div class="resume-page-current">
-                        <div class="resume-header">
-                            <div class="resume-meta">
-                                <div class="resume-name" id="resume-nickname">加载中...</div>
-                                <div class="resume-type">简历名称</div>
-                            </div>
-                        </div>
-
-                        <div class="info-grid-compact">
-                            <div class="info-cell">
-                                <div class="info-cell-label">学校</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell">
-                                <div class="info-cell-label">学历</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell">
-                                <div class="info-cell-label">专业</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell">
-                                <div class="info-cell-label">毕业年份</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell">
-                                <div class="info-cell-label">手机</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell">
-                                <div class="info-cell-label">邮箱</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell">
-                                <div class="info-cell-label">意向岗位</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell">
-                                <div class="info-cell-label">期望城市</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                            <div class="info-cell" style="grid-column: span 2;">
-                                <div class="info-cell-label">核心技能</div>
-                                <div class="info-cell-value">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 底部按钮区 -->
-                <div class="bottom-buttons">
+                <!-- 顶部按钮区 -->
+                <div class="top-buttons">
                     <button class="btn-settings" title="设置">
                         <i class="fas fa-cog"></i>
                     </button>
                     <button class="btn-logout" title="退出登录">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
+                </div>
+
+                <!-- 未登录状态 -->
+                <div id="not-logged-in" class="not-logged-in">
+                    <div class="login-prompt">
+                        <div class="login-prompt-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="login-prompt-text">请先登录</div>
+                        <button class="btn-login" id="btn-go-login">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>立即登录</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 已登录状态 -->
+                <div id="logged-in" class="logged-in">
+                    <!-- 个人信息区 -->
+                    <div class="profile-header">
+                        <img src="logo-small.png" class="profile-avatar" id="user-avatar">
+                        <div class="profile-name" id="user-nickname">加载中...</div>
+                        <div class="profile-status">求职中</div>
+                    </div>
+
+                    <!-- 简历卡片区 -->
+                    <div class="book-wrapper">
+                        <div class="switch-tooltip">切换下一份简历</div>
+                        <div class="resume-page-next">
+                            <div style="text-align:right; font-size:7px; color:var(--primary); font-weight:bold; margin-bottom:4px;">简历 B</div>
+                            <div style="font-size:9px; font-weight:bold; color:#ccc;">加载中...</div>
+                            <div class="skeleton-text"></div>
+                            <div class="skeleton-block"></div>
+                        </div>
+
+                        <div class="resume-page-current">
+                            <div class="resume-header">
+                                <div class="resume-meta">
+                                    <div class="resume-name" id="resume-nickname">加载中...</div>
+                                    <div class="resume-type">简历名称</div>
+                                </div>
+                            </div>
+
+                            <div class="info-grid-compact">
+                                <div class="info-cell">
+                                    <div class="info-cell-label">学校</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell">
+                                    <div class="info-cell-label">学历</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell">
+                                    <div class="info-cell-label">专业</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell">
+                                    <div class="info-cell-label">毕业年份</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell">
+                                    <div class="info-cell-label">手机</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell">
+                                    <div class="info-cell-label">邮箱</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell">
+                                    <div class="info-cell-label">意向岗位</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell">
+                                    <div class="info-cell-label">期望城市</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                                <div class="info-cell" style="grid-column: span 2;">
+                                    <div class="info-cell-label">核心技能</div>
+                                    <div class="info-cell-value">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 页脚 -->
@@ -399,7 +477,21 @@
         </div>
     </div>
 
+    <!-- 调试：立即执行的内联脚本，确认页面已加载 -->
+    <script>
+        console.log('=== [DEBUG] profileMini.html 页面开始加载 ===');
+        console.log('[DEBUG] 当前 URL:', window.location.href);
+        console.log('[DEBUG] document.readyState:', document.readyState);
+    </script>
+
     <script src="scripts/transitions.js"></script>
     <script src="scripts/profileMini.js"></script>
+
+    <!-- 调试：在脚本加载后执行 -->
+    <script>
+        console.log('=== [DEBUG] 所有外部脚本已加载 ===');
+        console.log('[DEBUG] 检查 chrome.storage 是否可用:', typeof chrome !== 'undefined' && typeof chrome.storage !== 'undefined');
+        console.log('[DEBUG] 检查 chrome.runtime 是否可用:', typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined');
+    </script>
 </body>
 </html>

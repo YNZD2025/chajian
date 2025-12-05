@@ -934,8 +934,8 @@
                 });
             }
 
-            // 初始化简历数据
-            initResumeData();
+            // 初始化简历数据（切换菜单时强制刷新）
+            initResumeData(true);
         }
 
         // profile.html - 个人页面
@@ -1095,11 +1095,14 @@
         try {
             // 1. 加载本地 CSS 文件（fetch 方式，最可靠）
             const cssFiles = [
-                "popup/styles/simple-icons.css",  // 简单图标系统（Unicode字符 + CSS）
+                // "popup/styles/simple-icons.css",  // 简单图标系统（Unicode字符 + CSS）- 已禁用，使用 Font Awesome 代替
                 "popup/styles/common.css",
                 "popup/styles/fill.css"
                 // 移除 resumeInterface.css，因为它是为旧的深色主题设计的，会与新设计冲突
             ];
+
+            // 2. Font Awesome CSS（本地文件，需要替换字体路径）
+            const fontAwesomeCssFile = "popup/styles/font-awesome.min.css";
 
             // 验证 CSS 文件是否可访问
             cssFiles.forEach((file) => {
@@ -1186,8 +1189,120 @@
                 }
             }
 
-            // 将所有样式表应用到 Shadow DOM
+            // 将本地样式表应用到 Shadow DOM
             shadowRoot.adoptedStyleSheets = styleSheets;
+
+            // 加载 Font Awesome CSS（本地文件）- 需要替换字体路径
+            try {
+                const fontAwesomeUrl = chrome.runtime.getURL(fontAwesomeCssFile);
+                const response = await fetch(fontAwesomeUrl);
+                if (!response.ok) {
+                    console.error(`❌ 加载 Font Awesome CSS 失败: ${fontAwesomeCssFile} - ${response.status}`);
+                } else {
+                    let cssText = await response.text();
+
+                    // 将相对字体路径替换为本地扩展的绝对路径
+                    // Font Awesome CSS 中使用 ../webfonts/ 路径
+                    const fontFiles = ['fa-solid-900', 'fa-regular-400', 'fa-brands-400'];
+                    const fontExtensions = ['woff2', 'woff', 'ttf'];
+
+                    for (const fontFile of fontFiles) {
+                        for (const ext of fontExtensions) {
+                            const localUrl = chrome.runtime.getURL(`popup/webfonts/${fontFile}.${ext}`);
+                            // 匹配各种可能的字体路径格式
+                            const patterns = [
+                                new RegExp(`url\\(["']?\\.\\.\/webfonts\/${fontFile}\\.${ext}["']?\\)`, 'g'),
+                                new RegExp(`url\\(["']?[^"')]*\/webfonts\/${fontFile}\\.${ext}["']?\\)`, 'g')
+                            ];
+                            for (const pattern of patterns) {
+                                cssText = cssText.replace(pattern, `url("${localUrl}")`);
+                            }
+                        }
+                    }
+
+                    // 调试：打印前几个 @font-face 规则，验证路径转换
+                    const fontFaceMatches = cssText.match(/@font-face\{[^}]+\}/g);
+
+                    // 先加载 Font Awesome CSS
+                    const styleElement = document.createElement('style');
+                    styleElement.textContent = cssText;
+                    shadowRoot.appendChild(styleElement);
+
+                    // 然后在 Font Awesome CSS 之后，注入覆盖样式以确保优先级最高
+                    const faOverrideStyle = document.createElement('style');
+                    faOverrideStyle.textContent = `
+                        /* Font Awesome 覆盖样式 - 最高优先级，覆盖 common.css 的通配符规则 */
+                        .fas, .far, .fab, .fa {
+                            font-family: "Font Awesome 6 Free" !important;
+                            font-weight: 900 !important;
+                            display: inline-block !important;
+                            font-style: normal !important;
+                            font-variant: normal !important;
+                            line-height: 1 !important;
+                            text-rendering: auto !important;
+                            -webkit-font-smoothing: antialiased !important;
+                            -moz-osx-font-smoothing: grayscale !important;
+                        }
+                        .far {
+                            font-weight: 400 !important;
+                        }
+                        .fab {
+                            font-family: "Font Awesome 6 Brands" !important;
+                            font-weight: 400 !important;
+                        }
+
+                        /* 确保::before伪元素继承正确的字体 */
+                        .fas::before, .far::before, .fab::before {
+                            font-family: inherit !important;
+                            font-weight: inherit !important;
+                            display: inline-block !important;
+                        }
+                    `;
+                    shadowRoot.appendChild(faOverrideStyle);
+
+
+                    // 测试字体文件是否可访问
+                    const testFontUrls = [
+                        chrome.runtime.getURL('popup/webfonts/fa-solid-900.woff2'),
+                        chrome.runtime.getURL('popup/webfonts/fa-regular-400.woff2'),
+                        chrome.runtime.getURL('popup/webfonts/fa-brands-400.woff2')
+                    ];
+
+                    for (const fontUrl of testFontUrls) {
+                        try {
+                            const response = await fetch(fontUrl);
+                            if (response.ok) {
+                                const size = (await response.blob()).size;
+                            } else {
+                                console.error(`  ❌ 字体文件无法访问: ${fontUrl.split('/').pop()} - HTTP ${response.status}`);
+                            }
+                        } catch (error) {
+                            console.error(`  ❌ 字体文件访问失败: ${fontUrl.split('/').pop()}`, error);
+                        }
+                    }
+
+                    // 主动使用 FontFace API 手动加载字体
+                    try {
+                        const solidFontUrl = chrome.runtime.getURL('popup/webfonts/fa-solid-900.woff2');
+                        const solidFont = new FontFace('Font Awesome 6 Free', `url(${solidFontUrl})`, {
+                            weight: '900',
+                            style: 'normal'
+                        });
+
+                        await solidFont.load();
+                        document.fonts.add(solidFont);
+
+                        // 立即触发重绘
+                        shadowRoot.host.style.display = 'none';
+                        shadowRoot.host.offsetHeight; // 强制重排
+                        shadowRoot.host.style.display = '';
+                    } catch (error) {
+                        console.error(`  ❌ FontFace API 加载失败:`, error);
+                    }
+                }
+            } catch (error) {
+                console.error(`❌ 加载 Font Awesome CSS 时出错:`, error);
+            }
             // 添加Logo按钮和窗口容器的样式（从 resumeInterface.css 提取）
             const logoAndContainerStyle = document.createElement("style");
             logoAndContainerStyle.textContent = `
@@ -1430,51 +1545,149 @@
 
             // 验证样式是否成功注入
             const styleCount = shadowRoot.querySelectorAll('style').length;
+            console.log(`📊 Shadow DOM中共有 ${styleCount} 个<style>标签`);
+
             // 调试：检查图标元素的实际状态
             setTimeout(() => {
-                const iconElements = shadowRoot.querySelectorAll('.fas, .far, .fab');
+                console.log("🔍 开始检查 Font Awesome 图标状态...");
+
+                const iconElements = shadowRoot.querySelectorAll('.fas, .far, .fab, [class*="fa-"]');
+                console.log(`🎯 找到 ${iconElements.length} 个图标元素`);
+
                 if (iconElements.length > 0) {
                     const firstIcon = iconElements[0];
-                    const computedStyle = window.getComputedStyle(firstIcon, '::before');
-                    // 检查是否有多个font-family回退
-                    const allFonts = computedStyle.fontFamily.split(',').map(f => f.trim().replace(/['"]/g, ''));
-                    // 检查CSS规则是否存在
-                    const styleSheets = Array.from(shadowRoot.styleSheets || []);
-                    // 尝试找到 fa-info-circle 的规则
-                    let foundRule = false;
-                    for (const sheet of styleSheets) {
-                        try {
-                            const rules = Array.from(sheet.cssRules || []);
-                            const iconRule = rules.find(rule =>
-                                rule.selectorText && rule.selectorText.includes('fa-info-circle')
-                            );
-                            if (iconRule) {
-                                foundRule = true;
-                                break;
+                    console.log(`📌 第一个图标的类名: ${firstIcon.className}`);
+
+                    // 检查元素本身的样式
+                    const elemStyle = window.getComputedStyle(firstIcon);
+                    console.log(`  - 元素字体: ${elemStyle.fontFamily}`);
+                    console.log(`  - 元素display: ${elemStyle.display}`);
+
+                    // 检查::before伪元素的样式
+                    const beforeStyle = window.getComputedStyle(firstIcon, '::before');
+                    console.log(`  - ::before content: ${beforeStyle.content}`);
+                    console.log(`  - ::before font-family: ${beforeStyle.fontFamily}`);
+                    console.log(`  - ::before font-weight: ${beforeStyle.fontWeight}`);
+                    console.log(`  - ::before display: ${beforeStyle.display}`);
+
+                    // 检查<style>标签内容
+                    const styles = shadowRoot.querySelectorAll('style');
+                    console.log(`📄 检查 ${styles.length} 个<style>标签...`);
+
+                    // 直接检查 CSS 中是否有 fa-info-circle 的 content 定义
+                    for (let i = 0; i < styles.length; i++) {
+                        const content = styles[i].textContent;
+                        if (content.includes('fa-info-circle')) {
+                            console.log(`  📍 在 <style>#${i} 中找到 fa-info-circle`);
+                            // 查找包含 fa-info-circle 和 content 的规则
+                            const pattern = /\.fa-info-circle[^{]*::?before[^}]*content[^}]*\}/gi;
+                            const matches = content.match(pattern);
+                            if (matches) {
+                                console.log(`    规则:`, matches[0].substring(0, 200));
+                            } else {
+                                // 查找fa-info-circle所在的位置，并显示周围内容
+                                const pos = content.indexOf('fa-info-circle');
+                                console.log(`    上下文:`, content.substring(Math.max(0, pos - 50), pos + 150));
                             }
-                        } catch (e) {
-                            // 某些样式表可能无法访问
                         }
                     }
 
-                    if (!foundRule) {
-                        console.warn("  ⚠️ 未找到 fa-info-circle 的CSS规则！");
+                    // 手动测试：直接给第一个图标添加content
+                    console.log(`🧪 测试：手动设置图标content...`);
+                    const testStyle = document.createElement('style');
+                    testStyle.textContent = `
+                        .fas.fa-info-circle::before {
+                            content: "\\f05a" !important;
+                        }
+                        .fas.fa-magic::before {
+                            content: "\\f0d0" !important;
+                        }
+                        .fas.fa-bolt::before {
+                            content: "\\f0e7" !important;
+                        }
+                    `;
+                    shadowRoot.appendChild(testStyle);
+                    console.log(`✅ 已添加测试样式`);
 
-                        // 检查样式表的内容
-                        const styles = shadowRoot.querySelectorAll('style');
-                        for (let i = 0; i < Math.min(styles.length, 3); i++) {
-                            const content = styles[i].textContent;
-                            const hasIconRules = content.includes('.fa-') && content.includes(':before');
-                            if (hasIconRules) {
-                                // 查找一个示例规则
-                                const match = content.match(/\.fa-[a-z-]+:before\{content:"[^"]+"\}/);
-                                if (match) {
-                                }
+                    // 再次检查content
+                    setTimeout(() => {
+                        const afterTestStyle = window.getComputedStyle(firstIcon, '::before');
+                        console.log(`🔍 添加测试样式后的 ::before content:`, afterTestStyle.content);
+
+                        // 检查所有可能覆盖content的样式
+                        console.log(`🔍 检查可能覆盖 content 的样式...`);
+                        for (let i = 0; i < styles.length; i++) {
+                            const styleText = styles[i].textContent;
+                            // 查找设置 content: "" 或 content: none 的规则
+                            const emptyContentMatches = styleText.match(/[^}]*::?before[^}]*content\s*:\s*(""|''|none)[^}]*/gi);
+                            if (emptyContentMatches && emptyContentMatches.length > 0) {
+                                console.warn(`  ⚠️ <style>#${i} 中发现空content规则:`, emptyContentMatches);
+                            }
+                        }
+
+                        // 尝试直接在元素上设置内联样式（最高优先级）
+                        console.log(`🧪 测试2: 直接在元素上设置样式...`);
+                        firstIcon.style.setProperty('--fa-content', '\\f05a');
+                        const directStyle = document.createElement('style');
+                        directStyle.textContent = `
+                            i.fas.fa-info-circle::before {
+                                content: "\\f05a" !important;
+                                font-family: "Font Awesome 6 Free" !important;
+                                font-weight: 900 !important;
+                                display: inline-block !important;
+                            }
+                        `;
+                        shadowRoot.appendChild(directStyle);
+
+                        setTimeout(() => {
+                            const finalStyle = window.getComputedStyle(firstIcon, '::before');
+                            console.log(`🔍 最终测试后的 ::before content:`, finalStyle.content);
+                            if (finalStyle.content === '""' || finalStyle.content === '') {
+                                console.error(`❌ 即使使用最高优先级样式，content 仍然为空！可能是Shadow DOM内部机制问题。`);
+                            }
+                        }, 100);
+                    }, 100);
+
+                    for (let i = 0; i < styles.length; i++) {
+                        const content = styles[i].textContent;
+
+                        // 检查是否包含@font-face
+                        if (content.includes('@font-face')) {
+                            console.log(`  ✅ <style>标签 #${i} 包含 @font-face 规则`);
+                            const fontFaceCount = (content.match(/@font-face/g) || []).length;
+                            console.log(`     共 ${fontFaceCount} 个字体声明`);
+                        }
+
+                        // 检查是否包含.fa-图标规则
+                        if (content.includes('.fa-magic') || content.includes('.fa-bolt')) {
+                            console.log(`  ✅ <style>标签 #${i} 包含 Font Awesome 图标规则`);
+
+                            // 提取一个示例规则
+                            const match = content.match(/\.fa-magic::?before[^}]+content[^}]+/);
+                            if (match) {
+                                console.log(`     示例规则: ${match[0].substring(0, 100)}...`);
                             }
                         }
                     }
                 }
-            }, 1000);
+
+                // 检查字体是否真的加载了
+                if (document.fonts) {
+                    document.fonts.ready.then(() => {
+                        const fontAwesomeFonts = [];
+                        document.fonts.forEach((font) => {
+                            if (font.family.includes('Font Awesome')) {
+                                fontAwesomeFonts.push(`${font.family} ${font.weight} ${font.style}`);
+                            }
+                        });
+                        if (fontAwesomeFonts.length > 0) {
+                            console.log(`✅ 字体已加载: `, fontAwesomeFonts);
+                        } else {
+                            console.warn(`⚠️ 未找到已加载的 Font Awesome 字体`);
+                        }
+                    });
+                }
+            }, 1500);
 
         } catch (error) {
             console.error("✗ 加载样式时出错:", error);
@@ -1552,6 +1765,10 @@
         logoBtn.addEventListener("click", async () => {
             const { auth } = await chrome.storage.local.get(["auth"]);
             if (auth) {
+                // 打开窗口前，如果当前在 fill.html 页面，强制刷新简历数据
+                if (currentPage === 'fill.html') {
+                    await initResumeData(true);
+                }
                 toggleWindow(true);
             } else {
                 if (confirm("尚未登录到一念职达，是否立即前往登录？")) {
@@ -1955,173 +2172,45 @@
 
         switch (state) {
             case "running":
-                startButton.innerHTML = '<i class="fas fa-pause"></i> 暂停填充';
+                startButton.innerHTML = '<i class="fas fa-pause"></i><span class="btn-text">暂停填充</span>';
                 startButton.classList.add("paused");
                 startButton.style.pointerEvents = "auto";
-                // 移除刷新按钮（如果存在）
-                const runningRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (runningRefreshBtn) runningRefreshBtn.remove();
                 break;
             case "pause":
-                startButton.innerHTML = '<i class="fas fa-play"></i> 继续填充';
+                startButton.innerHTML = '<i class="fas fa-play"></i><span class="btn-text">继续填充</span>';
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
-                // 移除刷新按钮（如果存在）
-                const pauseRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (pauseRefreshBtn) pauseRefreshBtn.remove();
                 break;
             case "success":
-                startButton.innerHTML = '<i class="fas fa-calendar-check"></i> 填充完成';
+                startButton.innerHTML = '<i class="fas fa-check-circle"></i><span class="btn-text">填充完成</span>';
                 startButton.classList.remove("paused");
-                // 禁用填充完成按钮的点击
-                startButton.style.pointerEvents = "none";
-                startButton.style.opacity = "0.7";
-
-                // 添加刷新按钮
-                let refreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (!refreshBtn && buttonContainer) {
-                    refreshBtn = document.createElement('button');
-                    refreshBtn.className = 'refresh-btn';
-                    refreshBtn.innerHTML = '<i class="fas fa-sync"></i> 刷新';
-                    refreshBtn.style.cssText = `
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 12px 24px;
-                        border-radius: 18px;
-                        font-size: 13px;
-                        font-weight: 700;
-                        cursor: pointer;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 8px;
-                        transition: all 0.3s ease;
-                        margin-left: 10px;
-                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-                        border: none;
-                        outline: none;
-                        pointer-events: auto;
-                        z-index: 9999;
-                        position: relative;
-                    `;
-
-                    // 添加悬停效果
-                    refreshBtn.addEventListener('mouseenter', () => {
-                        refreshBtn.style.transform = 'translateY(-2px)';
-                        refreshBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
-                    });
-                    refreshBtn.addEventListener('mouseleave', () => {
-                        refreshBtn.style.transform = 'translateY(0)';
-                        refreshBtn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
-                    });
-
-                    // 刷新按钮点击事件 - 重置所有状态
-                    refreshBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        // 移除刷新按钮
-                        refreshBtn.remove();
-
-                        // 重置填充状态
-                        fillState = "ready";
-
-                        // 更新UI状态
-                        changeState("ready");
-                    });
-
-                    buttonContainer.appendChild(refreshBtn);
-                }
+                // 重新启用按钮，允许再次点击
+                startButton.style.pointerEvents = "auto";
+                startButton.style.opacity = "1";
                 break;
             case "error":
-                startButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 填充错误';
+                startButton.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="btn-text">填充错误</span>';
                 startButton.classList.remove("paused");
-                // 禁用错误按钮的点击
-                startButton.style.pointerEvents = "none";
-                startButton.style.opacity = "0.7";
-
-                // 添加刷新按钮
-                let errorRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (!errorRefreshBtn && buttonContainer) {
-                    errorRefreshBtn = document.createElement('button');
-                    errorRefreshBtn.className = 'refresh-btn';
-                    errorRefreshBtn.innerHTML = '<i class="fas fa-sync"></i> 刷新重试';
-                    errorRefreshBtn.style.cssText = `
-                        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                        color: white;
-                        padding: 12px 24px;
-                        border-radius: 18px;
-                        font-size: 13px;
-                        font-weight: 700;
-                        cursor: pointer;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 8px;
-                        transition: all 0.3s ease;
-                        margin-left: 10px;
-                        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-                        border: none;
-                        outline: none;
-                        pointer-events: auto;
-                        z-index: 9999;
-                        position: relative;
-                    `;
-
-                    // 添加悬停效果
-                    errorRefreshBtn.addEventListener('mouseenter', () => {
-                        errorRefreshBtn.style.transform = 'translateY(-2px)';
-                        errorRefreshBtn.style.boxShadow = '0 6px 20px rgba(245, 87, 108, 0.6)';
-                    });
-                    errorRefreshBtn.addEventListener('mouseleave', () => {
-                        errorRefreshBtn.style.transform = 'translateY(0)';
-                        errorRefreshBtn.style.boxShadow = '0 4px 15px rgba(245, 87, 108, 0.4)';
-                    });
-
-                    // 刷新按钮点击事件 - 重置所有状态并重新填充
-                    errorRefreshBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        // 移除刷新按钮
-                        errorRefreshBtn.remove();
-
-                        // 重置填充状态
-                        fillState = "ready";
-
-                        // 更新UI状态
-                        changeState("ready");
-
-                        // 延迟一小段时间后自动开始填充
-                        setTimeout(() => {
-                            startFilling();
-                        }, 300);
-                    });
-
-                    buttonContainer.appendChild(errorRefreshBtn);
-                }
+                // 重新启用按钮，允许再次点击重试
+                startButton.style.pointerEvents = "auto";
+                startButton.style.opacity = "1";
                 break;
             case "quota":
-                startButton.innerHTML = '<i class="fas fa-charging-station"></i> 配额已用完';
+                startButton.innerHTML = '<i class="fas fa-battery-empty"></i><span class="btn-text">配额已用完</span>';
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
-                // 移除刷新按钮（如果存在）
-                const quotaRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (quotaRefreshBtn) quotaRefreshBtn.remove();
                 break;
             case "learning":
-                startButton.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> 学习中';
+                startButton.innerHTML = '<i class="fas fa-brain"></i><span class="btn-text">学习中</span>';
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
-                // 移除刷新按钮（如果存在）
-                const learningRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (learningRefreshBtn) learningRefreshBtn.remove();
                 break;
             default:
-                startButton.innerHTML = '<i class="fas fa-bolt"></i> 一键智能填充';
+                startButton.innerHTML = '<i class="fas fa-bolt"></i><span class="btn-text">一键智能填充</span>';
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
-                // 移除刷新按钮（如果存在）
-                const defaultRefreshBtn = buttonContainer?.querySelector('.refresh-btn');
-                if (defaultRefreshBtn) defaultRefreshBtn.remove();
                 break;
         }
     }
@@ -2343,7 +2432,6 @@
                 const queryString = new URLSearchParams(params).toString();
                 url += `?${queryString}`;
             }
-            console.log("url===>",url)
             const response = await fetchWithJwt(url, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" }
@@ -2584,7 +2672,7 @@
     /**
      * 切换到下一个简历
      */
-    function switchToNextResume() {
+    async function switchToNextResume() {
         if (resumeList.length === 0) return;
 
         // 检查简历是否被锁定
@@ -2594,14 +2682,32 @@
             return;
         }
 
-        currentResumeIndex = (currentResumeIndex + 1) % resumeList.length;
-        renderResumeData();
+        // 确认是否切换
+        if (!confirm("确定要切换到下一份简历吗？\n切换后将刷新当前页面。")) {
+            return;
+        }
+
+        // 计算下一个索引
+        const nextIndex = (currentResumeIndex + 1) % resumeList.length;
+
+        // 存储切换后的索引和当前列表长度到 storage
+        try {
+            await chrome.storage.local.set({
+                currentResumeIndex: nextIndex,
+                lastResumeListLength: resumeList.length  // 保存当前列表长度
+            });
+
+            // 刷新当前页面
+            window.location.reload();
+        } catch (error) {
+            console.error("[switchToNextResume] 切换失败:", error);
+        }
     }
 
     /**
      * 切换到上一个简历
      */
-    function switchToPrevResume() {
+    async function switchToPrevResume() {
         if (resumeList.length === 0) return;
 
         // 检查简历是否被锁定
@@ -2611,8 +2717,26 @@
             return;
         }
 
-        currentResumeIndex = (currentResumeIndex - 1 + resumeList.length) % resumeList.length;
-        renderResumeData();
+        // 确认是否切换
+        if (!confirm("确定要切换到上一份简历吗？\n切换后将刷新当前页面。")) {
+            return;
+        }
+
+        // 计算上一个索引
+        const prevIndex = (currentResumeIndex - 1 + resumeList.length) % resumeList.length;
+
+        // 存储切换后的索引和当前列表长度到 storage
+        try {
+            await chrome.storage.local.set({
+                currentResumeIndex: prevIndex,
+                lastResumeListLength: resumeList.length  // 保存当前列表长度
+            });
+
+            // 刷新当前页面
+            window.location.reload();
+        } catch (error) {
+            console.error("[switchToPrevResume] 切换失败:", error);
+        }
     }
 
     /**
@@ -2771,30 +2895,175 @@
     }
 
     /**
-     * 初始化简历数据
+     * 从 API 加载简历数据（仅在 fill.html 页面调用）
+     * 此函数会调用接口并将数据存储到 chrome.storage.local
      */
-    async function initResumeData() {
+    async function loadResumeDataFromAPI() {
         try {
-            // 获取简历列表
+
+            // 获取简历列表（调用接口）
             resumeList = await getResumeList();
 
             if (resumeList.length === 0) {
-                console.warn("[initResumeData] 没有可用的简历数据");
+                console.warn("[loadResumeDataFromAPI] API 返回空数据");
                 // 在简历卡片区域显示提示信息
                 showNoResumeMessage();
+
+                // 即使没有数据，也要清空 storage 中的缓存
+                try {
+                    await chrome.storage.local.set({
+                        resumeList: [],
+                        resumeListUpdateTime: Date.now()
+                    });
+                } catch (storageError) {
+                    console.error("[loadResumeDataFromAPI] 清空 storage 缓存失败:", storageError);
+                }
                 return;
             }
 
-            // 重置索引
-            currentResumeIndex = 0;
+            // 存储简历列表到 chrome.storage.local（供其他页面使用）
+            try {
+                await chrome.storage.local.set({
+                    resumeList: resumeList,
+                    resumeListUpdateTime: Date.now()
+                });
+            } catch (storageError) {
+                console.error("[loadResumeDataFromAPI] 存储简历列表到 storage 失败:", storageError);
+            }
+
+            // 恢复或重置索引，并根据列表长度变化智能调整
+            try {
+                const { currentResumeIndex: savedIndex, lastResumeListLength } = await chrome.storage.local.get(['currentResumeIndex', 'lastResumeListLength']);
+
+                if (savedIndex !== undefined && savedIndex >= 0) {
+                    const newLength = resumeList.length;
+                    const oldLength = lastResumeListLength || newLength;  // 如果没有保存的长度，使用当前长度
+
+                    let adjustedIndex = savedIndex;
+
+                    // 根据列表长度变化调整索引
+                    if (newLength > oldLength) {
+                        // 列表增加了，索引+1（显示新增的简历，但不能超过最大索引）
+                        adjustedIndex = Math.min(savedIndex + 1, newLength - 1);
+                    } else if (newLength < oldLength) {
+                        // 列表减少了，索引-1（避免越界，但不能小于0）
+                        adjustedIndex = Math.max(savedIndex - 1, 0);
+                    } else {
+                        // 列表长度未变，保持索引不变（但要确保不越界）
+                        adjustedIndex = Math.min(savedIndex, newLength - 1);
+                    }
+
+                    currentResumeIndex = adjustedIndex;
+                } else {
+                    currentResumeIndex = 0;
+                }
+            } catch (error) {
+                console.error("[loadResumeDataFromAPI] 读取保存的索引失败:", error);
+                currentResumeIndex = 0;
+            }
 
             // 渲染简历数据
             renderResumeData();
 
             // 绑定简历切换事件
             bindResumeSwitchEvents();
+
         } catch (error) {
-            console.error("[initResumeData] 初始化简历数据失败:", error);
+            console.error("[loadResumeDataFromAPI] 加载简历数据失败:", error);
+        }
+    }
+
+    /**
+     * 从 storage 加载简历数据（在非 fill.html 页面调用）
+     * 此函数不调用接口，只从 chrome.storage.local 读取数据
+     */
+    async function loadResumeDataFromStorage() {
+        try {
+
+            // 从 chrome.storage.local 读取简历列表
+            const { resumeList: cachedList, resumeListUpdateTime } = await chrome.storage.local.get(['resumeList', 'resumeListUpdateTime']);
+
+            if (!cachedList || !Array.isArray(cachedList) || cachedList.length === 0) {
+                console.warn("[loadResumeDataFromStorage] storage 中没有简历数据");
+                console.info("[loadResumeDataFromStorage] 提示：请先访问智能填充页面以加载简历数据");
+                showNoResumeMessage();
+                resumeList = [];
+                return;
+            }
+
+            // 使用缓存的数据
+            resumeList = cachedList;
+
+            // 恢复或重置索引，并根据列表长度变化智能调整
+            try {
+                const { currentResumeIndex: savedIndex, lastResumeListLength } = await chrome.storage.local.get(['currentResumeIndex', 'lastResumeListLength']);
+
+                if (savedIndex !== undefined && savedIndex >= 0) {
+                    const newLength = resumeList.length;
+                    const oldLength = lastResumeListLength || newLength;  // 如果没有保存的长度，使用当前长度
+
+                    let adjustedIndex = savedIndex;
+
+                    // 根据列表长度变化调整索引
+                    if (newLength > oldLength) {
+                        // 列表增加了，索引+1（显示新增的简历，但不能超过最大索引）
+                        adjustedIndex = Math.min(savedIndex + 1, newLength - 1);
+                    } else if (newLength < oldLength) {
+                        // 列表减少了，索引-1（避免越界，但不能小于0）
+                        adjustedIndex = Math.max(savedIndex - 1, 0);
+                    } else {
+                        // 列表长度未变，保持索引不变（但要确保不越界）
+                        adjustedIndex = Math.min(savedIndex, newLength - 1);
+                    }
+
+                    currentResumeIndex = adjustedIndex;
+                } else {
+                    currentResumeIndex = 0;
+                }
+            } catch (error) {
+                console.error("[loadResumeDataFromStorage] 读取保存的索引失败:", error);
+                currentResumeIndex = 0;
+            }
+
+            // 渲染简历数据
+            renderResumeData();
+
+            // 绑定简历切换事件
+            bindResumeSwitchEvents();
+
+        } catch (error) {
+            console.error("[loadResumeDataFromStorage] 从 storage 加载简历数据失败:", error);
+        }
+    }
+
+    /**
+     * 初始化简历数据（兼容旧代码的包装函数）
+     * 根据当前页面决定是从 API 还是从 storage 加载
+     * @param {boolean} forceRefresh - 是否强制刷新（调用接口）。默认false
+     */
+    async function initResumeData(forceRefresh = false) {
+        // 判断当前是否在 fill.html 页面
+        const isFillPage = currentPage === 'fill.html';
+
+        if (isFillPage) {
+            if (forceRefresh) {
+                // 强制刷新：调用接口并更新 storage
+                await loadResumeDataFromAPI();
+            } else {
+                // 非强制刷新：先检查 storage 中是否有数据
+                const { resumeList: cachedList } = await chrome.storage.local.get(['resumeList']);
+
+                if (cachedList && Array.isArray(cachedList) && cachedList.length > 0) {
+                    // storage 中有数据，直接使用
+                    await loadResumeDataFromStorage();
+                } else {
+                    // storage 中没有数据，调用接口
+                    await loadResumeDataFromAPI();
+                }
+            }
+        } else {
+            // 其他页面：从 storage 读取
+            await loadResumeDataFromStorage();
         }
     }
 
@@ -2828,21 +3097,34 @@
     function bindResumeSwitchEvents() {
         if (!resumeWindowContainer) return;
 
-        const bookWrapper = resumeWindowContainer.querySelector('.book-wrapper');
-        if (bookWrapper) {
+        // 绑定"往前切换"按钮
+        const prevBtn = resumeWindowContainer.querySelector('.resume-switch-prev');
+        if (prevBtn) {
             // 移除旧的事件监听器
-            const newBookWrapper = bookWrapper.cloneNode(true);
-            bookWrapper.parentNode.replaceChild(newBookWrapper, bookWrapper);
+            const newPrevBtn = prevBtn.cloneNode(true);
+            prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
 
-            // 绑定新的点击事件
-            newBookWrapper.addEventListener('click', (e) => {
-                // 检查点击目标是否是编辑简历按钮或其子元素
-                const editBtn = e.target.closest('.edit-resume-btn');
-                if (editBtn) {
-                    return;
+            // 绑定点击事件
+            newPrevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (resumeList.length > 1) {
+                    switchToPrevResume();
                 }
+            });
+        }
 
-                // 只有在有多份简历时才切换
+        // 绑定"往后切换"按钮
+        const nextBtn = resumeWindowContainer.querySelector('.resume-switch-next');
+        if (nextBtn) {
+            // 移除旧的事件监听器
+            const newNextBtn = nextBtn.cloneNode(true);
+            nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+
+            // 绑定点击事件
+            newNextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
                 if (resumeList.length > 1) {
                     switchToNextResume();
                 }

@@ -102,7 +102,7 @@
         AUTOFILL_URL: buildUrl("/autofill", "WEB"),
         VERSION_URL: buildUrl("/crx/version.txt", "WEB"),
         WELCOME_URL: buildUrl("/welcome", "WEB"),
-        PRICING_URL: buildUrl("/pricing", "WEB"),
+        PRICING_URL: buildUrl("/vip", "WEB"),
 
         // 所有官网 URL 列表
         ALL_WEB_URLS: [
