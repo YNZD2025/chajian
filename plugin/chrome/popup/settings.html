@@ -4,8 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>设置 - 一念职达</title>
-    <link rel="stylesheet" href="styles/simple-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles/common.css">
+    <style>
+        /* ========== 图标备用样式 ========== */
+        .fas::before,
+        .far::before,
+        .fab::before {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            display: inline-block !important;
+            font-style: normal !important;
+            font-variant: normal !important;
+            text-rendering: auto !important;
+            line-height: 1 !important;
+        }
+
+        .fa-magic::before {
+            content: "\f0d0";
+        }
+
+        .fa-bolt::before {
+            content: "\f0e7";
+        }
+
+        .fa-history::before {
+            content: "\f1da";
+        }
+
+        .fa-user::before {
+            content: "\f007";
+        }
+
+        .fa-cog::before {
+            content: "\f013";
+        }
+
+        .fa-times::before {
+            content: "\f00d";
+        }
+
+        .fa-info-circle::before {
+            content: "\f05a";
+        }
+
+        .fa-edit::before {
+            content: "\f044";
+        }
+
+        .fa-spinner::before {
+            content: "\f110";
+        }
+
+        .fa-id-card::before {
+            content: "\f2c2";
+        }
+
+        .fa-sign-out-alt::before {
+            content: "\f2f5";
+        }
+
+        .fa-user-cog::before {
+            content: "\f4fe";
+        }
+
+        .fa-chevron-right::before {
+            content: "\f054";
+        }
+
+        .fa-spin {
+            animation: fa-spin 2s infinite linear;
+        }
+
+        @keyframes fa-spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 如果Font Awesome没加载，使用文字备用 */
+        .fas:not([class*="fa-"])::before,
+        .far:not([class*="fa-"])::before {
+            content: "●";
+        }
+    </style>
 </head>
 <body>
 

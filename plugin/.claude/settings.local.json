@@ -9,7 +9,8 @@
       "Bash(python:*)",
       "Bash(dir:*)",
       "Bash(git restore:*)",
-      "Bash(if not exist webfonts mkdir webfonts)"
+      "Bash(if not exist webfonts mkdir webfonts)",
+      "WebFetch(domain:zhaopin.meituan.com)"
     ],
     "deny": [],
     "ask": []

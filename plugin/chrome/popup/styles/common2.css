@@ -2,6 +2,7 @@
    一念职达 - Chrome 插件弹窗共用样式
    ======================================== */
 
+/* CSS 变量定义 - 支持普通页面和 Shadow DOM */
 :root {
     /* --- 核心色板 --- */
     --primary: #57c5b6;
@@ -28,35 +29,100 @@
     /* --- 圆角 --- */
     --r-card: 20px;
     --r-btn: 25px;
-
-    /* --- 深绿色 --- */
-    --dark-green: #006666;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+/* Shadow DOM 支持 */
+:host {
+    --primary: #57c5b6;
+    --primary-dark: #3a8e82;
+    --accent: #ff9a9e;
+    --text-main: #2d3436;
+    --text-gray: #636e72;
+    --bg-fluid: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
+    --glass-clear-bg: rgba(255, 255, 255, 0.35);
+    --glass-clear-blur: blur(12px);
+    --glass-clear-border: 1px solid rgba(255, 255, 255, 0.6);
+    --glass-clear-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    --card-white: rgba(255, 255, 255, 0.85);
+    --card-blur: blur(20px);
+    --card-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+    --r-card: 20px;
+    --r-btn: 25px;
+}
 
+/* CSS隔离：将所有样式限定在插件容器内 */
+.plugin-container,
+.plugin-container * {
+    box-sizing: border-box !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* 重置插件内部元素的外部样式干扰 */
+.plugin-container input,
+.plugin-container textarea,
+.plugin-container button,
+.plugin-container select {
+    border: none !important;
+    outline: none !important;
+    background: none !important;
+    color: inherit !important;
+    font-size: inherit !important;
+    line-height: normal !important;
+    text-decoration: none !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-align: left !important;
+    text-indent: 0 !important;
+    text-shadow: none !important;
+    display: inline-block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    /* 防止外部样式造成尺寸变形 */
+    transform: none !important;
+    zoom: 1 !important;
+    scale: 1 !important;
+}
+
+/* Body 样式 - 用于页面居中 */
 body {
-    background: var(--bg-fluid);
-    background-attachment: fixed;
+    margin: 0;
+    padding: 0;
     min-height: 100vh;
-    color: var(--text-main);
-    -webkit-user-select: none;
-    user-select: none;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    background: var(--bg-fluid);
+    background-attachment: fixed;
 }
 
 /* 可交互元素恢复选择 */
-button, a, input, textarea, select, .settings-item, .nav-item {
-    -webkit-user-select: auto;
-    user-select: auto;
+.plugin-container button,
+.plugin-container a,
+.plugin-container input,
+.plugin-container textarea,
+.plugin-container select,
+.plugin-container .settings-item,
+.plugin-container .nav-item {
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
 }
 
-img {
-    -webkit-user-drag: none;
-    pointer-events: none;
+.plugin-container img {
+    -webkit-user-drag: none !important;
+    pointer-events: none !important;
 }
 
 /* --- 插件容器 --- */
@@ -66,10 +132,12 @@ img {
     position: relative;
     display: flex;
     overflow: hidden;
-    border-radius: 0px;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    border: none;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
-    background: rgba(255, 255, 255, 0.1);
+    background: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
 }
 
 /* --- 侧边栏导航 --- */
@@ -83,7 +151,7 @@ img {
     padding: 30px 0;
     gap: 18px;
     flex-shrink: 0;
-    border-radius: 0 13px 13px 0;
+    border-radius: 20px;
     box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2);
 }
 
@@ -151,6 +219,10 @@ img {
     height: 100%;
     position: relative;
     overflow: hidden;
+    border-radius: 0 20px 20px 0;
+    background: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
 }
 
 /* --- 悬浮标题（玻璃效果） --- */
@@ -203,9 +275,11 @@ img {
 /* --- 滚动内容区 --- */
 .plugin-content {
     height: 100%;
-    overflow-y: auto;
-    padding: 75px 15px 20px;
-    scrollbar-width: none;
+    overflow: hidden;
+    padding: 75px 15px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .plugin-content::-webkit-scrollbar {
@@ -354,52 +428,61 @@ img {
 }
 
 /* --- 表单样式 --- */
-.form-group {
-    margin-bottom: 12px;
+.plugin-container .form-group {
+    margin-bottom: 12px !important;
 }
 
-.form-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-main);
-    margin-bottom: 5px;
-    display: block;
+.plugin-container .form-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--text-main) !important;
+    margin-bottom: 5px !important;
+    display: block !important;
 }
 
-.form-input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 12px;
-    color: var(--text-main);
-    background: white;
-    transition: 0.2s;
+.plugin-container .form-input {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    color: var(--text-main) !important;
+    background: white !important;
+    transition: 0.2s !important;
+    box-sizing: border-box !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    line-height: normal !important;
+    min-height: auto !important;
+    max-height: none !important;
 }
 
-.form-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(87, 197, 182, 0.1);
+.plugin-container .form-input:focus {
+    outline: none !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(87, 197, 182, 0.1) !important;
 }
 
-.form-textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 12px;
-    color: var(--text-main);
-    background: white;
-    min-height: 80px;
-    resize: vertical;
-    transition: 0.2s;
+.plugin-container .form-textarea {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    color: var(--text-main) !important;
+    background: white !important;
+    min-height: 80px !important;
+    resize: vertical !important;
+    transition: 0.2s !important;
+    box-sizing: border-box !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    line-height: 1.4 !important;
+    max-height: none !important;
 }
 
-.form-textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(87, 197, 182, 0.1);
+.plugin-container .form-textarea:focus {
+    outline: none !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(87, 197, 182, 0.1) !important;
 }
 
 /* --- 按钮样式 --- */

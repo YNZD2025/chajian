@@ -78,7 +78,7 @@
             const hostElement = document.createElement("div");
             hostElement.id = "ark-ai";
 
-            // 附加Shadow DOM
+            // 附加Shadow DOM - 使用 open 模式
             shadowRoot = hostElement.attachShadow({ mode: "open" });
             document.body.appendChild(hostElement);
 
@@ -536,6 +536,21 @@
                 pageStyle.textContent = styleContents;
                 shadowRoot.appendChild(pageStyle);
             }
+
+            // ========== 方案1: 页面切换时注入增强版内联样式 ==========
+            // 移除之前页面的强化样式（避免样式累积）
+            const oldEnhancedStyles = shadowRoot.querySelectorAll('style[data-enhanced-inline-styles]');
+            oldEnhancedStyles.forEach(style => style.remove());
+
+            // 注入新页面的强化内联样式
+            const enhancedInlineStyle = document.createElement("style");
+            enhancedInlineStyle.setAttribute('data-enhanced-inline-styles', 'true');
+            enhancedInlineStyle.setAttribute('data-enhanced-for-page', pageHtml);
+            enhancedInlineStyle.setAttribute('data-priority', 'highest');
+            // enhancedInlineStyle.textContent = generateInlineStylesForPage(pageHtml);
+            shadowRoot.appendChild(enhancedInlineStyle);
+
+            console.log(`✅ 已为 ${pageHtml} 页面注入增强版内联样式保护`);
             // ⚠️ 验证：确保所有危险的属性都被移除
             const dangerousElements = resumeWindowContainer.querySelectorAll('[onclick], [onload]');
             if (dangerousElements.length > 0) {
@@ -1089,6 +1104,575 @@
     }
 
     /**
+     * 生成页面专用内联样式（方案1：增强版内联样式）
+     * @param {string} pageType - 页面类型（如 'fill.html'）
+     * @returns {string} 生成的CSS样式文本
+     */
+    function generateInlineStylesForPage(pageType) {
+        const baseStyles = `
+            /* ========== 增强版内联样式保护 ========== */
+            /* CSS变量定义（内联版本，优先级最高） */
+            :host, .plugin-container, #ark-ai {
+                --primary: #57c5b6 !important;
+                --primary-dark: #3a8e82 !important;
+                --accent: #ff9a9e !important;
+                --text-main: #2d3436 !important;
+                --text-gray: #636e72 !important;
+                --bg-fluid: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
+                            radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
+                            linear-gradient(135deg, #def7fa 0%, #ffecec 100%) !important;
+                --glass-clear-bg: rgba(255, 255, 255, 0.35) !important;
+                --glass-clear-blur: blur(12px) !important;
+                --glass-clear-border: 1px solid rgba(255, 255, 255, 0.6) !important;
+                --glass-clear-shadow: 0 8px 30px rgba(0, 0, 0, 0.05) !important;
+                --card-white: rgba(255, 255, 255, 0.85) !important;
+                --card-blur: blur(20px) !important;
+                --card-shadow: 0 5px 20px rgba(0, 0, 0, 0.03) !important;
+                --r-card: 20px !important;
+                --r-btn: 25px !important;
+                --dark-green: #006666 !important;
+            }
+
+            /* 强制样式重置和隔离 */
+            .plugin-container, .plugin-container * {
+                all: revert !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                outline: none !important;
+                background: none !important;
+                text-decoration: none !important;
+                text-transform: none !important;
+                letter-spacing: normal !important;
+                word-spacing: normal !important;
+                text-align: left !important;
+                text-indent: 0 !important;
+                text-shadow: none !important;
+                transform: none !important;
+                zoom: 1 !important;
+                scale: 1 !important;
+            }
+
+            /* 恢复重要样式 */
+            .plugin-container {
+                display: flex !important;
+                width: 420px !important;
+                height: 600px !important;
+                background: var(--bg-fluid) !important;
+                border-radius: 20px !important;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+                overflow: hidden !important;
+                color: var(--text-main) !important;
+            }
+
+            .sidebar {
+                width: 70px !important;
+                height: 100% !important;
+                background: var(--primary) !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                padding: 30px 0 !important;
+                gap: 18px !important;
+                flex-shrink: 0 !important;
+                border-radius: 20px !important;
+                box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2) !important;
+            }
+
+            .main-area {
+                flex: 1 !important;
+                height: 100% !important;
+                position: relative !important;
+                overflow: hidden !important;
+                border-radius: 0 20px 20px 0 !important;
+                background: var(--bg-fluid) !important;
+            }
+
+            /* Unicode图标替换（不依赖外部字体） */
+            .fas, .far, .fab {
+                font-family: inherit !important;
+                font-style: normal !important;
+                font-weight: normal !important;
+                speak: none !important;
+                display: inline-block !important;
+                text-decoration: inherit !important;
+                text-align: center !important;
+                font-variant: normal !important;
+                text-transform: none !important;
+                line-height: 1em !important;
+            }
+
+            /* 关键图标Unicode字符直接定义 */
+            .fa-magic::before { content: "✨" !important; font-family: inherit !important; }
+            .fa-bolt::before { content: "⚡" !important; font-family: inherit !important; }
+            .fa-history::before { content: "📋" !important; font-family: inherit !important; }
+            .fa-user::before { content: "👤" !important; font-family: inherit !important; }
+            .fa-cog::before { content: "⚙️" !important; font-family: inherit !important; }
+            .fa-times::before { content: "❌" !important; font-family: inherit !important; }
+            .fa-edit::before { content: "✏️" !important; font-family: inherit !important; }
+            .fa-info-circle::before { content: "ℹ️" !important; font-family: inherit !important; }
+            .fa-spinner::before {
+                content: "⏳" !important;
+                font-family: inherit !important;
+                animation: fa-spin 2s infinite linear !important;
+            }
+            .fa-check-circle::before { content: "✅" !important; font-family: inherit !important; }
+            .fa-exclamation-triangle::before { content: "⚠️" !important; font-family: inherit !important; }
+            .fa-pause::before { content: "⏸️" !important; font-family: inherit !important; }
+            .fa-play::before { content: "▶️" !important; font-family: inherit !important; }
+            .fa-battery-empty::before { content: "🔋" !important; font-family: inherit !important; }
+            .fa-brain::before { content: "🧠" !important; font-family: inherit !important; }
+            .fa-chevron-right::before { content: "▶" !important; font-family: inherit !important; }
+
+            @keyframes fa-spin {
+                0% { transform: rotate(0deg) !important; }
+                100% { transform: rotate(360deg) !important; }
+            }
+
+            /* 导航栏样式保护 */
+            .nav-item {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                cursor: pointer !important;
+                transition: 0.3s !important;
+                width: 100% !important;
+                text-decoration: none !important;
+                color: rgba(255,255,255,0.7) !important;
+            }
+
+            .nav-icon-box {
+                width: 38px !important;
+                height: 38px !important;
+                border-radius: 14px !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                font-size: 16px !important;
+                color: rgba(255,255,255,0.7) !important;
+                transition: 0.3s !important;
+            }
+
+            .nav-label {
+                font-size: 9px !important;
+                font-weight: 500 !important;
+                color: rgba(255,255,255,0.9) !important;
+                transition: 0.3s !important;
+                margin-top: 4px !important;
+            }
+
+            .nav-item.active .nav-icon-box {
+                background: rgba(255,255,255,0.2) !important;
+                color: white !important;
+            }
+
+            /* 悬浮元素样式保护 */
+            .liquid-title {
+                position: absolute !important;
+                top: 20px !important;
+                left: 20px !important;
+                background: var(--glass-clear-bg) !important;
+                backdrop-filter: var(--glass-clear-blur) !important;
+                -webkit-backdrop-filter: var(--glass-clear-blur) !important;
+                border: var(--glass-clear-border) !important;
+                box-shadow: var(--glass-clear-shadow) !important;
+                padding: 10px 20px !important;
+                border-radius: 18px !important;
+                font-size: 16px !important;
+                font-weight: 800 !important;
+                color: var(--text-main) !important;
+                z-index: 30 !important;
+            }
+
+            .liquid-close {
+                position: absolute !important;
+                top: 20px !important;
+                right: 15px !important;
+                width: 40px !important;
+                height: 40px !important;
+                border-radius: 14px !important;
+                background: var(--glass-clear-bg) !important;
+                backdrop-filter: var(--glass-clear-blur) !important;
+                -webkit-backdrop-filter: var(--glass-clear-blur) !important;
+                border: var(--glass-clear-border) !important;
+                box-shadow: var(--glass-clear-shadow) !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                color: var(--text-gray) !important;
+                z-index: 30 !important;
+                cursor: pointer !important;
+                font-size: 16px !important;
+                text-decoration: none !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .plugin-content {
+                height: 100% !important;
+                overflow-y: auto !important;
+                padding: 75px 15px 15px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+                scrollbar-width: none !important;
+            }
+
+            .plugin-content::-webkit-scrollbar {
+                display: none !important;
+            }
+        `;
+
+        // 页面特定样式
+        const pageSpecificStyles = {
+            'fill.html': `
+                /* ========== 填充页面专用样式 ========== */
+                .book-wrapper {
+                    position: relative !important;
+                    width: 96% !important;
+                    height: 280px !important;
+                    perspective: 1000px !important;
+                    cursor: pointer !important;
+                    flex-shrink: 0 !important;
+                    min-height: 280px !important;
+                    max-height: 280px !important;
+                }
+
+                .resume-page-current {
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    background: white !important;
+                    border-radius: 18px !important;
+                    padding: 14px !important;
+                    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+                    box-shadow: -5px 10px 30px rgba(0, 0, 0, 0.1) !important;
+                    z-index: 2 !important;
+                    transition: transform 0.4s ease !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    min-height: 0 !important;
+                }
+
+                .resume-page-next {
+                    position: absolute !important;
+                    top: 8px !important;
+                    right: -16px !important;
+                    width: 98% !important;
+                    height: 100% !important;
+                    background: rgba(255, 255, 255, 0.8) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+                    border-radius: 18px !important;
+                    padding: 14px !important;
+                    transform: rotate(3deg) translateZ(-10px) !important;
+                    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05) !important;
+                    z-index: 1 !important;
+                    transition: transform 0.4s ease, filter 0.4s ease, opacity 0.4s ease !important;
+                    filter: blur(1px) !important;
+                    opacity: 0.8 !important;
+                    overflow: hidden !important;
+                }
+
+                .liquid-cta-container {
+                    position: absolute !important;
+                    bottom: 40px !important;
+                    left: 34px !important;
+                    right: 0 !important;
+                    width: calc(100% - 70px) !important;
+                    display: flex !important;
+                    justify-content: center !important;
+                    pointer-events: none !important;
+                    z-index: 40 !important;
+                }
+
+                .liquid-cta-btn {
+                    pointer-events: auto !important;
+                    cursor: pointer !important;
+                    background: var(--glass-clear-bg) !important;
+                    backdrop-filter: var(--glass-clear-blur) !important;
+                    -webkit-backdrop-filter: var(--glass-clear-blur) !important;
+                    box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25) !important;
+                    border: 1px solid var(--accent) !important;
+                    padding: 12px 25px !important;
+                    border-radius: 25px !important;
+                    color: var(--accent) !important;
+                    font-size: 14px !important;
+                    font-weight: 700 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 6px !important;
+                    transition: 0.2s !important;
+                }
+
+                .liquid-cta-btn:hover {
+                    transform: translateY(-2px) !important;
+                    background: rgba(255,255,255,0.35) !important;
+                }
+
+                .task-card {
+                    background: white !important;
+                    border-radius: 16px !important;
+                    padding: 12px !important;
+                    box-shadow: 0 5px 20px rgba(0,0,0,0.03) !important;
+                    border: 1px solid rgba(0,0,0,0.02) !important;
+                }
+
+                .task-card h4 {
+                    margin-bottom: 8px !important;
+                    font-size: 12px !important;
+                    color: var(--text-main) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 5px !important;
+                }
+
+                .task-input {
+                    width: 100% !important;
+                    padding: 10px !important;
+                    border: 1px solid #e8e8e8 !important;
+                    border-radius: 10px !important;
+                    font-size: 11px !important;
+                    color: var(--text-main) !important;
+                    background: #fafafa !important;
+                    min-height: 60px !important;
+                    resize: none !important;
+                    line-height: 1.5 !important;
+                }
+
+                .task-input:focus {
+                    outline: none !important;
+                    border-color: var(--primary) !important;
+                    background: white !important;
+                }
+
+                .info-grid-compact {
+                    display: grid !important;
+                    grid-template-columns: repeat(2, 1fr) !important;
+                    gap: 6px !important;
+                    font-size: 10px !important;
+                    flex: 1 !important;
+                    overflow-y: auto !important;
+                }
+
+                .info-cell {
+                    background: #f9f9f9 !important;
+                    padding: 5px 6px !important;
+                    border-radius: 6px !important;
+                }
+
+                .info-cell-label {
+                    font-size: 8px !important;
+                    color: #999 !important;
+                    margin-bottom: 2px !important;
+                }
+
+                .info-cell-value {
+                    color: var(--text-main) !important;
+                    font-weight: 500 !important;
+                    white-space: nowrap !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                }
+            `,
+            'history.html': `
+                /* ========== 历史记录页面专用样式 ========== */
+                .job-item {
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    padding: 12px !important;
+                    background: white !important;
+                    border-radius: 14px !important;
+                    margin-bottom: 10px !important;
+                }
+
+                .status-dot {
+                    width: 8px !important;
+                    height: 8px !important;
+                    background: var(--accent) !important;
+                    border-radius: 50% !important;
+                    margin-right: 12px !important;
+                    box-shadow: 0 0 8px var(--accent) !important;
+                }
+
+                .status-dot.inactive {
+                    background: #ccc !important;
+                    box-shadow: none !important;
+                }
+
+                .view-btn {
+                    background: #f7f9fa !important;
+                    padding: 5px 12px !important;
+                    border-radius: 12px !important;
+                    font-size: 11px !important;
+                    color: var(--text-gray) !important;
+                    border: none !important;
+                    font-weight: 600 !important;
+                    cursor: pointer !important;
+                }
+
+                .view-btn:hover {
+                    background: #edf1f3 !important;
+                    color: var(--primary) !important;
+                }
+            `,
+            'profile.html': `
+                /* ========== 个人中心页面专用样式 ========== */
+                .profile-header {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    margin-bottom: 15px !important;
+                }
+
+                .profile-avatar {
+                    width: 60px !important;
+                    height: 60px !important;
+                    border-radius: 50% !important;
+                    border: 3px solid white !important;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+                }
+
+                .profile-name {
+                    margin-top: 8px !important;
+                    font-size: 16px !important;
+                    font-weight: 700 !important;
+                    color: var(--text-main) !important;
+                }
+
+                .profile-status {
+                    font-size: 10px !important;
+                    color: var(--accent) !important;
+                    border: 1px solid var(--accent) !important;
+                    padding: 2px 8px !important;
+                    border-radius: 8px !important;
+                    margin-top: 5px !important;
+                }
+
+                .edit-resume-btn {
+                    margin-top: auto !important;
+                    border: 1px solid var(--accent) !important;
+                    color: var(--accent) !important;
+                    background: white !important;
+                    padding: 8px 0 !important;
+                    border-radius: 18px !important;
+                    font-size: 11px !important;
+                    width: 100% !important;
+                    font-weight: 600 !important;
+                    cursor: pointer !important;
+                    transition: 0.2s !important;
+                }
+
+                .edit-resume-btn:hover {
+                    background: var(--accent) !important;
+                    color: white !important;
+                }
+
+                .resume-section {
+                    margin-bottom: 12px !important;
+                }
+
+                .resume-section h4 {
+                    color: var(--primary) !important;
+                    font-size: 12px !important;
+                    margin-bottom: 6px !important;
+                }
+
+                .skill-tags {
+                    display: flex !important;
+                    flex-wrap: wrap !important;
+                    gap: 4px !important;
+                }
+
+                .skill-tag {
+                    font-size: 9px !important;
+                    background: #e0f7fa !important;
+                    color: var(--dark-green) !important;
+                    padding: 2px 6px !important;
+                    border-radius: 5px !important;
+                }
+            `,
+            'settings.html': `
+                /* ========== 设置页面专用样式 ========== */
+                .content-card {
+                    background: white !important;
+                    border-radius: 16px !important;
+                    padding: 16px !important;
+                    margin-bottom: 12px !important;
+                    box-shadow: 0 5px 20px rgba(0,0,0,0.03) !important;
+                }
+
+                .card-title {
+                    font-size: 14px !important;
+                    font-weight: 700 !important;
+                    color: var(--text-main) !important;
+                    margin-bottom: 12px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 8px !important;
+                }
+
+                .settings-item {
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    padding: 12px !important;
+                    background: #f8f9fa !important;
+                    border-radius: 12px !important;
+                    margin-bottom: 8px !important;
+                    cursor: pointer !important;
+                    text-decoration: none !important;
+                    color: inherit !important;
+                    transition: background 0.2s !important;
+                }
+
+                .settings-item:hover {
+                    background: #e9ecef !important;
+                }
+
+                .settings-item-left {
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 12px !important;
+                }
+
+                .settings-item-label {
+                    font-size: 13px !important;
+                    font-weight: 500 !important;
+                    color: var(--text-main) !important;
+                }
+
+                .btn-danger {
+                    background: #dc3545 !important;
+                    color: white !important;
+                    border: none !important;
+                    padding: 12px 20px !important;
+                    border-radius: 12px !important;
+                    font-size: 14px !important;
+                    font-weight: 600 !important;
+                    cursor: pointer !important;
+                    width: 100% !important;
+                    margin-top: 20px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 8px !important;
+                    transition: background 0.2s !important;
+                }
+
+                .btn-danger:hover {
+                    background: #c82333 !important;
+                }
+            `
+        };
+
+        return baseStyles + (pageSpecificStyles[pageType] || '');
+    }
+
+    /**
      * 加载CSS样式
      */
     async function loadStyles() {
@@ -1109,9 +1693,10 @@
                 const url = chrome.runtime.getURL(file);
             });
 
-            // 首先定义CSS变量（在Shadow DOM中，:root不工作，需要用:host或*）
+            // ✅ Shadow DOM专用样式：CSS变量定义 + 强制样式隔离（防止外部网站样式渗透）
             const cssVariables = document.createElement("style");
             cssVariables.textContent = `
+                /* Shadow DOM变量定义 */
                 :host {
                     /* --- 核心色板 --- */
                     --primary: #57c5b6;
@@ -1143,26 +1728,27 @@
                     --dark-green: #006666;
                 }
 
-                * {
-                    /* 确保所有元素都能访问到这些变量 */
-                    --primary: #57c5b6;
-                    --primary-dark: #3a8e82;
-                    --accent: #ff9a9e;
-                    --text-main: #2d3436;
-                    --text-gray: #636e72;
-                    --bg-fluid: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
-                                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
-                                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
-                    --glass-clear-bg: rgba(255, 255, 255, 0.35);
-                    --glass-clear-blur: blur(12px);
-                    --glass-clear-border: 1px solid rgba(255, 255, 255, 0.6);
-                    --glass-clear-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
-                    --card-white: rgba(255, 255, 255, 0.85);
-                    --card-blur: blur(20px);
-                    --card-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
-                    --r-card: 20px;
-                    --r-btn: 25px;
-                    --dark-green: #006666;
+                /* 针对插件容器内的表单元素进行强制样式重置，防止外部网站样式影响 */
+                .plugin-container input,
+                .plugin-container textarea,
+                .plugin-container button,
+                .plugin-container select {
+                    /* 防止外部网站的transform/scale影响 */
+                    transform: none !important;
+                    zoom: 1 !important;
+                    scale: 1 !important;
+
+                    /* 基础盒模型重置 */
+                    box-sizing: border-box !important;
+
+                    /* 字体重置 - 让外部网站的font-size不影响我们的样式 */
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+                }
+
+                /* 针对所有插件容器内的元素进行基础重置 */
+                .plugin-container * {
+                    box-sizing: border-box !important;
+                    transform: none !important;
                 }
             `;
             shadowRoot.appendChild(cssVariables);
@@ -1221,7 +1807,7 @@
                     }
 
                     // 调试：打印前几个 @font-face 规则，验证路径转换
-                    const fontFaceMatches = cssText.match(/@font-face\{[^}]+\}/g);
+                    // const fontFaceMatches = cssText.match(/@font-face\{[^}]+\}/g);
 
                     // 先加载 Font Awesome CSS
                     const styleElement = document.createElement('style');
@@ -1260,6 +1846,47 @@
                     `;
                     shadowRoot.appendChild(faOverrideStyle);
 
+                    // 使用 FontFace API 手动加载字体
+                    try {
+                        const solidFontUrl = chrome.runtime.getURL('popup/webfonts/fa-solid-900.woff2');
+                        const solidFont = new FontFace('Font Awesome 6 Free', `url(${solidFontUrl})`, {
+                            weight: '900',
+                            style: 'normal'
+                        });
+
+                        await solidFont.load();
+                        document.fonts.add(solidFont);
+                        console.log('✅ 手动加载 Font Awesome 6 Free (900) 成功');
+
+                        // 也加载 Regular 版本（fa-regular）
+                        const regularFontUrl = chrome.runtime.getURL('popup/webfonts/fa-regular-400.woff2');
+                        const regularFont = new FontFace('Font Awesome 6 Free', `url(${regularFontUrl})`, {
+                            weight: '400',
+                            style: 'normal'
+                        });
+
+                        await regularFont.load();
+                        document.fonts.add(regularFont);
+                        console.log('✅ 手动加载 Font Awesome 6 Free (400) 成功');
+
+                        // 加载 Brands 版本
+                        const brandsFontUrl = chrome.runtime.getURL('popup/webfonts/fa-brands-400.woff2');
+                        const brandsFont = new FontFace('Font Awesome 6 Brands', `url(${brandsFontUrl})`, {
+                            weight: '400',
+                            style: 'normal'
+                        });
+
+                        await brandsFont.load();
+                        document.fonts.add(brandsFont);
+                        console.log('✅ 手动加载 Font Awesome 6 Brands (400) 成功');
+
+                        // 触发页面重绘
+                        shadowRoot.host.style.display = 'none';
+                        shadowRoot.host.offsetHeight; // 强制重排
+                        shadowRoot.host.style.display = '';
+                    } catch (error) {
+                        console.error('❌ FontFace API 加载字体失败:', error);
+                    }
 
                     // 测试字体文件是否可访问
                     const testFontUrls = [
@@ -1281,32 +1908,52 @@
                         }
                     }
 
-                    // 主动使用 FontFace API 手动加载字体
-                    try {
-                        const solidFontUrl = chrome.runtime.getURL('popup/webfonts/fa-solid-900.woff2');
-                        const solidFont = new FontFace('Font Awesome 6 Free', `url(${solidFontUrl})`, {
-                            weight: '900',
-                            style: 'normal'
-                        });
-
-                        await solidFont.load();
-                        document.fonts.add(solidFont);
-
-                        // 立即触发重绘
-                        shadowRoot.host.style.display = 'none';
-                        shadowRoot.host.offsetHeight; // 强制重排
-                        shadowRoot.host.style.display = '';
-                    } catch (error) {
-                        console.error(`  ❌ FontFace API 加载失败:`, error);
-                    }
+                    // ✅ 图标备用样式已移至各个HTML文件，此处注释掉避免重复
+                    // const iconFallbackStyle = document.createElement('style');
+                    // iconFallbackStyle.textContent = `
+                    //     /* 图标备用方案 */
+                    //     .fas::before, .far::before, .fab::before {
+                    //         font-family: "Font Awesome 6 Free" !important;
+                    //         font-weight: 900 !important;
+                    //         display: inline-block !important;
+                    //         font-style: normal !important;
+                    //         font-variant: normal !important;
+                    //         text-rendering: auto !important;
+                    //         line-height: 1 !important;
+                    //     }
+                    //
+                    //     .fa-magic::before { content: "\\f0d0"; }
+                    //     .fa-bolt::before { content: "\\f0e7"; }
+                    //     .fa-history::before { content: "\\f1da"; }
+                    //     .fa-user::before { content: "\\f007"; }
+                    //     .fa-cog::before { content: "\\f013"; }
+                    //     .fa-times::before { content: "\\f00d"; }
+                    //     .fa-info-circle::before { content: "\\f05a"; }
+                    //     .fa-edit::before { content: "\\f044"; }
+                    //     .fa-spinner::before { content: "\\f110"; }
+                    //     .fa-spin {
+                    //         animation: fa-spin 2s infinite linear;
+                    //     }
+                    //     @keyframes fa-spin {
+                    //         0% { transform: rotate(0deg); }
+                    //         100% { transform: rotate(360deg); }
+                    //     }
+                    //
+                    //     /* 如果Font Awesome没加载，使用文字备用 */
+                    //     .fas:not([class*="fa-"])::before,
+                    //     .far:not([class*="fa-"])::before {
+                    //         content: "●";
+                    //     }
+                    // `;
+                    // shadowRoot.appendChild(iconFallbackStyle);
                 }
             } catch (error) {
                 console.error(`❌ 加载 Font Awesome CSS 时出错:`, error);
             }
-            // 添加Logo按钮和窗口容器的样式（从 resumeInterface.css 提取）
+            // ✅ 只保留插件注入时需要的特定样式（Logo按钮和窗口容器）
             const logoAndContainerStyle = document.createElement("style");
             logoAndContainerStyle.textContent = `
-                /* Logo按钮样式 */
+                /* Logo按钮样式 - 用于外部网站注入 */
                 #logo-button {
                     position: fixed;
                     bottom: 40px;
@@ -1346,14 +1993,14 @@
                     100% { transform: scale(1); }
                 }
 
-                /* 简历窗口容器样式 */
+                /* 简历窗口容器样式 - 用于外部网站注入 */
                 #resume-window-container {
                     position: fixed;
                     bottom: 40px;
                     right: 40px;
                     max-height: calc(100vh - 80px);
                     width: 420px;
-                    height: 600px;
+                    height: min(600px, calc(100vh - 80px));
                     border-radius: 20px;
                     z-index: 100000001;
                     display: none;
@@ -1370,230 +2017,186 @@
                                 radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
                                 linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
                     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2), 0 0 40px rgba(0, 0, 0, 0.1);
-                }
-
-                /* 核心样式备份 - 确保关键元素一定能显示 */
-                .sidebar {
-                    width: 70px;
-                    height: 100%;
-                    background: #57c5b6;
                     display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    padding: 30px 0;
-                    gap: 18px;
-                    flex-shrink: 0;
-                    border-radius: 20px;
-                    box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2);
-                }
-
-                .main-area {
-                    flex: 1;
-                    height: 100%;
-                    position: relative;
-                    overflow: hidden;
-                    border-radius: 0 20px 20px 0;
-                    background: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
-                                radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
-                                linear-gradient(135deg, #def7fa 0%, #ffecec 100%);
-                }
-
-                /* 悬浮标题（玻璃效果） */
-                .liquid-title {
-                    position: absolute;
-                    top: 20px;
-                    left: 20px;
-                    background: rgba(255, 255, 255, 0.35);
-                    backdrop-filter: blur(12px);
-                    -webkit-backdrop-filter: blur(12px);
-                    border: 1px solid rgba(255, 255, 255, 0.6);
-                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
-                    padding: 10px 20px;
-                    border-radius: 18px;
-                    font-size: 16px;
-                    font-weight: 800;
-                    color: #2d3436;
-                    z-index: 30;
-                }
-
-                /* 悬浮关闭/设置按钮 */
-                .liquid-close {
-                    position: absolute;
-                    top: 20px;
-                    right: 15px;
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 14px;
-                    background: rgba(255, 255, 255, 0.35);
-                    backdrop-filter: blur(12px);
-                    -webkit-backdrop-filter: blur(12px);
-                    border: 1px solid rgba(255, 255, 255, 0.6);
-                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    color: #636e72;
-                    z-index: 30;
-                    cursor: pointer;
-                    font-size: 16px;
-                    text-decoration: none;
-                    transition: all 0.3s ease;
-                }
-
-                .liquid-close:hover {
-                    background: rgba(255, 255, 255, 0.6);
-                    color: #57c5b6;
-                }
-
-                /* 滚动内容区 */
-                .plugin-content {
-                    height: 100%;
-                    overflow: hidden;
-                    padding: 75px 15px 110px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 12px;
-                }
-
-                .plugin-content::-webkit-scrollbar {
-                    display: none;
-                }
-
-                /* Switch tooltip 关键样式 */
-                .switch-tooltip {
-                    position: absolute;
-                    right: 10px;
-                    top: 25px;
-                    background: #ff9a9e;
-                    color: white;
-                    font-size: 13px;
-                    padding: 2px 20px;
-                    border-radius: 5px;
-                    opacity: 0;
-                    transition: opacity 0.3s ease, transform 0.3s ease;
-                    pointer-events: none;
-                    z-index: 10;
-                    white-space: nowrap;
-                    transform: translateX(10px);
-                }
-
-                .book-wrapper:hover .switch-tooltip {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-
-                .book-wrapper {
-                    position: relative;
-                    width: 96%;
-                    height: 280px;
-                    perspective: 1000px;
-                    cursor: pointer;
-                    flex-shrink: 0;
-                    min-height: 280px;
-                    max-height: 280px;
-                }
-
-                .resume-page-current {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: white;
-                    border-radius: 18px;
-                    padding: 14px;
-                    border: 1px solid rgba(0, 0, 0, 0.05);
-                    box-shadow: -5px 10px 30px rgba(0, 0, 0, 0.1);
-                    z-index: 2;
-                    transition: transform 0.4s ease;
-                    display: flex;
-                    flex-direction: column;
-                    min-height: 0;
-                }
-
-                .book-wrapper:hover .resume-page-current {
-                    transform: translateX(-20px) rotateY(-5deg);
-                }
-
-                .resume-page-next {
-                    position: absolute;
-                    top: 8px;
-                    right: -16px;
-                    width: 98%;
-                    height: 100%;
-                    background: rgba(255, 255, 255, 0.8);
-                    border: 1px solid rgba(255, 255, 255, 0.5);
-                    border-radius: 18px;
-                    padding: 14px;
-                    transform: rotate(3deg) translateZ(-10px);
-                    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05);
-                    z-index: 1;
-                    transition: transform 0.4s ease, filter 0.4s ease, opacity 0.4s ease;
-                    filter: blur(1px);
-                    opacity: 0.8;
                     overflow: hidden;
                 }
 
-                .book-wrapper:hover .resume-page-next {
-                    transform: rotate(1deg) translateZ(0);
-                    filter: blur(0);
-                    opacity: 1;
-                }
+                /* ✅ 以下样式已移至 common.css 和各HTML文件，此处注释掉避免重复 */
+                /* .sidebar, .main-area, .liquid-title, .liquid-close, .plugin-content */
+                /* .switch-tooltip, .book-wrapper, .resume-page-current, .resume-page-next */
             `;
             shadowRoot.appendChild(logoAndContainerStyle);
+
+            // ✅ 添加最终样式保护层（最高优先级），防止特殊网站（如美团）的样式渗透
+            const finalProtectionStyle = document.createElement("style");
+            finalProtectionStyle.textContent = `
+                /* 全局重置 - 防止美团等网站的全局样式影响 */
+                .plugin-container,
+                .plugin-container * {
+                    /* 重置line-height，防止元素高度被拉长 - 使用具体数值避免继承外部样式 */
+                    line-height: 1.4 !important;
+
+                    /* 重置letter-spacing和word-spacing */
+                    letter-spacing: 0 !important;
+                    word-spacing: 0 !important;
+
+                    /* 重置text相关属性 */
+                    text-indent: 0 !important;
+                    text-shadow: none !important;
+                }
+
+                /* 窗口容器固定定位保护 */
+                #resume-window-container {
+                    position: fixed !important;
+                    top: auto !important;
+                    bottom: 40px !important;
+                    left: auto !important;
+                    right: 40px !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                /* 主容器尺寸保护 */
+                .plugin-container {
+                    width: 420px !important;
+                    height: 600px !important;
+                    max-width: 420px !important;
+                    max-height: 600px !important;
+                    min-width: 420px !important;
+                    min-height: 600px !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                /* 滚动内容区padding保护 */
+                .plugin-content {
+                    padding: 75px 15px 20px !important;
+                    margin: 0 !important;
+                    line-height: 1.4 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 12px !important;
+                }
+
+                /* task-input样式保护 */
+                .plugin-container .task-input {
+                    width: 100% !important;
+                    min-height: auto !important;
+                    max-height: none !important;
+                    height: auto !important;
+                    box-sizing: border-box !important;
+                    padding: 10px !important;
+                    margin: 0 !important;
+                    font-size: 11px !important;
+                    line-height: 1.5 !important;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+                    transform: none !important;
+                    zoom: 1 !important;
+                    scale: 1 !important;
+                    flex: 1 !important;
+                }
+
+                /* job-item（记录页面项）样式保护 */
+                .job-item {
+                    display: flex !important;
+                    align-items: center !important;
+                    padding: 12px !important;
+                    margin: 0 0 10px 0 !important;
+                    line-height: 1.4 !important;
+                    height: auto !important;
+                    min-height: auto !important;
+                }
+
+                .job-item * {
+                    line-height: 1.4 !important;
+                }
+
+                /* 所有文本元素line-height重置为具体值 */
+                .plugin-container p,
+                .plugin-container div,
+                .plugin-container span,
+                .plugin-container a,
+                .plugin-container button,
+                .plugin-container h1,
+                .plugin-container h2,
+                .plugin-container h3,
+                .plugin-container h4,
+                .plugin-container h5,
+                .plugin-container h6 {
+                    line-height: 1.4 !important;
+                }
+
+                /* 卡片样式保护 */
+                .content-card,
+                .task-card {
+                    margin: 0 0 15px 0 !important;
+                    padding: 15px !important;
+                    line-height: 1.4 !important;
+                }
+
+                .task-card {
+                    padding: 12px !important;
+                    height: 110px !important;
+                    flex-shrink: 0 !important;
+                }
+
+                /* 按钮样式保护 */
+                .view-btn,
+                .btn-primary,
+                .btn-danger,
+                .liquid-cta-btn {
+                    line-height: 1.4 !important;
+                    height: auto !important;
+                }
+
+                .liquid-cta-btn {
+                    padding: 12px 25px !important;
+                }
+
+                .btn-primary,
+                .btn-danger {
+                    padding: 12px 20px !important;
+                }
+
+                .view-btn {
+                    padding: 5px 12px !important;
+                }
+            `;
+            shadowRoot.appendChild(finalProtectionStyle);
+
             // 2. Font Awesome 已在 loadStyles() 中加载，这里不需要额外处理
 
             // 验证样式是否成功注入
             const styleCount = shadowRoot.querySelectorAll('style').length;
-            console.log(`📊 Shadow DOM中共有 ${styleCount} 个<style>标签`);
 
             // 调试：检查图标元素的实际状态
             setTimeout(() => {
-                console.log("🔍 开始检查 Font Awesome 图标状态...");
 
                 const iconElements = shadowRoot.querySelectorAll('.fas, .far, .fab, [class*="fa-"]');
-                console.log(`🎯 找到 ${iconElements.length} 个图标元素`);
 
                 if (iconElements.length > 0) {
                     const firstIcon = iconElements[0];
-                    console.log(`📌 第一个图标的类名: ${firstIcon.className}`);
 
                     // 检查元素本身的样式
                     const elemStyle = window.getComputedStyle(firstIcon);
-                    console.log(`  - 元素字体: ${elemStyle.fontFamily}`);
-                    console.log(`  - 元素display: ${elemStyle.display}`);
 
                     // 检查::before伪元素的样式
                     const beforeStyle = window.getComputedStyle(firstIcon, '::before');
-                    console.log(`  - ::before content: ${beforeStyle.content}`);
-                    console.log(`  - ::before font-family: ${beforeStyle.fontFamily}`);
-                    console.log(`  - ::before font-weight: ${beforeStyle.fontWeight}`);
-                    console.log(`  - ::before display: ${beforeStyle.display}`);
 
                     // 检查<style>标签内容
                     const styles = shadowRoot.querySelectorAll('style');
-                    console.log(`📄 检查 ${styles.length} 个<style>标签...`);
 
                     // 直接检查 CSS 中是否有 fa-info-circle 的 content 定义
                     for (let i = 0; i < styles.length; i++) {
                         const content = styles[i].textContent;
                         if (content.includes('fa-info-circle')) {
-                            console.log(`  📍 在 <style>#${i} 中找到 fa-info-circle`);
                             // 查找包含 fa-info-circle 和 content 的规则
                             const pattern = /\.fa-info-circle[^{]*::?before[^}]*content[^}]*\}/gi;
                             const matches = content.match(pattern);
-                            if (matches) {
-                                console.log(`    规则:`, matches[0].substring(0, 200));
-                            } else {
-                                // 查找fa-info-circle所在的位置，并显示周围内容
-                                const pos = content.indexOf('fa-info-circle');
-                                console.log(`    上下文:`, content.substring(Math.max(0, pos - 50), pos + 150));
-                            }
                         }
                     }
 
                     // 手动测试：直接给第一个图标添加content
-                    console.log(`🧪 测试：手动设置图标content...`);
                     const testStyle = document.createElement('style');
                     testStyle.textContent = `
                         .fas.fa-info-circle::before {
@@ -1607,15 +2210,11 @@
                         }
                     `;
                     shadowRoot.appendChild(testStyle);
-                    console.log(`✅ 已添加测试样式`);
 
                     // 再次检查content
                     setTimeout(() => {
                         const afterTestStyle = window.getComputedStyle(firstIcon, '::before');
-                        console.log(`🔍 添加测试样式后的 ::before content:`, afterTestStyle.content);
 
-                        // 检查所有可能覆盖content的样式
-                        console.log(`🔍 检查可能覆盖 content 的样式...`);
                         for (let i = 0; i < styles.length; i++) {
                             const styleText = styles[i].textContent;
                             // 查找设置 content: "" 或 content: none 的规则
@@ -1626,7 +2225,6 @@
                         }
 
                         // 尝试直接在元素上设置内联样式（最高优先级）
-                        console.log(`🧪 测试2: 直接在元素上设置样式...`);
                         firstIcon.style.setProperty('--fa-content', '\\f05a');
                         const directStyle = document.createElement('style');
                         directStyle.textContent = `
@@ -1641,7 +2239,6 @@
 
                         setTimeout(() => {
                             const finalStyle = window.getComputedStyle(firstIcon, '::before');
-                            console.log(`🔍 最终测试后的 ::before content:`, finalStyle.content);
                             if (finalStyle.content === '""' || finalStyle.content === '') {
                                 console.error(`❌ 即使使用最高优先级样式，content 仍然为空！可能是Shadow DOM内部机制问题。`);
                             }
@@ -1650,13 +2247,6 @@
 
                     for (let i = 0; i < styles.length; i++) {
                         const content = styles[i].textContent;
-
-                        // 检查是否包含@font-face
-                        if (content.includes('@font-face')) {
-                            console.log(`  ✅ <style>标签 #${i} 包含 @font-face 规则`);
-                            const fontFaceCount = (content.match(/@font-face/g) || []).length;
-                            console.log(`     共 ${fontFaceCount} 个字体声明`);
-                        }
 
                         // 检查是否包含.fa-图标规则
                         if (content.includes('.fa-magic') || content.includes('.fa-bolt')) {
@@ -1688,6 +2278,18 @@
                     });
                 }
             }, 1500);
+
+            // ========== 方案1: 注入增强版内联样式 ==========
+            console.log("🚀 正在注入增强版内联样式保护...");
+
+            // 生成并注入当前页面的强化内联样式
+            const enhancedInlineStyle = document.createElement("style");
+            enhancedInlineStyle.setAttribute('data-enhanced-inline-styles', 'true');
+            enhancedInlineStyle.setAttribute('data-priority', 'highest');
+            // enhancedInlineStyle.textContent = generateInlineStylesForPage(currentPage);
+            shadowRoot.appendChild(enhancedInlineStyle);
+
+            console.log("✅ 增强版内联样式已注入完成");
 
         } catch (error) {
             console.error("✗ 加载样式时出错:", error);

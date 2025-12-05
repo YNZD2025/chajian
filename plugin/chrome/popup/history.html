@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>投递记录 - 一念职达</title>
-    <link rel="stylesheet" href="styles/simple-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles/common.css">
     <style>
         .job-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 14px; margin-bottom: 10px; }
@@ -33,6 +33,75 @@
         .plugin-content::-webkit-scrollbar-thumb:hover {
             background: #ccc;
         }
+
+        /* ========== 图标备用样式 ========== */
+        .fas::before,
+        .far::before,
+        .fab::before {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            display: inline-block !important;
+            font-style: normal !important;
+            font-variant: normal !important;
+            text-rendering: auto !important;
+            line-height: 1 !important;
+        }
+
+        .fa-magic::before {
+            content: "\f0d0";
+        }
+
+        .fa-bolt::before {
+            content: "\f0e7";
+        }
+
+        .fa-history::before {
+            content: "\f1da";
+        }
+
+        .fa-user::before {
+            content: "\f007";
+        }
+
+        .fa-cog::before {
+            content: "\f013";
+        }
+
+        .fa-times::before {
+            content: "\f00d";
+        }
+
+        .fa-info-circle::before {
+            content: "\f05a";
+        }
+
+        .fa-edit::before {
+            content: "\f044";
+        }
+
+        .fa-spinner::before {
+            content: "\f110";
+        }
+
+        .fa-spin {
+            animation: fa-spin 2s infinite linear;
+        }
+
+        @keyframes fa-spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 如果Font Awesome没加载，使用文字备用 */
+        .fas:not([class*="fa-"])::before,
+        .far:not([class*="fa-"])::before {
+            content: "●";
+        }
     </style>
 </head>
 <body>
@@ -59,7 +128,7 @@
             </div>
         </div>
         <div class="main-area">
-            <div class="liquid-title">使用记录</div>
+            <div class="liquid-title">投递记录</div>
             <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
             <div class="plugin-content">
                 <!-- 投递记录将通过 JavaScript 动态加载 -->
