@@ -30,7 +30,7 @@
             transform: rotate(3deg) translateZ(-10px);
             box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05);
             z-index: 1;
-            transition: transform 0.4s ease;
+            transition: transform 0.4s ease, filter 0.4s ease, opacity 0.4s ease;
             filter: blur(1px);
             opacity: 0.8;
             overflow: hidden;
@@ -54,13 +54,13 @@
         }
 
         .book-wrapper:hover .resume-page-current {
-            transform: translateX(-20px) rotateY(-5deg);
+            transform: translateX(-20px) rotateY(-5deg) !important;
         }
 
         .book-wrapper:hover .resume-page-next {
-            transform: rotate(1deg) translateZ(0);
-            filter: blur(0);
-            opacity: 1;
+            transform: rotate(1deg) translateZ(0) !important;
+            filter: blur(0) !important;
+            opacity: 1 !important;
         }
 
         .switch-tooltip {
@@ -99,19 +99,41 @@
             border-radius: 3px;
         }
 
-        .liquid-cta-container { position: absolute; bottom: 40px; left: 34px; right: 0; width: calc(100% - 70px); display: flex; justify-content: center; pointer-events: none; z-index: 40; }
+        .liquid-cta-container {
+            position: absolute;
+            bottom: 40px;
+            left: 34px;
+            right: 0;
+            width: calc(100% - 70px);
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 40;
+        }
+
         .liquid-cta-btn {
-            pointer-events: auto; cursor: pointer;
+            pointer-events: auto;
+            cursor: pointer;
             background: var(--glass-clear-bg);
             backdrop-filter: var(--glass-clear-blur);
             -webkit-backdrop-filter: var(--glass-clear-blur);
             box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25);
             border: 1px solid var(--accent);
-            padding: 12px 25px; border-radius: 25px;
-            color: var(--accent); font-size: 14px; font-weight: 700;
-            display: flex; align-items: center; gap: 6px; transition: 0.2s;
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
         }
-        .liquid-cta-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.35); }
+
+        .liquid-cta-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.35);
+        }
 
 
         .task-card {
@@ -235,6 +257,57 @@
 
         .resume-switch-btn:hover {
             opacity: 0.8 !important;
+        }
+
+        /* ========== 额度显示样式 ========== */
+        .header-right-container {
+            position: absolute;
+            top: 20px;
+            right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 30;
+        }
+
+        .quota-display {
+            background: var(--glass-clear-bg);
+            backdrop-filter: var(--glass-clear-blur);
+            -webkit-backdrop-filter: var(--glass-clear-blur);
+            border: var(--glass-clear-border);
+            box-shadow: var(--glass-clear-shadow);
+            padding: 8px 15px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .quota-label {
+            font-size: 12px;
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .quota-value {
+            font-size: 14px;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .quota-value.low {
+            color: var(--accent);
+        }
+
+        .quota-value.empty {
+            color: #dc3545;
+        }
+
+        /* 覆盖关闭按钮的position，因为它现在在容器中 */
+        .header-right-container .liquid-close {
+            position: relative;
+            top: auto;
+            right: auto;
         }
 
         .resume-switch-controls {
@@ -366,7 +439,14 @@
         </div>
         <div class="main-area">
             <div class="liquid-title">智能填充</div>
-            <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
+            <div class="header-right-container">
+                <div class="quota-display">
+                    <span class="quota-label">剩余额度：</span>
+                    <span class="quota-value" id="quota-value">--</span>
+                </div>
+                <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
+            </div>
+
 
             <div class="liquid-cta-container">
                 <div id="fill-action-btn" class="liquid-cta-btn">

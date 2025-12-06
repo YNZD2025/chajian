@@ -249,6 +249,7 @@
     async function createResumeWindow() {
         const container = document.createElement("div");
         container.id = "resume-window-container";
+        let styleContents = ''; // 在函数作用域声明，以便后续使用
 
         try {
             // 加载HTML模板 - 改为引用 fill.html
@@ -268,6 +269,10 @@
             // 移除head中的link标签（避免重复加载）
             const links = doc.querySelectorAll("head link");
             links.forEach(link => link.remove());
+
+            // 🔧 提取内联样式（fill.html 中的 <style> 标签）
+            const inlineStyles = doc.querySelectorAll("head style");
+            styleContents = Array.from(inlineStyles).map(style => style.textContent).join('\n');
 
             // ⚠️ 关键修复：在注入前移除所有可能导致页面跳转的属性和事件
             // 1. 先移除所有script标签
@@ -309,6 +314,15 @@
         shadowRoot.appendChild(container);
         // 保存容器引用
         resumeWindowContainer = container;
+
+        // 🔧 注入提取的内联样式到 Shadow DOM
+        if (styleContents) {
+            const pageStyle = document.createElement("style");
+            pageStyle.setAttribute('data-page-style', 'fill.html');
+            pageStyle.textContent = styleContents;
+            shadowRoot.appendChild(pageStyle);
+            console.log('✅ fill.html 的内联样式已注入到 Shadow DOM');
+        }
 
         // ⚠️ 额外安全措施：添加全局点击事件监听，拦截所有可能的导航
         container.addEventListener('click', (e) => {
@@ -951,6 +965,9 @@
 
             // 初始化简历数据（切换菜单时强制刷新）
             initResumeData(true);
+
+            // 加载并显示额度
+            loadQuota();
         }
 
         // profile.html - 个人页面
@@ -2027,13 +2044,13 @@
             `;
             shadowRoot.appendChild(logoAndContainerStyle);
 
-            // ✅ 添加最终样式保护层（最高优先级），防止特殊网站（如美团）的样式渗透
+            // ✅ 添加基础样式保护层（适用于所有网站）
             const finalProtectionStyle = document.createElement("style");
             finalProtectionStyle.textContent = `
-                /* 全局重置 - 防止美团等网站的全局样式影响 */
+                /* 基础重置 - 适用于所有网站 */
                 .plugin-container,
                 .plugin-container * {
-                    /* 重置line-height，防止元素高度被拉长 - 使用具体数值避免继承外部样式 */
+                    /* 重置line-height，防止元素高度被拉长 */
                     line-height: 1.4 !important;
 
                     /* 重置letter-spacing和word-spacing */
@@ -2111,7 +2128,7 @@
                     line-height: 1.4 !important;
                 }
 
-                /* 所有文本元素line-height重置为具体值 */
+                /* 所有文本元素line-height重置 */
                 .plugin-container p,
                 .plugin-container div,
                 .plugin-container span,
@@ -2163,6 +2180,176 @@
                 }
             `;
             shadowRoot.appendChild(finalProtectionStyle);
+
+            // ✅ 检测美团网站，应用额外的激进样式保护
+            const isMeituanSite = window.location.hostname.includes('meituan.com') ||
+                                   window.location.hostname.includes('zhaopin.meituan.com');
+
+            if (isMeituanSite) {
+                console.log('🎯 检测到美团网站，应用额外样式保护');
+                const meituanProtectionStyle = document.createElement("style");
+                meituanProtectionStyle.textContent = `
+                    /* ========== 美团网站专用样式保护 ========== */
+
+                    /* 1. 超强变形属性重置 - 美团可能使用了transform/scale */
+                    .plugin-container,
+                    .plugin-container *,
+                    .plugin-container *::before,
+                    .plugin-container *::after {
+                        transform: none !important;
+                        translate: none !important;
+                        rotate: none !important;
+                        scale: none !important;
+                        zoom: 1 !important;
+                        -webkit-transform: none !important;
+                    }
+
+                    /* 2. 窗口容器额外定位保护 - 防止被美团的布局影响 */
+                    #resume-window-container {
+                        transform: none !important;
+                        translate: none !important;
+                        width: 420px !important;
+                        height: min(600px, calc(100vh - 80px)) !important;
+                        max-height: calc(100vh - 80px) !important;
+                        flex: none !important;
+                        flex-grow: 0 !important;
+                        flex-shrink: 0 !important;
+                        flex-basis: auto !important;
+                    }
+
+                    /* 3. 主容器严格定位 - 防止内容下移 */
+                    .plugin-container {
+                        position: relative !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        transform: none !important;
+                        overflow: hidden !important;
+                        display: flex !important;
+                    }
+
+                    /* 4. 侧边栏和主区域固定 */
+                    .plugin-container .sidebar {
+                        position: relative !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 50px !important;
+                        flex-shrink: 0 !important;
+                        transform: none !important;
+                    }
+
+                    .plugin-container .main-area {
+                        position: relative !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        flex: 1 !important;
+                        transform: none !important;
+                        overflow: hidden !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                    }
+
+                    /* 5. 标题和关闭按钮绝对定位保护 - 防止下移 */
+                    .plugin-container .liquid-title {
+                        position: absolute !important;
+                        top: 20px !important;
+                        left: 65px !important;
+                        transform: none !important;
+                        z-index: 20 !important;
+                    }
+
+                    .plugin-container .liquid-close {
+                        position: absolute !important;
+                        top: 15px !important;
+                        right: 15px !important;
+                        transform: none !important;
+                        z-index: 20 !important;
+                    }
+
+                    /* 6. 滚动内容区严格padding - 防止内容下移 */
+                    .plugin-container .plugin-content {
+                        position: relative !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        padding: 75px 15px 20px 15px !important;
+                        transform: none !important;
+                        overflow-y: auto !important;
+                        overflow-x: hidden !important;
+                    }
+
+                    /* 7. job-item额外高度控制 - 防止被拉长 */
+                    .plugin-container .job-item {
+                        width: 100% !important;
+                        height: auto !important;
+                        min-height: auto !important;
+                        max-height: none !important;
+                        transform: none !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    .plugin-container .job-item * {
+                        transform: none !important;
+                    }
+
+                    /* 8. 卡片元素额外保护 */
+                    .plugin-container .content-card,
+                    .plugin-container .task-card,
+                    .plugin-container .book-wrapper {
+                        position: relative !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        transform: none !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    /* 9. 按钮元素额外保护 */
+                    .plugin-container .btn-primary,
+                    .plugin-container .btn-danger,
+                    .plugin-container .liquid-cta-btn,
+                    .plugin-container .view-btn {
+                        transform: none !important;
+                        position: relative !important;
+                    }
+
+                    /* 10. 表单元素额外保护 */
+                    .plugin-container input,
+                    .plugin-container textarea,
+                    .plugin-container select,
+                    .plugin-container button {
+                        transform: none !important;
+                        zoom: 1 !important;
+                        scale: 1 !important;
+                    }
+
+                    /* 11. 防止opacity和filter影响 */
+                    .plugin-container,
+                    .plugin-container * {
+                        opacity: 1 !important;
+                        filter: none !important;
+                        backdrop-filter: none !important;
+                        -webkit-filter: none !important;
+                    }
+
+                    /* 12. 防止vertical-align和float影响布局 */
+                    .plugin-container * {
+                        vertical-align: baseline !important;
+                        float: none !important;
+                        clear: none !important;
+                    }
+
+                    /* 13. 特殊元素额外保护 */
+                    .plugin-container .resume-header,
+                    .plugin-container .resume-meta,
+                    .plugin-container .info-grid-compact,
+                    .plugin-container .info-cell,
+                    .plugin-container .settings-group,
+                    .plugin-container .settings-item,
+                    .plugin-container .profile-header,
+                    .plugin-container .profile-content-wrapper {
+                        transform: none !important;
+                    }
+                `;
+                shadowRoot.appendChild(meituanProtectionStyle);
+            }
 
             // 2. Font Awesome 已在 loadStyles() 中加载，这里不需要额外处理
 
@@ -2700,6 +2887,8 @@
                         changeState("success");
                         // 保存投递记录
                         saveApplicationRecord(company, position);
+                        // 刷新额度显示
+                        loadQuota();
                     } else {
                         // 处理错误情况
                         console.error("[startFilling] 填充失败:", result);
@@ -3494,6 +3683,53 @@
                 console.warn('⚠ 未找到用户信息，使用默认值');
             }
         });
+    }
+
+    /**
+     * 加载并更新额度显示
+     */
+    async function loadQuota() {
+        try {
+            // 获取额度值元素
+            const quotaValueEl = resumeWindowContainer?.querySelector('#quota-value');
+            if (!quotaValueEl) {
+                console.warn('⚠ 未找到额度显示元素 #quota-value');
+                return;
+            }
+
+            // 显示加载状态
+            quotaValueEl.textContent = '加载中...';
+            quotaValueEl.className = 'quota-value';
+
+            // 调用接口获取额度
+            const quotaResult = await apiRequestForGet("quota", {}, false);
+
+            if (quotaResult && typeof quotaResult.quota !== 'undefined') {
+                const quotaValue = quotaResult.quota;
+
+                // 更新显示
+                quotaValueEl.textContent = quotaValue;
+
+                // 根据额度值添加不同的样式类
+                quotaValueEl.className = 'quota-value';
+                if (quotaValue <= 0) {
+                    quotaValueEl.classList.add('empty');
+                } else if (quotaValue <= 10) {
+                    quotaValueEl.classList.add('low');
+                }
+
+                console.log(`✅ 额度加载成功: ${quotaValue}`);
+            } else {
+                throw new Error('额度数据格式错误');
+            }
+        } catch (error) {
+            console.error('❌ 加载额度失败:', error);
+            const quotaValueEl = resumeWindowContainer?.querySelector('#quota-value');
+            if (quotaValueEl) {
+                quotaValueEl.textContent = '获取失败';
+                quotaValueEl.className = 'quota-value';
+            }
+        }
     }
 
     /**
