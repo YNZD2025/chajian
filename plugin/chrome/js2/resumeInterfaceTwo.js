@@ -3300,79 +3300,6 @@
     }
 
     // ============================================================================
-    // 评分弹窗
-    // ============================================================================
-
-    /**
-     * 显示评分弹窗 - 步骤1
-     * @param {Object} stats - 统计数据
-     */
-    async function showStep1Modal(stats) {
-        // TODO: 实现评分弹窗逻辑
-    }
-
-    /**
-     * 显示评分弹窗 - 步骤2（上传截图）
-     */
-    async function showStep2Modal() {
-        // TODO: 实现上传截图逻辑
-    }
-
-    /**
-     * 处理图片（转换为PNG格式）
-     * @param {string} dataUrl - 图片DataURL
-     */
-    async function processImage(dataUrl) {
-        // TODO: 实现图片处理逻辑
-    }
-
-    /**
-     * 显示评分弹窗 - 步骤3（感谢）
-     */
-    async function showStep3Modal() {
-        // TODO: 实现感谢弹窗逻辑
-    }
-
-    // ============================================================================
-    // 版本检查
-    // ============================================================================
-
-    /**
-     * 检查新版本
-     */
-    async function checkVersion() {
-        // TODO: 实现版本检查逻辑
-    }
-
-    /**
-     * 比较版本号
-     * @param {string} v1 - 版本1
-     * @param {string} v2 - 版本2
-     * @returns {boolean} v1是否比v2新
-     */
-    function isNewerVersion(v1, v2) {
-        const parts1 = v1.split(".").map(Number);
-        const parts2 = v2.split(".").map(Number);
-
-        for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-            const p1 = parts1[i] || 0;
-            const p2 = parts2[i] || 0;
-
-            if (p1 > p2) return true;
-            if (p1 < p2) return false;
-        }
-
-        return false;
-    }
-
-    /**
-     * 显示新版本通知
-     */
-    function showVersionNotification() {
-        // TODO: 实现版本通知逻辑
-    }
-
-    // ============================================================================
     // 简历数据管理
     // ============================================================================
 
@@ -4151,11 +4078,6 @@
             return true;
         }
 
-        if (message.action === "toggleBeautifyResume") {
-            // TODO: 根据fill.html实现美化简历切换
-            sendResponse({ success: true });
-            return true;
-        }
     });
 
     // ============================================================================
@@ -4452,13 +4374,6 @@
     window.getCurrentCompanyName = getCurrentCompanyName;
 
     /**
-     * 绑定美化后的简历
-     */
-    window.bindBeautifyResume = function (data) {
-        // TODO: 实现美化简历绑定逻辑
-    };
-
-    /**
      * 停止打字机效果
      */
     window.stopTypeResumeContent = function (content) {
@@ -4470,13 +4385,6 @@
      */
     window.breatheJobInfo = async function () {
         // TODO: 实现呼吸效果逻辑
-    };
-
-    /**
-     * 简历编辑器呼吸效果
-     */
-    window.breatheResume = async function (action) {
-        // TODO: 实现简历编辑器呼吸效果逻辑
     };
 
     /**

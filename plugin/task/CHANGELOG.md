@@ -149,4 +149,4 @@ window.updateStatusPopup('正在扫描网站...', 'processing')
 
 - [完整文档](STATUS_USAGE.md)
 - [快速入门](QUICK_START.md)
-- [测试页面](test-status.html)
+- [测试页面](../chrome/popup/test-status.html)

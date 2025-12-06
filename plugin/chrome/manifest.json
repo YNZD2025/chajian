@@ -36,13 +36,8 @@
         "popup/profile.html",
         "popup/history.html",
         "popup/settings.html",
-        "popup/settingsMini.html",
         "popup/profileMini.html",
         "popup/edit-resume.html",
-        "popup/login.html",
-        "popup/change-password.html",
-        "popup/privacy-settings.html",
-        "popup/about.html",
         "popup/help.html",
         "popup/feedback.html",
         "popup/logo-small.png",
@@ -52,15 +47,12 @@
         "popup/styles/font-awesome.min.css",
         "popup/scripts/transitions.js",
         "popup/scripts/statusPopup.js",
-        "popup/scripts/settingsMini.js",
         "popup/scripts/profileMini.js",
         "popup/webfonts/fa-solid-900.woff2",
         "popup/webfonts/fa-regular-400.woff2",
         "popup/webfonts/fa-brands-400.woff2",
         "case/css/resumeInterface.css",
-        "case/data/简历列表数据.json",
-        "icons/icon128.png",
-        "test_data/resume.md"
+        "icons/icon128.png"
       ]
     }
   ],
@@ -88,10 +80,8 @@
   "externally_connectable": {
     "matches": [
       "http://192.168.1.144:*/*",
-      "http://z6467e53.natappfree.cc/*",
       "http://localhost:*/*",
       "https://applymind.cn/*",
-      "http://g6fedde8.natappfree.cc/*",
       "https://test.applymind.cn/*"
     ]
   }
