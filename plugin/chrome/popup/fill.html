@@ -100,39 +100,40 @@
         }
 
         .liquid-cta-container {
-            position: absolute;
-            bottom: 40px;
-            left: 34px;
-            right: 0;
-            width: calc(100% - 70px);
-            display: flex;
-            justify-content: center;
-            pointer-events: none;
-            z-index: 40;
+            position: absolute !important;
+            bottom: 40px !important;
+            left: 34px !important;
+            right: 0 !important;
+            width: calc(100% - 70px) !important;
+            display: flex !important;
+            justify-content: center !important;
+            pointer-events: none !important;
+            z-index: 40 !important;
         }
 
         .liquid-cta-btn {
-            pointer-events: auto;
-            cursor: pointer;
-            background: var(--glass-clear-bg);
-            backdrop-filter: var(--glass-clear-blur);
-            -webkit-backdrop-filter: var(--glass-clear-blur);
-            box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25);
-            border: 1px solid var(--accent);
-            padding: 12px 25px;
-            border-radius: 25px;
-            color: var(--accent);
-            font-size: 14px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            background: var(--glass-clear-bg) !important;
+            backdrop-filter: var(--glass-clear-blur) !important;
+            -webkit-backdrop-filter: var(--glass-clear-blur) !important;
+            box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25) !important;
+            border: 1px solid var(--accent) !important;
+            padding: 12px 25px !important;
+            border-radius: 25px !important;
+            color: var(--accent) !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
         }
 
         .liquid-cta-btn:hover {
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px) !important;
+            background: rgba(255, 255, 255, 0.35) !important;
+            box-shadow: 0 15px 35px rgba(255, 154, 158, 0.35) !important;
         }
 
 

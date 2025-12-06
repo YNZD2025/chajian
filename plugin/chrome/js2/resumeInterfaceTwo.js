@@ -1421,12 +1421,13 @@
                     display: flex !important;
                     align-items: center !important;
                     gap: 6px !important;
-                    transition: 0.2s !important;
+                    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
                 }
 
                 .liquid-cta-btn:hover {
                     transform: translateY(-2px) !important;
                     background: rgba(255,255,255,0.35) !important;
+                    box-shadow: 0 15px 35px rgba(255, 154, 158, 0.35) !important;
                 }
 
                 .task-card {
@@ -2301,20 +2302,19 @@
                         box-sizing: border-box !important;
                     }
 
-                    /* 9. 按钮元素额外保护 */
+                    /* 9. 按钮元素额外保护（排除 liquid-cta-btn，它需要 transform 动画） */
                     .plugin-container .btn-primary,
                     .plugin-container .btn-danger,
-                    .plugin-container .liquid-cta-btn,
                     .plugin-container .view-btn {
                         transform: none !important;
                         position: relative !important;
                     }
 
-                    /* 10. 表单元素额外保护 */
+                    /* 10. 表单元素额外保护（排除 liquid-cta-btn 按钮） */
                     .plugin-container input,
                     .plugin-container textarea,
                     .plugin-container select,
-                    .plugin-container button {
+                    .plugin-container button:not(.liquid-cta-btn) {
                         transform: none !important;
                         zoom: 1 !important;
                         scale: 1 !important;
