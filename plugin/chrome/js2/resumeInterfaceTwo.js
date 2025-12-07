@@ -315,13 +315,26 @@
         // 保存容器引用
         resumeWindowContainer = container;
 
+        // 🔧 修复图片路径：将相对路径转换为 Chrome extension 绝对路径
+        const images = container.querySelectorAll('img');
+        images.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src && !src.startsWith('http') && !src.startsWith('chrome-extension://') && !src.startsWith('data:')) {
+                // 相对路径，需要转换
+                const absoluteUrl = chrome.runtime.getURL(`popup/${src}`);
+                img.setAttribute('src', absoluteUrl);
+            }
+        });
+
         // 🔧 注入提取的内联样式到 Shadow DOM
         if (styleContents) {
             const pageStyle = document.createElement("style");
             pageStyle.setAttribute('data-page-style', 'fill.html');
             pageStyle.textContent = styleContents;
             shadowRoot.appendChild(pageStyle);
-            console.log('✅ fill.html 的内联样式已注入到 Shadow DOM');
+
+            // 🔧 强制触发重绘，确保样式立即生效
+            void container.offsetHeight;
         }
 
         // ⚠️ 额外安全措施：添加全局点击事件监听，拦截所有可能的导航
@@ -537,6 +550,17 @@
             // 清空当前容器并注入新内容
             resumeWindowContainer.innerHTML = bodyContent;
 
+            // 🔧 修复图片路径：将相对路径转换为 Chrome extension 绝对路径
+            const images = resumeWindowContainer.querySelectorAll('img');
+            images.forEach(img => {
+                const src = img.getAttribute('src');
+                if (src && !src.startsWith('http') && !src.startsWith('chrome-extension://') && !src.startsWith('data:')) {
+                    // 相对路径，需要转换
+                    const absoluteUrl = chrome.runtime.getURL(`popup/${src}`);
+                    img.setAttribute('src', absoluteUrl);
+                }
+            });
+
             // 移除之前页面的内联样式（避免样式累积）
             const oldPageStyles = shadowRoot.querySelectorAll('style[data-page-style]');
             oldPageStyles.forEach(style => style.remove());
@@ -549,6 +573,9 @@
                 pageStyle.setAttribute('data-page-style', pageHtml); // 标记样式来源
                 pageStyle.textContent = styleContents;
                 shadowRoot.appendChild(pageStyle);
+
+                // 🔧 强制触发重绘，确保样式立即生效
+                void resumeWindowContainer.offsetHeight;
             }
 
             // ========== 方案1: 页面切换时注入增强版内联样式 ==========
@@ -563,7 +590,6 @@
             enhancedInlineStyle.setAttribute('data-priority', 'highest');
             shadowRoot.appendChild(enhancedInlineStyle);
 
-            console.log(`✅ 已为 ${pageHtml} 页面注入增强版内联样式保护`);
             // ⚠️ 验证：确保所有危险的属性都被移除
             const dangerousElements = resumeWindowContainer.querySelectorAll('[onclick], [onload]');
             if (dangerousElements.length > 0) {
@@ -1191,8 +1217,8 @@
                     box-sizing: border-box !important;
                 }
 
-                /* 排除动画元素，允许它们使用transform */
-                .plugin-container *:not(.status-icon):not(.status-display) {
+                /* 排除动画元素和简历框，允许它们使用transform */
+                .plugin-container *:not(.status-icon):not(.status-display):not(.resume-page-current):not(.resume-page-next) {
                     transform: none !important;
                 }
 
@@ -1342,7 +1368,6 @@
 
                         await solidFont.load();
                         document.fonts.add(solidFont);
-                        console.log('✅ 手动加载 Font Awesome 6 Free (900) 成功');
 
                         // 也加载 Regular 版本（fa-regular）
                         const regularFontUrl = chrome.runtime.getURL('popup/webfonts/fa-regular-400.woff2');
@@ -1353,7 +1378,6 @@
 
                         await regularFont.load();
                         document.fonts.add(regularFont);
-                        console.log('✅ 手动加载 Font Awesome 6 Free (400) 成功');
 
                         // 加载 Brands 版本
                         const brandsFontUrl = chrome.runtime.getURL('popup/webfonts/fa-brands-400.woff2');
@@ -1364,7 +1388,6 @@
 
                         await brandsFont.load();
                         document.fonts.add(brandsFont);
-                        console.log('✅ 手动加载 Font Awesome 6 Brands (400) 成功');
 
                         // 触发页面重绘
                         shadowRoot.host.style.display = 'none';
@@ -1616,7 +1639,6 @@
                 window.location.hostname.includes('zhaopin.meituan.com');
 
             if (isMeituanSite) {
-                console.log('🎯 检测到美团网站，应用额外样式保护');
                 const meituanProtectionStyle = document.createElement("style");
                 meituanProtectionStyle.textContent = `
                     /* ========== 美团网站专用样式保护 ========== */
@@ -1858,13 +1880,9 @@
 
                         // 检查是否包含.fa-图标规则
                         if (content.includes('.fa-magic') || content.includes('.fa-bolt')) {
-                            console.log(`  ✅ <style>标签 #${i} 包含 Font Awesome 图标规则`);
 
                             // 提取一个示例规则
                             const match = content.match(/\.fa-magic::?before[^}]+content[^}]+/);
-                            if (match) {
-                                console.log(`     示例规则: ${match[0].substring(0, 100)}...`);
-                            }
                         }
                     }
                 }
@@ -1878,17 +1896,11 @@
                                 fontAwesomeFonts.push(`${font.family} ${font.weight} ${font.style}`);
                             }
                         });
-                        if (fontAwesomeFonts.length > 0) {
-                            console.log(`✅ 字体已加载: `, fontAwesomeFonts);
-                        } else {
-                            console.warn(`⚠️ 未找到已加载的 Font Awesome 字体`);
-                        }
                     });
                 }
             }, 1500);
 
             // ========== 方案1: 注入增强版内联样式 ==========
-            console.log("🚀 正在注入增强版内联样式保护...");
 
             // 生成并注入当前页面的强化内联样式
             const enhancedInlineStyle = document.createElement("style");
@@ -1896,7 +1908,6 @@
             enhancedInlineStyle.setAttribute('data-priority', 'highest');
             shadowRoot.appendChild(enhancedInlineStyle);
 
-            console.log("✅ 增强版内联样式已注入完成");
 
         } catch (error) {
             console.error("✗ 加载样式时出错:", error);
@@ -3189,17 +3200,17 @@
                 }
 
                 // 当额度在 4-10 之间时，隐藏整个额度显示容器
-                if (quotaDisplay) {
-                    if (quotaValue >= 4 && quotaValue <= 10) {
-                        quotaDisplay.style.display = 'none';
-                        console.log(`✅ 额度为 ${quotaValue}，已隐藏额度显示`);
-                    } else {
-                        quotaDisplay.style.display = 'flex';
-                        console.log(`✅ 额度加载成功: ${quotaValue}`);
-                    }
-                } else {
-                    console.log(`✅ 额度加载成功: ${quotaValue}`);
-                }
+                // if (quotaDisplay) {
+                //     if (quotaValue >= 4 && quotaValue <= 10) {
+                //         quotaDisplay.style.display = 'none';
+                //         console.log(`✅ 额度为 ${quotaValue}，已隐藏额度显示`);
+                //     } else {
+                //         quotaDisplay.style.display = 'flex';
+                //         console.log(`✅ 额度加载成功: ${quotaValue}`);
+                //     }
+                // } else {
+                //     console.log(`✅ 额度加载成功: ${quotaValue}`);
+                // }
             } else {
                 throw new Error('额度数据格式错误');
             }
@@ -3370,7 +3381,6 @@
                 // 绑定 profile 页面的简历切换事件
                 bindResumeSwitchEventsProfile();
 
-                console.log(`✅ [loadResumeDataFromStorage] 已为 profile.html 加载 ${resumeProfileList.length} 份简历`);
             } else {
                 // 其他页面（如 fill.html）：使用原有逻辑
                 // 渲染简历数据
@@ -3540,7 +3550,6 @@
             }
         });
 
-        console.log(`✅ 已更新个人中心简历显示: ${currentResume.name} (索引: ${currentProfileResumeIndex}/${resumeProfileList.length - 1})`);
     }
 
     /**
@@ -3566,9 +3575,6 @@
                     // 往前切换（索引减1，如果到头则循环到最后）
                     currentProfileResumeIndex = (currentProfileResumeIndex - 1 + resumeProfileList.length) % resumeProfileList.length;
                     updateProfileResumeDisplay();
-                    console.log(`⬅️ 往前切换简历，当前索引: ${currentProfileResumeIndex}`);
-                } else {
-                    console.log('⚠️ 只有一份简历，无需切换');
                 }
             });
         }
@@ -3589,9 +3595,6 @@
                     // 往后切换（索引加1，如果到尾则循环到开头）
                     currentProfileResumeIndex = (currentProfileResumeIndex + 1) % resumeProfileList.length;
                     updateProfileResumeDisplay();
-                    console.log(`➡️ 往后切换简历，当前索引: ${currentProfileResumeIndex}`);
-                } else {
-                    console.log('⚠️ 只有一份简历，无需切换');
                 }
             });
         }

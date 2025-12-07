@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,6 +87,11 @@
             }
         }
 
+        .beian-icon {
+            width: 14px;
+            height: 14px;
+        }
+
         /* 如果Font Awesome没加载，使用文字备用 */
         .fas:not([class*="fa-"])::before,
         .far:not([class*="fa-"])::before {
@@ -93,6 +99,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="plugin-container">
@@ -164,7 +171,7 @@
                 <!-- 账号设置 -->
                 <div class="content-card">
                     <div class="card-title">
-                        <i class="fas fa-user-cog" ></i> 账号设置
+                        <i class="fas fa-user-cog"></i> 账号设置
                     </div>
                     <div class="settings-group">
                         <!-- <a href="change-password.html" class="settings-item">
@@ -253,6 +260,21 @@
                 <!-- 页脚 -->
                 <div class="plugin-footer">
                     <p>一念职达 v1.0.0</p>
+                    <div class="page-footer">
+                        <div class="footer-copyright">
+                            Copyright © 2025 应念科技（深圳）有限公司 All Rights Reserved
+                        </div>
+                        <div class="footer-beian">
+                            <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank" rel="noreferrer">
+                                粤ICP备2025491638号-1
+                            </a>
+                            <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44030002008708" target="_blank"
+                                rel="noreferrer" class="beian-item">
+                                <img src="beian-icon.png" alt="公安备案" class="beian-icon">
+                                粤公网安备44030002008708号
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -260,4 +282,5 @@
 
     <script src="scripts/transitions.js"></script>
 </body>
+
 </html>

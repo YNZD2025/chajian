@@ -26,7 +26,7 @@ const environments = {
             PORT: "3000"
         },
         API: {
-            HOST: "http://localhost",
+            HOST: "http://192.168.1.144",
             PORT: "8080"
         }
     },
@@ -34,11 +34,11 @@ const environments = {
     // 生产环境配置
     production: {
         WEB: {
-            HOST: "https://applymind.cn/",
+            HOST: "https://test.applymind.cn",
             PORT: "443"
         },
         API: {
-            HOST: "https://applymind.cn/",
+            HOST: "https://test.applymind.cn",
             PORT: "443"
         }
     }
@@ -48,7 +48,7 @@ const environments = {
  * 当前环境
  * 可选值: "development" | "production"
  */
-const currentEnv = "development";
+const currentEnv = "production";
 
 /**
  * 当前环境的配置
