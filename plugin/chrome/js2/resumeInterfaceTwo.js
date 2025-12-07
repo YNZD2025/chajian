@@ -2311,51 +2311,126 @@
 
         // TODO: 根据fill.html的按钮实现状态变化
         const startButton = resumeWindowContainer?.querySelector(".liquid-cta-btn");
+        const statusDisplay = resumeWindowContainer?.querySelector("#status-display");
+        const buttonContainer = resumeWindowContainer?.querySelector(".liquid-cta-container");
+
         if (!startButton) {
             console.warn("[changeState] 未找到填充按钮");
             return;
         }
 
-        const buttonContainer = startButton.parentElement;
-
         switch (state) {
             case "running":
+                // 显示状态框
+                if (statusDisplay) {
+                    statusDisplay.classList.remove("hidden");
+                }
+                // 容器改为左对齐
+                if (buttonContainer) {
+                    buttonContainer.classList.add("running");
+                }
+                // 按钮变成图标模式（只显示暂停图标）
                 startButton.innerHTML = '<i class="fas fa-pause"></i><span class="btn-text">暂停填充</span>';
+                startButton.classList.add("icon-mode");
                 startButton.classList.add("paused");
                 startButton.style.pointerEvents = "auto";
                 break;
+
             case "pause":
+                // 显示状态框
+                if (statusDisplay) {
+                    statusDisplay.classList.remove("hidden");
+                }
+                // 容器保持左对齐
+                if (buttonContainer) {
+                    buttonContainer.classList.add("running");
+                }
+                // 按钮变成图标模式（只显示继续图标）
                 startButton.innerHTML = '<i class="fas fa-play"></i><span class="btn-text">继续填充</span>';
+                startButton.classList.add("icon-mode");
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
                 break;
+
             case "success":
+                // 显示状态框
+                if (statusDisplay) {
+                    statusDisplay.classList.remove("hidden");
+                }
+                // 容器保持左对齐
+                if (buttonContainer) {
+                    buttonContainer.classList.add("running");
+                }
+                // 按钮恢复完整模式
                 startButton.innerHTML = '<i class="fas fa-check-circle"></i><span class="btn-text">填充完成</span>';
+                startButton.classList.remove("icon-mode");
                 startButton.classList.remove("paused");
-                // 重新启用按钮，允许再次点击
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
                 break;
+
             case "error":
+                // 显示状态框
+                if (statusDisplay) {
+                    statusDisplay.classList.remove("hidden");
+                }
+                // 容器保持左对齐
+                if (buttonContainer) {
+                    buttonContainer.classList.add("running");
+                }
+                // 按钮恢复完整模式
                 startButton.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="btn-text">填充错误</span>';
+                startButton.classList.remove("icon-mode");
                 startButton.classList.remove("paused");
-                // 重新启用按钮，允许再次点击重试
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
                 break;
+
             case "quota":
+                // 显示状态框
+                if (statusDisplay) {
+                    statusDisplay.classList.remove("hidden");
+                }
+                // 容器保持左对齐
+                if (buttonContainer) {
+                    buttonContainer.classList.add("running");
+                }
+                // 按钮恢复完整模式
                 startButton.innerHTML = '<i class="fas fa-battery-empty"></i><span class="btn-text">配额已用完</span>';
+                startButton.classList.remove("icon-mode");
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
                 break;
+
             case "learning":
+                // 显示状态框
+                if (statusDisplay) {
+                    statusDisplay.classList.remove("hidden");
+                }
+                // 容器改为左对齐
+                if (buttonContainer) {
+                    buttonContainer.classList.add("running");
+                }
+                // 按钮恢复完整模式
                 startButton.innerHTML = '<i class="fas fa-brain"></i><span class="btn-text">学习中</span>';
+                startButton.classList.remove("icon-mode");
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
                 break;
-            default:
+
+            default: // ready 状态
+                // 隐藏状态框
+                if (statusDisplay) {
+                    statusDisplay.classList.add("hidden");
+                }
+                // 容器恢复居中
+                if (buttonContainer) {
+                    buttonContainer.classList.remove("running");
+                }
+                // 按钮恢复完整模式
                 startButton.innerHTML = '<i class="fas fa-bolt"></i><span class="btn-text">智能填充</span>';
+                startButton.classList.remove("icon-mode");
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";

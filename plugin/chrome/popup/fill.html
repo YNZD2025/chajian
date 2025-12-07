@@ -107,11 +107,18 @@
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
-            justify-content: flex-start !important;
+            justify-content: center !important; /* 默认居中显示 */
             align-items: center !important;
             pointer-events: none !important;
             z-index: 40 !important;
             gap: 12px !important;
+            transition: justify-content 0.3s ease !important;
+            width: 100% !important;
+        }
+
+        /* 运行状态时，容器改为左对齐 */
+        .liquid-cta-container.running {
+            justify-content: flex-start !important;
         }
 
         .liquid-cta-btn {
@@ -134,7 +141,7 @@
             flex-shrink: 0 !important;
             flex-grow: 0 !important;
             width: auto !important;
-            min-width: 120px !important;
+            min-width: 180px !important;
             max-width: 90% !important;
         }
 
@@ -142,6 +149,27 @@
             transform: translateY(-2px) !important;
             background: rgba(255, 255, 255, 0.35) !important;
             box-shadow: 0 15px 35px rgba(255, 154, 158, 0.35) !important;
+        }
+
+        /* 按钮图标模式：只显示图标，隐藏文字 */
+        .liquid-cta-btn.icon-mode {
+            min-width: 45px !important;
+            max-width: 45px !important;
+            width: 45px !important;
+            height: 45px !important;
+            padding: 0 !important;
+            justify-content: center !important;
+            border-radius: 50% !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .liquid-cta-btn.icon-mode .btn-text {
+            display: none !important;
+        }
+
+        .liquid-cta-btn.icon-mode i {
+            font-size: 18px !important;
+            margin: 0 !important;
         }
 
         /* 状态展示框样式 */
@@ -160,8 +188,16 @@
             flex-shrink: 1 !important;
             flex-grow: 0 !important;
             /* width: auto !important; */
-            min-width: 190px !important;
-            max-width: 190px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            opacity: 1 !important;
+            transition: opacity 0.3s ease, transform 0.3s ease !important;
+            height: 45px !important;
+        }
+
+        /* 默认状态：隐藏状态框 */
+        .status-display.hidden {
+            display: none !important;
         }
 
         .status-icon {
@@ -171,7 +207,7 @@
         }
 
         .status-text {
-            font-size: 9px !important;
+            font-size: 10px !important;
             font-weight: 600 !important;
             color: var(--text-main) !important;
             white-space: nowrap !important;
@@ -501,16 +537,16 @@
 
 
             <div class="liquid-cta-container">
-                <!-- 状态展示框 -->
-                <div id="status-display" class="status-display">
+                <div id="fill-action-btn" class="liquid-cta-btn">
+                    <i class="fas fa-bolt"></i>
+                    <span class="btn-text">一键智能填充</span>
+                </div>
+                <!-- 状态展示框 - 默认隐藏 -->
+                <div id="status-display" class="status-display hidden">
                     <i class="status-icon fas fa-info-circle"></i>
                     <span class="status-text">准备就绪</span>
                 </div>
-                <div id="fill-action-btn" class="liquid-cta-btn">
-                    <i class="fas fa-bolt"></i>
-                    <span class="btn-text">智能填充</span>
-                </div>
-                
+
             </div>
 
             <div class="plugin-content">
