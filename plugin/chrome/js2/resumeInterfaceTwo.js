@@ -357,7 +357,7 @@
         const navItems = container.querySelectorAll(".nav-item");
         if (navItems.length === 0) {
             console.error("✗ 警告：没有找到任何导航按钮！");
-            
+
         }
 
         navItems.forEach((item, index) => {
@@ -792,7 +792,7 @@
             statusDisplay.style.display = 'flex';
 
             // 根据状态设置图标和样式
-            switch(type) {
+            switch (type) {
                 case 'processing':
                     statusIcon.className = 'status-icon fas fa-spinner fa-spin';
                     statusText.textContent = text || '正在处理...';
@@ -923,7 +923,7 @@
                 buttonText: btnText?.textContent
             })
         };
-        
+
     }
 
     /**
@@ -1027,7 +1027,7 @@
                         try {
                             const newWindow = window.open(resumeUrl, '_blank');
                             if (newWindow) {
-                                
+
                             } else {
                                 console.error('✗ 新标签页被阻止');
                                 alert('请允许浏览器弹出窗口以打开简历编辑页面');
@@ -1561,7 +1561,7 @@
 
             // ✅ 检测美团网站，应用额外的激进样式保护
             const isMeituanSite = window.location.hostname.includes('meituan.com') ||
-                                   window.location.hostname.includes('zhaopin.meituan.com');
+                window.location.hostname.includes('zhaopin.meituan.com');
 
             if (isMeituanSite) {
                 console.log('🎯 检测到美团网站，应用额外样式保护');
@@ -2101,7 +2101,7 @@
      * @param {Object} data - 简历数据
      */
     function fillFormData(data) {
-        
+
         // TODO: 根据fill.html的实际表单元素实现
         // const companyInput = resumeWindow.querySelector("#company-name");
         // const positionInput = resumeWindow.querySelector("#position-name");
@@ -2194,7 +2194,7 @@
 
             // todo 检查配额接口
             // 检查配额
-            const quotaResult = await apiRequestForGet("quota", {},false);
+            const quotaResult = await apiRequestForGet("quota", {}, false);
             // const quotaResult = { remainQuota: 9999 };
             if (quotaResult.quota <= 0) {
                 const goToPricing = confirm(
@@ -2661,7 +2661,9 @@
     // ============================================================================
 
     let resumeList = []; // 简历列表
-    let currentResumeIndex = 0; // 当前选中的简历索引
+    let resumeProfileList = []; // 我的主页简历列表
+    let currentResumeIndex = 0; // 当前选中的简历索引（用于填充页面）
+    let currentProfileResumeIndex = 0; // 当前选中的简历索引（用于个人中心页面）
     let isResumeLocked = false; // 简历锁定状态（填充过程中锁定，防止切换）
 
     /**
@@ -2748,35 +2750,36 @@
      * 切换到下一个简历
      */
     async function switchToNextResume() {
-        if (resumeList.length === 0) return;
 
-        // 检查简历是否被锁定
-        if (isResumeLocked) {
-            console.warn("[switchToNextResume] 简历已锁定，无法切换");
-            alert("填充正在进行中，无法切换简历！\n请等待填充完成或取消填充后再切换。");
-            return;
-        }
+            if (resumeList.length === 0) return;
 
-        // 确认是否切换
-        if (!confirm("确定要切换到下一份简历吗？\n切换后将刷新当前页面。")) {
-            return;
-        }
+            // 检查简历是否被锁定
+            if (isResumeLocked) {
+                console.warn("[switchToNextResume] 简历已锁定，无法切换");
+                alert("填充正在进行中，无法切换简历！\n请等待填充完成或取消填充后再切换。");
+                return;
+            }
 
-        // 计算下一个索引
-        const nextIndex = (currentResumeIndex + 1) % resumeList.length;
+            // 确认是否切换
+            if (!confirm("确定要切换到下一份简历吗？\n切换后将刷新当前页面。")) {
+                return;
+            }
 
-        // 存储切换后的索引和当前列表长度到 storage
-        try {
-            await chrome.storage.local.set({
-                currentResumeIndex: nextIndex,
-                lastResumeListLength: resumeList.length  // 保存当前列表长度
-            });
+            // 计算下一个索引
+            const nextIndex = (currentResumeIndex + 1) % resumeList.length;
 
-            // 刷新当前页面
-            window.location.reload();
-        } catch (error) {
-            console.error("[switchToNextResume] 切换失败:", error);
-        }
+            // 存储切换后的索引和当前列表长度到 storage
+            try {
+                await chrome.storage.local.set({
+                    currentResumeIndex: nextIndex,
+                    lastResumeListLength: resumeList.length  // 保存当前列表长度
+                });
+
+                // 刷新当前页面
+                window.location.reload();
+            } catch (error) {
+                console.error("[switchToNextResume] 切换失败:", error);
+            }
     }
 
     /**
@@ -2934,7 +2937,7 @@
      * 加载用户信息（昵称和头像）
      */
     function loadUserInfo() {
-        chrome.storage.local.get(['auth'], function(result) {
+        chrome.storage.local.get(['auth'], function (result) {
             if (result.auth && result.auth.userInfo) {
                 const userInfo = result.auth.userInfo;
                 const nickname = userInfo.nickname || '未设置昵称';
@@ -3068,6 +3071,9 @@
                 return;
             }
 
+            // 同步数据到 resumeProfileList（用于 profile.html 页面）
+            resumeProfileList = [...resumeList];
+
             // 存储简历列表到 chrome.storage.local（供其他页面使用）
             try {
                 await chrome.storage.local.set({
@@ -3112,7 +3118,7 @@
             // 渲染简历数据
             renderResumeData();
 
-            // 绑定简历切换事件
+            // 绑定简历切换事件（fill.html 页面的切换事件）
             bindResumeSwitchEvents();
 
         } catch (error) {
@@ -3172,11 +3178,31 @@
                 currentResumeIndex = 0;
             }
 
-            // 渲染简历数据
-            renderResumeData();
+            // 判断当前页面，决定渲染逻辑
+            const isProfilePage = currentPage === 'profile.html';
 
-            // 绑定简历切换事件
-            bindResumeSwitchEvents();
+            if (isProfilePage) {
+                // profile.html 页面：同步数据到 resumeProfileList
+                resumeProfileList = [...resumeList]; // 使用展开运算符复制数组，避免引用同一数组
+
+                // 初始化 profile 页面的索引（与 fill 页面独立）
+                currentProfileResumeIndex = 0;
+
+                // 更新 profile 页面的简历显示
+                updateProfileResumeDisplay();
+
+                // 绑定 profile 页面的简历切换事件
+                bindResumeSwitchEventsProfile();
+
+                console.log(`✅ [loadResumeDataFromStorage] 已为 profile.html 加载 ${resumeProfileList.length} 份简历`);
+            } else {
+                // 其他页面（如 fill.html）：使用原有逻辑
+                // 渲染简历数据
+                renderResumeData();
+
+                // 绑定简历切换事件
+                bindResumeSwitchEvents();
+            }
 
         } catch (error) {
             console.error("[loadResumeDataFromStorage] 从 storage 加载简历数据失败:", error);
@@ -3278,6 +3304,123 @@
             });
         }
     }
+
+    /**
+     * 更新个人中心页面的简历显示
+     */
+    function updateProfileResumeDisplay() {
+        if (!resumeWindowContainer) return;
+
+        // 确保 resumeProfileList 有数据
+        if (!resumeProfileList || resumeProfileList.length === 0) {
+            console.warn('[updateProfileResumeDisplay] resumeProfileList 为空');
+            return;
+        }
+
+        // 获取当前简历数据
+        const currentResume = resumeProfileList[currentProfileResumeIndex];
+        if (!currentResume) {
+            console.warn('[updateProfileResumeDisplay] 无法获取当前简历数据');
+            return;
+        }
+
+        // 更新简历头部信息
+        const resumeNameEl = resumeWindowContainer.querySelector('#resume-nickname');
+        if (resumeNameEl) {
+            resumeNameEl.textContent = currentResume.name || '未命名';
+        }
+
+        const resumeTypeEl = resumeWindowContainer.querySelector('.resume-type');
+        if (resumeTypeEl) {
+            resumeTypeEl.textContent = currentResume.resumeName || '简历';
+        }
+
+        // 更新简历详细信息 - 使用更精确的选择器
+        const infoCells = resumeWindowContainer.querySelectorAll('.info-grid-compact .info-cell');
+
+        // 创建一个映射来更新对应的字段
+        const fieldMap = {
+            '学校': currentResume.school || '-',
+            '学历': currentResume.educationDegreeText || '-',
+            '专业': currentResume.major || '-',
+            '毕业年份': currentResume.graduationYear || '-',
+            '手机': currentResume.phone || '-',
+            '邮箱': currentResume.email || '-',
+            '意向岗位': currentResume.jobIntention || '-',
+            '期望城市': currentResume.expectedCity || '-',
+            '核心技能': currentResume.coreSkills || '-'
+        };
+
+        // 遍历所有 info-cell 并更新值
+        infoCells.forEach(cell => {
+            const labelEl = cell.querySelector('.info-cell-label');
+            const valueEl = cell.querySelector('.info-cell-value');
+
+            if (labelEl && valueEl) {
+                const label = labelEl.textContent.trim();
+                if (fieldMap.hasOwnProperty(label)) {
+                    valueEl.textContent = fieldMap[label];
+                }
+            }
+        });
+
+        console.log(`✅ 已更新个人中心简历显示: ${currentResume.name} (索引: ${currentProfileResumeIndex}/${resumeProfileList.length - 1})`);
+    }
+
+    /**
+     * 绑定简历切换事件
+     */
+    function bindResumeSwitchEventsProfile() {
+        if (!resumeWindowContainer) return;
+
+        // 绑定"往前切换"按钮
+        const prevBtn = resumeWindowContainer.querySelector('.resume-switch-prev2');
+        if (prevBtn) {
+
+            // 移除旧的事件监听器
+            const newPrevBtn = prevBtn.cloneNode(true);
+            prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
+
+            // 绑定点击事件
+            newPrevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if (resumeProfileList.length > 1) {
+                    // 往前切换（索引减1，如果到头则循环到最后）
+                    currentProfileResumeIndex = (currentProfileResumeIndex - 1 + resumeProfileList.length) % resumeProfileList.length;
+                    updateProfileResumeDisplay();
+                    console.log(`⬅️ 往前切换简历，当前索引: ${currentProfileResumeIndex}`);
+                } else {
+                    console.log('⚠️ 只有一份简历，无需切换');
+                }
+            });
+        }
+
+        // 绑定"往后切换"按钮
+        const nextBtn = resumeWindowContainer.querySelector('.resume-switch-next2');
+        if (nextBtn) {
+            // 移除旧的事件监听器
+            const newNextBtn = nextBtn.cloneNode(true);
+            nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+
+            // 绑定点击事件
+            newNextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if (resumeProfileList.length > 1) {
+                    // 往后切换（索引加1，如果到尾则循环到开头）
+                    currentProfileResumeIndex = (currentProfileResumeIndex + 1) % resumeProfileList.length;
+                    updateProfileResumeDisplay();
+                    console.log(`➡️ 往后切换简历，当前索引: ${currentProfileResumeIndex}`);
+                } else {
+                    console.log('⚠️ 只有一份简历，无需切换');
+                }
+            });
+        }
+    }
+
 
     // ============================================================================
     // 投递记录管理
@@ -3647,9 +3790,9 @@
                 if (!companyName) {
                     const urlParams = new URLSearchParams(window.location.search);
                     const companyParam = urlParams.get('company') ||
-                                       urlParams.get('companyName') ||
-                                       urlParams.get('employer') ||
-                                       urlParams.get('co');
+                        urlParams.get('companyName') ||
+                        urlParams.get('employer') ||
+                        urlParams.get('co');
                     if (companyParam) {
                         companyName = decodeURIComponent(companyParam);
                     }

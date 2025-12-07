@@ -47,6 +47,44 @@
             margin-bottom: 12px;
         }
 
+        .resume-switch-controls {
+            position: absolute !important;
+            top: 25px !important;
+            right: -25px !important;
+            display: flex !important;
+            gap: 5px !important;
+            z-index: 10 !important;
+            opacity: 0 !important;
+            transition: 0.3s !important;
+            pointer-events: none !important;
+        }
+
+        .book-wrapper:hover .resume-switch-controls {
+            opacity: 1 !important;
+            right: -20px !important;
+            pointer-events: auto !important;
+        }
+
+        .resume-switch-btn {
+            background: var(--accent) !important;
+            color: white !important;
+            border: none !important;
+            font-size: 9px !important;
+            padding: 2px 5px !important;
+            border-radius: 5px !important;
+            white-space: nowrap !important;
+            cursor: pointer !important;
+            transition: 0.3s !important;
+            pointer-events: auto !important;
+            font-weight: normal !important;
+            display: inline-block !important;
+        }
+
+        .resume-switch-btn:hover {
+            opacity: 0.8 !important;
+        }
+
+
         .resume-page-next {
             position: absolute;
             top: 8px;
@@ -406,7 +444,11 @@
                 </div>
 
                 <div class="book-wrapper">
-                    <div class="switch-tooltip">切换下一份简历</div>
+                    <div class="resume-switch-controls">
+                        <button class="resume-switch-btn resume-switch-prev2">往前切换</button>
+                        <button class="resume-switch-btn resume-switch-next2" stlye="maring-right:10px">往后切换</button>
+                    </div>
+                    <!-- <div class="switch-tooltip">切换下一份简历</div> -->
                     <div class="resume-page-next">
                         <div style="text-align:right; font-size:8px; color:var(--primary); font-weight:bold; margin-bottom:6px;">
                             简历 B
