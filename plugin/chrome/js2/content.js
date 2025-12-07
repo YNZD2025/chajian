@@ -2976,6 +2976,7 @@
      * 获取需要填写的字段
      */
     async function getNeedFields(html) {
+        console.log(`url=${window.config.API_BASE_URL}analyze-page`)
         try {
             const response = await fetchWithJwt(
                 `${window.config.API_BASE_URL}analyze-page`,

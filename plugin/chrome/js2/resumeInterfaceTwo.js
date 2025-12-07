@@ -561,7 +561,6 @@
             enhancedInlineStyle.setAttribute('data-enhanced-inline-styles', 'true');
             enhancedInlineStyle.setAttribute('data-enhanced-for-page', pageHtml);
             enhancedInlineStyle.setAttribute('data-priority', 'highest');
-            // enhancedInlineStyle.textContent = generateInlineStylesForPage(pageHtml);
             shadowRoot.appendChild(enhancedInlineStyle);
 
             console.log(`✅ 已为 ${pageHtml} 页面注入增强版内联样式保护`);
@@ -789,51 +788,38 @@
             // 移除所有状态类
             statusDisplay.classList.remove('status-success', 'status-error');
 
+            // 状态框始终显示
+            statusDisplay.style.display = 'flex';
+
             // 根据状态设置图标和样式
             switch(type) {
                 case 'processing':
                     statusIcon.className = 'status-icon fas fa-spinner fa-spin';
                     statusText.textContent = text || '正在处理...';
-                    statusDisplay.style.display = 'flex';
                     break;
                 case 'success':
                     statusIcon.className = 'status-icon fas fa-check-circle';
                     statusText.textContent = text || '填充完成';
                     statusDisplay.classList.add('status-success');
-                    statusDisplay.style.display = 'flex';
-                    // 3秒后自动隐藏
-                    setTimeout(() => {
-                        if (currentStatus === 'success') {
-                            hideStatusDisplay();
-                        }
-                    }, 3000);
                     break;
                 case 'error':
                     statusIcon.className = 'status-icon fas fa-exclamation-triangle';
                     statusText.textContent = text || '出错了';
                     statusDisplay.classList.add('status-error');
-                    statusDisplay.style.display = 'flex';
-                    // 5秒后自动隐藏
-                    setTimeout(() => {
-                        if (currentStatus === 'error') {
-                            hideStatusDisplay();
-                        }
-                    }, 5000);
                     break;
                 case 'idle':
                 default:
-                    hideStatusDisplay();
+                    statusIcon.className = 'status-icon fas fa-info-circle';
+                    statusText.textContent = text || '准备就绪';
             }
         }
 
         /**
-         * 隐藏状态展示框
+         * 隐藏状态展示框（已废弃，状态框现在始终显示）
          */
         function hideStatusDisplay() {
-            const statusDisplay = resumeWindowContainer?.querySelector('#status-display');
-            if (statusDisplay) {
-                statusDisplay.style.display = 'none';
-            }
+            // 不再隐藏状态框，改为显示默认状态
+            updateStatusDisplay('idle', '准备就绪');
         }
 
         /**
@@ -1121,576 +1107,6 @@
     }
 
     /**
-     * 生成页面专用内联样式（方案1：增强版内联样式）
-     * @param {string} pageType - 页面类型（如 'fill.html'）
-     * @returns {string} 生成的CSS样式文本
-     */
-    function generateInlineStylesForPage(pageType) {
-        const baseStyles = `
-            /* ========== 增强版内联样式保护 ========== */
-            /* CSS变量定义（内联版本，优先级最高） */
-            :host, .plugin-container, #ark-ai {
-                --primary: #57c5b6 !important;
-                --primary-dark: #3a8e82 !important;
-                --accent: #ff9a9e !important;
-                --text-main: #2d3436 !important;
-                --text-gray: #636e72 !important;
-                --bg-fluid: radial-gradient(circle at 10% 10%, rgba(87, 197, 182, 0.4) 0%, transparent 50%),
-                            radial-gradient(circle at 90% 90%, rgba(255, 154, 158, 0.4) 0%, transparent 50%),
-                            linear-gradient(135deg, #def7fa 0%, #ffecec 100%) !important;
-                --glass-clear-bg: rgba(255, 255, 255, 0.35) !important;
-                --glass-clear-blur: blur(12px) !important;
-                --glass-clear-border: 1px solid rgba(255, 255, 255, 0.6) !important;
-                --glass-clear-shadow: 0 8px 30px rgba(0, 0, 0, 0.05) !important;
-                --card-white: rgba(255, 255, 255, 0.85) !important;
-                --card-blur: blur(20px) !important;
-                --card-shadow: 0 5px 20px rgba(0, 0, 0, 0.03) !important;
-                --r-card: 20px !important;
-                --r-btn: 25px !important;
-                --dark-green: #006666 !important;
-            }
-
-            /* 强制样式重置和隔离 */
-            .plugin-container, .plugin-container * {
-                all: revert !important;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-                box-sizing: border-box !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: none !important;
-                outline: none !important;
-                background: none !important;
-                text-decoration: none !important;
-                text-transform: none !important;
-                letter-spacing: normal !important;
-                word-spacing: normal !important;
-                text-align: left !important;
-                text-indent: 0 !important;
-                text-shadow: none !important;
-                transform: none !important;
-                zoom: 1 !important;
-                scale: 1 !important;
-            }
-
-            /* 恢复重要样式 */
-            .plugin-container {
-                display: flex !important;
-                width: 420px !important;
-                height: 600px !important;
-                background: var(--bg-fluid) !important;
-                border-radius: 20px !important;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
-                overflow: hidden !important;
-                color: var(--text-main) !important;
-            }
-
-            .sidebar {
-                width: 70px !important;
-                height: 100% !important;
-                background: var(--primary) !important;
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                padding: 30px 0 !important;
-                gap: 18px !important;
-                flex-shrink: 0 !important;
-                border-radius: 20px !important;
-                box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2) !important;
-            }
-
-            .main-area {
-                flex: 1 !important;
-                height: 100% !important;
-                position: relative !important;
-                overflow: hidden !important;
-                border-radius: 0 20px 20px 0 !important;
-                background: var(--bg-fluid) !important;
-            }
-
-            /* Unicode图标替换（不依赖外部字体） */
-            .fas, .far, .fab {
-                font-family: inherit !important;
-                font-style: normal !important;
-                font-weight: normal !important;
-                speak: none !important;
-                display: inline-block !important;
-                text-decoration: inherit !important;
-                text-align: center !important;
-                font-variant: normal !important;
-                text-transform: none !important;
-                line-height: 1em !important;
-            }
-
-            /* 关键图标Unicode字符直接定义 */
-            .fa-magic::before { content: "✨" !important; font-family: inherit !important; }
-            .fa-bolt::before { content: "⚡" !important; font-family: inherit !important; }
-            .fa-history::before { content: "📋" !important; font-family: inherit !important; }
-            .fa-user::before { content: "👤" !important; font-family: inherit !important; }
-            .fa-cog::before { content: "⚙️" !important; font-family: inherit !important; }
-            .fa-times::before { content: "❌" !important; font-family: inherit !important; }
-            .fa-edit::before { content: "✏️" !important; font-family: inherit !important; }
-            .fa-info-circle::before { content: "ℹ️" !important; font-family: inherit !important; }
-            .fa-spinner::before {
-                content: "⏳" !important;
-                font-family: inherit !important;
-                animation: fa-spin 2s infinite linear !important;
-            }
-            .fa-check-circle::before { content: "✅" !important; font-family: inherit !important; }
-            .fa-exclamation-triangle::before { content: "⚠️" !important; font-family: inherit !important; }
-            .fa-pause::before { content: "⏸️" !important; font-family: inherit !important; }
-            .fa-play::before { content: "▶️" !important; font-family: inherit !important; }
-            .fa-battery-empty::before { content: "🔋" !important; font-family: inherit !important; }
-            .fa-brain::before { content: "🧠" !important; font-family: inherit !important; }
-            .fa-chevron-right::before { content: "▶" !important; font-family: inherit !important; }
-
-            @keyframes fa-spin {
-                0% { transform: rotate(0deg) !important; }
-                100% { transform: rotate(360deg) !important; }
-            }
-
-            /* 导航栏样式保护 */
-            .nav-item {
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                cursor: pointer !important;
-                transition: 0.3s !important;
-                width: 100% !important;
-                text-decoration: none !important;
-                color: rgba(255,255,255,0.7) !important;
-            }
-
-            .nav-icon-box {
-                width: 38px !important;
-                height: 38px !important;
-                border-radius: 14px !important;
-                display: flex !important;
-                justify-content: center !important;
-                align-items: center !important;
-                font-size: 16px !important;
-                color: rgba(255,255,255,0.7) !important;
-                transition: 0.3s !important;
-            }
-
-            .nav-label {
-                font-size: 9px !important;
-                font-weight: 500 !important;
-                color: rgba(255,255,255,0.9) !important;
-                transition: 0.3s !important;
-                margin-top: 4px !important;
-            }
-
-            .nav-item.active .nav-icon-box {
-                background: rgba(255,255,255,0.2) !important;
-                color: white !important;
-            }
-
-            /* 悬浮元素样式保护 */
-            .liquid-title {
-                position: absolute !important;
-                top: 20px !important;
-                left: 20px !important;
-                background: var(--glass-clear-bg) !important;
-                backdrop-filter: var(--glass-clear-blur) !important;
-                -webkit-backdrop-filter: var(--glass-clear-blur) !important;
-                border: var(--glass-clear-border) !important;
-                box-shadow: var(--glass-clear-shadow) !important;
-                padding: 10px 20px !important;
-                border-radius: 18px !important;
-                font-size: 16px !important;
-                font-weight: 800 !important;
-                color: var(--text-main) !important;
-                z-index: 30 !important;
-            }
-
-            .liquid-close {
-                position: absolute !important;
-                top: 20px !important;
-                right: 15px !important;
-                width: 40px !important;
-                height: 40px !important;
-                border-radius: 14px !important;
-                background: var(--glass-clear-bg) !important;
-                backdrop-filter: var(--glass-clear-blur) !important;
-                -webkit-backdrop-filter: var(--glass-clear-blur) !important;
-                border: var(--glass-clear-border) !important;
-                box-shadow: var(--glass-clear-shadow) !important;
-                display: flex !important;
-                justify-content: center !important;
-                align-items: center !important;
-                color: var(--text-gray) !important;
-                z-index: 30 !important;
-                cursor: pointer !important;
-                font-size: 16px !important;
-                text-decoration: none !important;
-                transition: all 0.3s ease !important;
-            }
-
-            .plugin-content {
-                height: 100% !important;
-                overflow-y: auto !important;
-                padding: 75px 15px 15px !important;
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 12px !important;
-                scrollbar-width: none !important;
-            }
-
-            .plugin-content::-webkit-scrollbar {
-                display: none !important;
-            }
-        `;
-
-        // 页面特定样式
-        const pageSpecificStyles = {
-            'fill.html': `
-                /* ========== 填充页面专用样式 ========== */
-                .book-wrapper {
-                    position: relative !important;
-                    width: 96% !important;
-                    height: 280px !important;
-                    perspective: 1000px !important;
-                    cursor: pointer !important;
-                    flex-shrink: 0 !important;
-                    min-height: 280px !important;
-                    max-height: 280px !important;
-                }
-
-                .resume-page-current {
-                    position: absolute !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    width: 100% !important;
-                    height: 100% !important;
-                    background: white !important;
-                    border-radius: 18px !important;
-                    padding: 14px !important;
-                    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-                    box-shadow: -5px 10px 30px rgba(0, 0, 0, 0.1) !important;
-                    z-index: 2 !important;
-                    transition: transform 0.4s ease !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    min-height: 0 !important;
-                }
-
-                .resume-page-next {
-                    position: absolute !important;
-                    top: 8px !important;
-                    right: -16px !important;
-                    width: 98% !important;
-                    height: 100% !important;
-                    background: rgba(255, 255, 255, 0.8) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-                    border-radius: 18px !important;
-                    padding: 14px !important;
-                    transform: rotate(3deg) translateZ(-10px) !important;
-                    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05) !important;
-                    z-index: 1 !important;
-                    transition: transform 0.4s ease, filter 0.4s ease, opacity 0.4s ease !important;
-                    filter: blur(1px) !important;
-                    opacity: 0.8 !important;
-                    overflow: hidden !important;
-                }
-
-                .liquid-cta-container {
-                    position: absolute !important;
-                    bottom: 40px !important;
-                    left: 34px !important;
-                    right: 0 !important;
-                    width: calc(100% - 70px) !important;
-                    display: flex !important;
-                    justify-content: center !important;
-                    pointer-events: none !important;
-                    z-index: 40 !important;
-                }
-
-                .liquid-cta-btn {
-                    pointer-events: auto !important;
-                    cursor: pointer !important;
-                    background: var(--glass-clear-bg) !important;
-                    backdrop-filter: var(--glass-clear-blur) !important;
-                    -webkit-backdrop-filter: var(--glass-clear-blur) !important;
-                    box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25) !important;
-                    border: 1px solid var(--accent) !important;
-                    padding: 12px 25px !important;
-                    border-radius: 25px !important;
-                    color: var(--accent) !important;
-                    font-size: 14px !important;
-                    font-weight: 700 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 6px !important;
-                    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
-                }
-
-                .liquid-cta-btn:hover {
-                    transform: translateY(-2px) !important;
-                    background: rgba(255,255,255,0.35) !important;
-                    box-shadow: 0 15px 35px rgba(255, 154, 158, 0.35) !important;
-                }
-
-                .task-card {
-                    background: white !important;
-                    border-radius: 16px !important;
-                    padding: 12px !important;
-                    box-shadow: 0 5px 20px rgba(0,0,0,0.03) !important;
-                    border: 1px solid rgba(0,0,0,0.02) !important;
-                }
-
-                .task-card h4 {
-                    margin-bottom: 8px !important;
-                    font-size: 12px !important;
-                    color: var(--text-main) !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 5px !important;
-                }
-
-                .task-input {
-                    width: 100% !important;
-                    padding: 10px !important;
-                    border: 1px solid #e8e8e8 !important;
-                    border-radius: 10px !important;
-                    font-size: 11px !important;
-                    color: var(--text-main) !important;
-                    background: #fafafa !important;
-                    min-height: 60px !important;
-                    resize: none !important;
-                    line-height: 1.5 !important;
-                }
-
-                .task-input:focus {
-                    outline: none !important;
-                    border-color: var(--primary) !important;
-                    background: white !important;
-                }
-
-                .info-grid-compact {
-                    display: grid !important;
-                    grid-template-columns: repeat(2, 1fr) !important;
-                    gap: 6px !important;
-                    font-size: 10px !important;
-                    flex: 1 !important;
-                    overflow-y: auto !important;
-                }
-
-                .info-cell {
-                    background: #f9f9f9 !important;
-                    padding: 5px 6px !important;
-                    border-radius: 6px !important;
-                }
-
-                .info-cell-label {
-                    font-size: 8px !important;
-                    color: #999 !important;
-                    margin-bottom: 2px !important;
-                }
-
-                .info-cell-value {
-                    color: var(--text-main) !important;
-                    font-weight: 500 !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                }
-            `,
-            'history.html': `
-                /* ========== 历史记录页面专用样式 ========== */
-                .job-item {
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: space-between !important;
-                    padding: 12px !important;
-                    background: white !important;
-                    border-radius: 14px !important;
-                    margin-bottom: 10px !important;
-                }
-
-                .status-dot {
-                    width: 8px !important;
-                    height: 8px !important;
-                    background: var(--accent) !important;
-                    border-radius: 50% !important;
-                    margin-right: 12px !important;
-                    box-shadow: 0 0 8px var(--accent) !important;
-                }
-
-                .status-dot.inactive {
-                    background: #ccc !important;
-                    box-shadow: none !important;
-                }
-
-                .view-btn {
-                    background: #f7f9fa !important;
-                    padding: 5px 12px !important;
-                    border-radius: 12px !important;
-                    font-size: 11px !important;
-                    color: var(--text-gray) !important;
-                    border: none !important;
-                    font-weight: 600 !important;
-                    cursor: pointer !important;
-                }
-
-                .view-btn:hover {
-                    background: #edf1f3 !important;
-                    color: var(--primary) !important;
-                }
-            `,
-            'profile.html': `
-                /* ========== 个人中心页面专用样式 ========== */
-                .profile-header {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    align-items: center !important;
-                    margin-bottom: 15px !important;
-                }
-
-                .profile-avatar {
-                    width: 60px !important;
-                    height: 60px !important;
-                    border-radius: 50% !important;
-                    border: 3px solid white !important;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
-                }
-
-                .profile-name {
-                    margin-top: 8px !important;
-                    font-size: 16px !important;
-                    font-weight: 700 !important;
-                    color: var(--text-main) !important;
-                }
-
-                .profile-status {
-                    font-size: 10px !important;
-                    color: var(--accent) !important;
-                    border: 1px solid var(--accent) !important;
-                    padding: 2px 8px !important;
-                    border-radius: 8px !important;
-                    margin-top: 5px !important;
-                }
-
-                .edit-resume-btn {
-                    margin-top: auto !important;
-                    border: 1px solid var(--accent) !important;
-                    color: var(--accent) !important;
-                    background: white !important;
-                    padding: 8px 0 !important;
-                    border-radius: 18px !important;
-                    font-size: 11px !important;
-                    width: 100% !important;
-                    font-weight: 600 !important;
-                    cursor: pointer !important;
-                    transition: 0.2s !important;
-                }
-
-                .edit-resume-btn:hover {
-                    background: var(--accent) !important;
-                    color: white !important;
-                }
-
-                .resume-section {
-                    margin-bottom: 12px !important;
-                }
-
-                .resume-section h4 {
-                    color: var(--primary) !important;
-                    font-size: 12px !important;
-                    margin-bottom: 6px !important;
-                }
-
-                .skill-tags {
-                    display: flex !important;
-                    flex-wrap: wrap !important;
-                    gap: 4px !important;
-                }
-
-                .skill-tag {
-                    font-size: 9px !important;
-                    background: #e0f7fa !important;
-                    color: var(--dark-green) !important;
-                    padding: 2px 6px !important;
-                    border-radius: 5px !important;
-                }
-            `,
-            'settings.html': `
-                /* ========== 设置页面专用样式 ========== */
-                .content-card {
-                    background: white !important;
-                    border-radius: 16px !important;
-                    padding: 16px !important;
-                    margin-bottom: 12px !important;
-                    box-shadow: 0 5px 20px rgba(0,0,0,0.03) !important;
-                }
-
-                .card-title {
-                    font-size: 14px !important;
-                    font-weight: 700 !important;
-                    color: var(--text-main) !important;
-                    margin-bottom: 12px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 8px !important;
-                }
-
-                .settings-item {
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: space-between !important;
-                    padding: 12px !important;
-                    background: #f8f9fa !important;
-                    border-radius: 12px !important;
-                    margin-bottom: 8px !important;
-                    cursor: pointer !important;
-                    text-decoration: none !important;
-                    color: inherit !important;
-                    transition: background 0.2s !important;
-                }
-
-                .settings-item:hover {
-                    background: #e9ecef !important;
-                }
-
-                .settings-item-left {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 12px !important;
-                }
-
-                .settings-item-label {
-                    font-size: 13px !important;
-                    font-weight: 500 !important;
-                    color: var(--text-main) !important;
-                }
-
-                .btn-danger {
-                    background: #dc3545 !important;
-                    color: white !important;
-                    border: none !important;
-                    padding: 12px 20px !important;
-                    border-radius: 12px !important;
-                    font-size: 14px !important;
-                    font-weight: 600 !important;
-                    cursor: pointer !important;
-                    width: 100% !important;
-                    margin-top: 20px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 8px !important;
-                    transition: background 0.2s !important;
-                }
-
-                .btn-danger:hover {
-                    background: #c82333 !important;
-                }
-            `
-        };
-
-        return baseStyles + (pageSpecificStyles[pageType] || '');
-    }
-
-    /**
      * 加载CSS样式
      */
     async function loadStyles() {
@@ -1925,45 +1341,6 @@
                             console.error(`  ❌ 字体文件访问失败: ${fontUrl.split('/').pop()}`, error);
                         }
                     }
-
-                    // ✅ 图标备用样式已移至各个HTML文件，此处注释掉避免重复
-                    // const iconFallbackStyle = document.createElement('style');
-                    // iconFallbackStyle.textContent = `
-                    //     /* 图标备用方案 */
-                    //     .fas::before, .far::before, .fab::before {
-                    //         font-family: "Font Awesome 6 Free" !important;
-                    //         font-weight: 900 !important;
-                    //         display: inline-block !important;
-                    //         font-style: normal !important;
-                    //         font-variant: normal !important;
-                    //         text-rendering: auto !important;
-                    //         line-height: 1 !important;
-                    //     }
-                    //
-                    //     .fa-magic::before { content: "\\f0d0"; }
-                    //     .fa-bolt::before { content: "\\f0e7"; }
-                    //     .fa-history::before { content: "\\f1da"; }
-                    //     .fa-user::before { content: "\\f007"; }
-                    //     .fa-cog::before { content: "\\f013"; }
-                    //     .fa-times::before { content: "\\f00d"; }
-                    //     .fa-info-circle::before { content: "\\f05a"; }
-                    //     .fa-edit::before { content: "\\f044"; }
-                    //     .fa-spinner::before { content: "\\f110"; }
-                    //     .fa-spin {
-                    //         animation: fa-spin 2s infinite linear;
-                    //     }
-                    //     @keyframes fa-spin {
-                    //         0% { transform: rotate(0deg); }
-                    //         100% { transform: rotate(360deg); }
-                    //     }
-                    //
-                    //     /* 如果Font Awesome没加载，使用文字备用 */
-                    //     .fas:not([class*="fa-"])::before,
-                    //     .far:not([class*="fa-"])::before {
-                    //         content: "●";
-                    //     }
-                    // `;
-                    // shadowRoot.appendChild(iconFallbackStyle);
                 }
             } catch (error) {
                 console.error(`❌ 加载 Font Awesome CSS 时出错:`, error);
@@ -2168,7 +1545,7 @@
                 }
 
                 .liquid-cta-btn {
-                    padding: 12px 25px !important;
+                    padding: 10px 14px !important;
                 }
 
                 .btn-primary,
@@ -2364,12 +1741,6 @@
                 if (iconElements.length > 0) {
                     const firstIcon = iconElements[0];
 
-                    // 检查元素本身的样式
-                    const elemStyle = window.getComputedStyle(firstIcon);
-
-                    // 检查::before伪元素的样式
-                    const beforeStyle = window.getComputedStyle(firstIcon, '::before');
-
                     // 检查<style>标签内容
                     const styles = shadowRoot.querySelectorAll('style');
 
@@ -2379,7 +1750,6 @@
                         if (content.includes('fa-info-circle')) {
                             // 查找包含 fa-info-circle 和 content 的规则
                             const pattern = /\.fa-info-circle[^{]*::?before[^}]*content[^}]*\}/gi;
-                            const matches = content.match(pattern);
                         }
                     }
 
@@ -2400,7 +1770,6 @@
 
                     // 再次检查content
                     setTimeout(() => {
-                        const afterTestStyle = window.getComputedStyle(firstIcon, '::before');
 
                         for (let i = 0; i < styles.length; i++) {
                             const styleText = styles[i].textContent;
@@ -2473,7 +1842,6 @@
             const enhancedInlineStyle = document.createElement("style");
             enhancedInlineStyle.setAttribute('data-enhanced-inline-styles', 'true');
             enhancedInlineStyle.setAttribute('data-priority', 'highest');
-            // enhancedInlineStyle.textContent = generateInlineStylesForPage(currentPage);
             shadowRoot.appendChild(enhancedInlineStyle);
 
             console.log("✅ 增强版内联样式已注入完成");
@@ -2612,17 +1980,6 @@
         // TODO: 绑定简历切换事件（book-wrapper） - 暂未实现
         // const bookWrapper = resumeWin.querySelector(".book-wrapper");
     }
-
-    /**
-     * 绑定底部功能按钮
-     */
-    function bindFooterButtons() {
-        // TODO: 实现底部按钮绑定
-        // const historyBtn = resumeWindow.querySelector("#history-table-btn");
-        // const campusBtn = resumeWindow.querySelector("#campus-table-btn");
-        // const resumeBtn = resumeWindow.querySelector("#my-resume-btn");
-    }
-
     // ============================================================================
     // 窗口控制
     // ============================================================================
@@ -2998,7 +2355,7 @@
                 startButton.style.opacity = "1";
                 break;
             default:
-                startButton.innerHTML = '<i class="fas fa-bolt"></i><span class="btn-text">一键智能填充</span>';
+                startButton.innerHTML = '<i class="fas fa-bolt"></i><span class="btn-text">智能填充</span>';
                 startButton.classList.remove("paused");
                 startButton.style.pointerEvents = "auto";
                 startButton.style.opacity = "1";
@@ -4003,10 +3360,10 @@
             if (records.length === 0) {
                 // 显示空状态
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 60px 20px; color: #999;">
-                        <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; color: #ddd;"></i>
-                        <div style="font-size: 14px;">暂无投递记录</div>
-                        <div style="font-size: 12px; margin-top: 8px;">完成填充后将自动记录</div>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <div class="empty-text">暂无投递记录</div>
+                        <div style="font-size: 12px; margin-top: 8px; color: var(--text-gray);">完成填充后将自动记录</div>
                     </div>
                 `;
                 return;
@@ -4045,10 +3402,10 @@
         } catch (error) {
             console.error("[loadApplicationRecords] 加载投递记录失败:", error);
             container.innerHTML = `
-                <div style="text-align: center; padding: 60px 20px; color: #f44336;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
-                    <div style="font-size: 14px;">加载失败</div>
-                    <div style="font-size: 12px; margin-top: 8px;">请刷新页面重试</div>
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle" style="color: #f44336;"></i>
+                    <div class="empty-text">加载失败</div>
+                    <div style="font-size: 12px; margin-top: 8px; color: var(--text-gray);">请刷新页面重试</div>
                 </div>
             `;
         }

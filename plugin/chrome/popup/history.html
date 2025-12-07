@@ -13,6 +13,35 @@
         .view-btn { background: #f7f9fa; padding: 5px 12px; border-radius: 12px; font-size: 11px; color: var(--text-gray); border: none; font-weight: 600; cursor: pointer; }
         .view-btn:hover { background: #edf1f3; color: var(--primary); }
 
+        /* 空状态样式 - 类似投递记录标题的毛玻璃效果 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 30px;
+            margin: 80px auto;
+            max-width: 280px;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            border-radius: 18px;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
+        .empty-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
         /* 为投递记录列表启用滚动功能 */
         .plugin-content {
             overflow-y: auto !important;
@@ -132,9 +161,9 @@
             <a href="javascript:void(0)" class="liquid-close"><i class="fas fa-times"></i></a>
             <div class="plugin-content">
                 <!-- 投递记录将通过 JavaScript 动态加载 -->
-                <div style="text-align: center; padding: 60px 20px; color: #999;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 16px; color: #ddd;"></i>
-                    <div style="font-size: 14px;">加载中...</div>
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <div class="empty-text">加载中...</div>
                 </div>
             </div>
         </div>

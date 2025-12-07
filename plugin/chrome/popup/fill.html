@@ -102,13 +102,16 @@
         .liquid-cta-container {
             position: absolute !important;
             bottom: 40px !important;
-            left: 34px !important;
-            right: 0 !important;
-            width: calc(100% - 70px) !important;
+            left: 10px !important;
+            right: 20px !important;
             display: flex !important;
-            justify-content: center !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
             pointer-events: none !important;
             z-index: 40 !important;
+            gap: 12px !important;
         }
 
         .liquid-cta-btn {
@@ -117,23 +120,71 @@
             background: var(--glass-clear-bg) !important;
             backdrop-filter: var(--glass-clear-blur) !important;
             -webkit-backdrop-filter: var(--glass-clear-blur) !important;
-            box-shadow: 0 10px 30px rgba(255, 154, 158, 0.25) !important;
+            box-shadow: 0 10px 10px rgba(255, 154, 158, 0.25) !important;
             border: 1px solid var(--accent) !important;
-            padding: 12px 25px !important;
+            padding: 10px 14px !important;
             border-radius: 25px !important;
             color: var(--accent) !important;
-            font-size: 14px !important;
+            font-size: 13px !important;
             font-weight: 700 !important;
-            display: flex !important;
+            display: inline-flex !important;
             align-items: center !important;
             gap: 6px !important;
             transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+            flex-shrink: 0 !important;
+            flex-grow: 0 !important;
+            width: auto !important;
+            min-width: 120px !important;
+            max-width: 90% !important;
         }
 
         .liquid-cta-btn:hover {
             transform: translateY(-2px) !important;
             background: rgba(255, 255, 255, 0.35) !important;
             box-shadow: 0 15px 35px rgba(255, 154, 158, 0.35) !important;
+        }
+
+        /* 状态展示框样式 */
+        .status-display {
+            pointer-events: auto !important;
+            background: var(--glass-clear-bg) !important;
+            backdrop-filter: var(--glass-clear-blur) !important;
+            -webkit-backdrop-filter: var(--glass-clear-blur) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05) !important;
+            padding: 8px 12px !important;
+            border-radius: 20px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex-shrink: 1 !important;
+            flex-grow: 0 !important;
+            /* width: auto !important; */
+            min-width: 190px !important;
+            max-width: 190px !important;
+        }
+
+        .status-icon {
+            font-size: 14px !important;
+            color: var(--primary) !important;
+            flex-shrink: 0 !important;
+        }
+
+        .status-text {
+            font-size: 9px !important;
+            font-weight: 600 !important;
+            color: var(--text-main) !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .status-display.status-success .status-icon {
+            color: #28a745 !important;
+        }
+
+        .status-display.status-error .status-icon {
+            color: #dc3545 !important;
         }
 
 
@@ -403,7 +454,7 @@
 <body>
     <div class="plugin-container">
         <!-- 状态弹窗 -->
-        <!-- <div id="status-popup" class="status-popup">
+        <div id="status-popup" class="status-popup">
             <div class="status-popup-header">
                 <span class="status-popup-title">
                     <i class="fas fa-info-circle"></i>
@@ -416,7 +467,7 @@
             <div class="status-popup-content">
                 <div class="status-message" id="status-message">准备就绪</div>
             </div>
-        </div> -->
+        </div>
         <div class="sidebar">
             <a href="fill.html" class="nav-item active">
                 <div class="nav-icon-box"><i class="fas fa-magic"></i></div>
@@ -452,13 +503,13 @@
             <div class="liquid-cta-container">
                 <div id="fill-action-btn" class="liquid-cta-btn">
                     <i class="fas fa-bolt"></i>
-                    <span class="btn-text">一键智能填充</span>
+                    <span class="btn-text">智能填充</span>
                 </div>
                 <!-- 状态展示框 -->
-                <!-- <div id="status-display" class="status-display" style="display: none;">
-                    <i class="status-icon fas fa-spinner fa-spin"></i>
-                    <span class="status-text">正在处理...</span>
-                </div> -->
+                <div id="status-display" class="status-display">
+                    <i class="status-icon fas fa-info-circle"></i>
+                    <span class="status-text">准备就绪</span>
+                </div>
             </div>
 
             <div class="plugin-content">
