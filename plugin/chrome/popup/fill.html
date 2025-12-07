@@ -10,7 +10,7 @@
     <style>
         .book-wrapper {
             position: relative;
-            width: 96%;
+            width: 90%;
             height: 280px;
             perspective: 1000px;
             cursor: pointer;
@@ -54,7 +54,7 @@
         }
 
         .book-wrapper:hover .resume-page-current {
-            transform: translateX(-20px) rotateY(-5deg) !important;
+            transform: translateX(-15px) rotateY(-5deg) !important;
         }
 
         .book-wrapper:hover .resume-page-next {
@@ -141,7 +141,7 @@
             flex-shrink: 0 !important;
             flex-grow: 0 !important;
             width: auto !important;
-            min-width: 180px !important;
+            min-width: 120px !important;
             max-width: 90% !important;
         }
 
@@ -207,16 +207,21 @@
         }
 
         .status-text {
-            font-size: 10px !important;
+            font-size: 12px !important;
             font-weight: 600 !important;
-            color: var(--text-main) !important;
+            color: var(--accent) !important;
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
         }
 
+        /* 转圈图标（processing 状态）颜色 */
+        .status-icon.fa-spinner {
+            color: #FF9A9E !important;
+        }
+
         .status-display.status-success .status-icon {
-            color: #28a745 !important;
+            color: #FF9A9E !important;
         }
 
         .status-display.status-error .status-icon {
@@ -484,13 +489,49 @@
         .far:not([class*="fa-"])::before {
             content: "●";
         }
+
+        /* ========== 呼吸动画效果 ========== */
+        /* 状态框呼吸效果 - 边框和阴影脉动 */
+        @keyframes status-breathe {
+            0%, 100% {
+                border-color: var(--accent);
+                box-shadow: 0 10px 10px rgba(255, 154, 158, 0.25),
+                            0 0 0 0 rgba(255, 154, 158, 0.4);
+            }
+            50% {
+                border-color: var(--primary);
+                box-shadow: 0 10px 20px rgba(255, 154, 158, 0.35),
+                            0 0 15px 5px rgba(87, 197, 182, 0.3);
+            }
+        }
+
+        /* 图标旋转脉动效果 */
+        @keyframes icon-pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.15);
+                opacity: 0.8;
+            }
+        }
+
+        /* 运行状态的呼吸效果类 */
+        .status-display.breathing {
+            animation: status-breathe 2s ease-in-out infinite !important;
+        }
+
+        .status-icon.pulsing {
+            animation: icon-pulse 1.5s ease-in-out infinite !important;
+        }
     </style>
 </head>
 
 <body>
     <div class="plugin-container">
         <!-- 状态弹窗 -->
-        <div id="status-popup" class="status-popup">
+        <!-- <div id="status-popup" class="status-popup">
             <div class="status-popup-header">
                 <span class="status-popup-title">
                     <i class="fas fa-info-circle"></i>
@@ -503,7 +544,7 @@
             <div class="status-popup-content">
                 <div class="status-message" id="status-message">准备就绪</div>
             </div>
-        </div>
+        </div> -->
         <div class="sidebar">
             <a href="fill.html" class="nav-item active">
                 <div class="nav-icon-box"><i class="fas fa-magic"></i></div>

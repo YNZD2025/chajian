@@ -3784,11 +3784,11 @@
             // 阶段2：获取服务器字段（异步）
             getNeedFields(getCleanHtml());
 
+            window.setStateText("正在扫描网站...");
+
             // 阶段4：扫描输入框
             
             await scanAllInputs();
-
-            window.setStateText("正在扫描网站...", "min");
 
             // 等待DOM扫描完成
             while (!isDomScanComplete || !window.isRunning()) {
@@ -3803,7 +3803,7 @@
             }
 
             // 阶段5：构建字段结构
-            window.setStateText("正在标记简历字段...", "min");
+            window.setStateText("正在标记简历字段...");
 
             // 构建字段结构
             fieldStructures = buildFieldStructures(serverFields);
@@ -3835,7 +3835,7 @@
             // 阶段8：等待填充值返回
 
             window.setStateText("正在理解简历...", "show");
-            window.breatheResume("begin");
+            // window.breatheResume("begin");
 
             let waitCount = 0;
             
@@ -3845,7 +3845,7 @@
                 waitCount++;
 
                 if (waitCount === 16) {
-                    window.breatheResume("end");
+                    // window.breatheResume("end");
                     window.setStateText("开始思考网站填写策略...");
                 } else if (waitCount === 60) {
                     window.setStateText("思考时间稍长，请耐心等候...");
@@ -3854,7 +3854,7 @@
                 }
             }
 
-            window.breatheResume("end");
+            // window.breatheResume("end");
 
             // 阶段9：执行填充
 

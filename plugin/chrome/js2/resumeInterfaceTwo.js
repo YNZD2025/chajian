@@ -697,21 +697,25 @@
         if (window.updateStatusPopup) {
             return;
         }
-        // 获取Shadow DOM中的元素
+        // 获取Shadow DOM中的元素 - 使用新的 status-display 替代 status-popup
         const fillButton = resumeWindowContainer.querySelector('#fill-action-btn');
-        const statusPopup = resumeWindowContainer.querySelector('#status-popup');
-        const closeButton = statusPopup?.querySelector('.status-popup-close');
+        const statusDisplay = resumeWindowContainer.querySelector('#status-display');
+        const statusPopup = resumeWindowContainer.querySelector('#status-popup'); // 旧元素，可能不存在
+        const closeButton = statusPopup?.querySelector('.status-popup-close'); // 旧元素
         const statusMessage = resumeWindowContainer.querySelector('#status-message');
         const btnIcon = fillButton?.querySelector('i');
         const btnText = fillButton?.querySelector('.btn-text');
-        if (!fillButton || !statusPopup || !statusMessage) {
-            console.error("✗ 状态弹窗元素未找到", {
-                fillButton,
-                statusPopup,
-                statusMessage
-            });
+
+        if (!fillButton) {
+            console.error("✗ 填充按钮元素未找到", { fillButton });
             return;
         }
+
+        // status-display 是必需的（fill.html 新设计）
+        if (!statusDisplay) {
+            console.warn("⚠️ 状态展示框 (#status-display) 未找到，状态更新功能可能不可用");
+        }
+        // statusMessage 是旧设计的元素（fill.html 已移除），不存在是正常的
 
         if (!btnIcon || !btnText) {
             console.error("✗ 按钮内部元素未找到", {
@@ -730,6 +734,7 @@
          * 切换弹窗显示状态
          */
         function togglePopup() {
+            if (!statusPopup) return; // 新设计中没有弹窗
             isPopupOpen = !isPopupOpen;
             if (isPopupOpen) {
                 statusPopup.classList.add('show');
@@ -742,6 +747,7 @@
          * 关闭弹窗
          */
         function closePopup() {
+            if (!statusPopup) return; // 新设计中没有弹窗
             isPopupOpen = false;
             statusPopup.classList.remove('show');
         }
@@ -777,82 +783,81 @@
             const statusText = statusDisplay?.querySelector('.status-text');
 
             if (!statusDisplay || !statusIcon || !statusText) {
-                console.error('✗ 状态展示框元素未找到', {
-                    statusDisplay: !!statusDisplay,
-                    statusIcon: !!statusIcon,
-                    statusText: !!statusText,
-                    resumeWindowContainer: !!resumeWindowContainer
-                });
+                // 静默失败 - 某些页面可能没有 status-display（使用旧设计）
                 return;
             }
             // 移除所有状态类
             statusDisplay.classList.remove('status-success', 'status-error');
 
-            // 状态框始终显示
-            statusDisplay.style.display = 'flex';
-
             // 根据状态设置图标和样式
             switch (type) {
                 case 'processing':
+                    // 显示状态框
+                    statusDisplay.classList.remove('hidden');
                     statusIcon.className = 'status-icon fas fa-spinner fa-spin';
                     statusText.textContent = text || '正在处理...';
                     break;
                 case 'success':
+                    // success 状态由 changeState() 控制隐藏，这里只更新内容
                     statusIcon.className = 'status-icon fas fa-check-circle';
                     statusText.textContent = text || '填充完成';
                     statusDisplay.classList.add('status-success');
                     break;
                 case 'error':
+                    // error 状态由 changeState() 控制隐藏，这里只更新内容
                     statusIcon.className = 'status-icon fas fa-exclamation-triangle';
                     statusText.textContent = text || '出错了';
                     statusDisplay.classList.add('status-error');
                     break;
                 case 'idle':
                 default:
+                    // idle 状态：保持隐藏（不移除 hidden 类）
                     statusIcon.className = 'status-icon fas fa-info-circle';
                     statusText.textContent = text || '准备就绪';
+                    // 不移除 hidden 类，保持隐藏状态
             }
         }
 
         /**
-         * 隐藏状态展示框（已废弃，状态框现在始终显示）
+         * 隐藏状态展示框
          */
         function hideStatusDisplay() {
-            // 不再隐藏状态框，改为显示默认状态
-            updateStatusDisplay('idle', '准备就绪');
+            const statusDisplay = resumeWindowContainer?.querySelector('#status-display');
+            if (statusDisplay) {
+                statusDisplay.classList.add('hidden');
+            }
         }
 
         /**
          * 更新状态消息（主函数）
          */
         function updateStatusText(text, type = 'processing') {
-            if (!statusMessage) {
-                console.error('✗ statusMessage 元素未找到');
-                return;
-            }
-
             currentStatus = type;
 
-            // 更新消息内容
-            statusMessage.textContent = text || '准备就绪';
-
-            // 根据状态类型更新样式
-            statusMessage.className = 'status-message';
-            if (type === 'error') {
-                statusMessage.classList.add('status-error');
-            } else if (type === 'success') {
-                statusMessage.classList.add('status-success');
-            } else if (type === 'processing') {
-                statusMessage.classList.add('status-processing');
-            }
-            // 更新状态展示框（新方案：在按钮旁边显示状态）
+            // 优先使用新的状态展示框（fill.html 中的 #status-display）
             updateStatusDisplay(type, text);
 
-            // 添加动画效果
-            statusMessage.style.animation = 'none';
-            setTimeout(() => {
-                statusMessage.style.animation = 'messageSlideIn 0.4s ease';
-            }, 10);
+            // 如果存在旧的 statusMessage 元素，也更新它（兼容其他页面）
+            if (statusMessage) {
+                // 更新消息内容
+                statusMessage.textContent = text || '准备就绪';
+
+                // 根据状态类型更新样式
+                statusMessage.className = 'status-message';
+                if (type === 'error') {
+                    statusMessage.classList.add('status-error');
+                } else if (type === 'success') {
+                    statusMessage.classList.add('status-success');
+                } else if (type === 'processing') {
+                    statusMessage.classList.add('status-processing');
+                }
+
+                // 添加动画效果
+                statusMessage.style.animation = 'none';
+                setTimeout(() => {
+                    statusMessage.style.animation = 'messageSlideIn 0.4s ease';
+                }, 10);
+            }
 
             // 🔧 修复：不自动打开弹窗，只更新按钮状态
             // 用户可以通过右键点击按钮来查看详细状态
@@ -891,17 +896,19 @@
             });
         }
 
-        // 点击容器外部关闭弹窗
-        resumeWindowContainer.addEventListener('click', (e) => {
-            if (isPopupOpen && !statusPopup.contains(e.target) && !fillButton.contains(e.target)) {
-                closePopup();
-            }
-        });
+        // 点击容器外部关闭弹窗（仅旧设计需要）
+        if (statusPopup) {
+            resumeWindowContainer.addEventListener('click', (e) => {
+                if (isPopupOpen && !statusPopup.contains(e.target) && !fillButton.contains(e.target)) {
+                    closePopup();
+                }
+            });
 
-        // 阻止弹窗内部点击事件冒泡
-        statusPopup.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+            // 阻止弹窗内部点击事件冒泡
+            statusPopup.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
 
         // 暴露全局接口
         window.updateStatusPopup = updateStatusText;
@@ -1182,7 +1189,52 @@
                 /* 针对所有插件容器内的元素进行基础重置 */
                 .plugin-container * {
                     box-sizing: border-box !important;
+                }
+
+                /* 排除动画元素，允许它们使用transform */
+                .plugin-container *:not(.status-icon):not(.status-display) {
                     transform: none !important;
+                }
+
+                /* ========== 呼吸动画效果 ========== */
+                /* 状态框呼吸效果 - 边框和阴影脉动 */
+                @keyframes status-breathe {
+                    0%, 100% {
+                        border-color: var(--accent);
+                        box-shadow: 0 10px 10px rgba(255, 154, 158, 0.25),
+                                    0 0 0 0 rgba(255, 154, 158, 0.4);
+                    }
+                    50% {
+                        border-color: var(--primary);
+                        box-shadow: 0 10px 20px rgba(255, 154, 158, 0.35),
+                                    0 0 15px 5px rgba(87, 197, 182, 0.3);
+                    }
+                }
+
+                /* 图标脉动效果 */
+                @keyframes icon-pulse {
+                    0%, 100% {
+                        transform: scale(1);
+                        opacity: 1;
+                    }
+                    50% {
+                        transform: scale(1.15);
+                        opacity: 0.8;
+                    }
+                }
+
+                /* 运行状态的呼吸效果类 */
+                .status-display.breathing {
+                    animation: status-breathe 2s ease-in-out infinite !important;
+                }
+
+                .status-icon.pulsing {
+                    animation: icon-pulse 1.5s ease-in-out infinite !important;
+                }
+
+                /* 转圈图标（processing 状态）颜色 */
+                .status-icon.fa-spinner {
+                    color: #FF9A9E !important;
                 }
             `;
             shadowRoot.appendChild(cssVariables);
@@ -2324,6 +2376,14 @@
                 // 显示状态框
                 if (statusDisplay) {
                     statusDisplay.classList.remove("hidden");
+                    // 添加呼吸动画
+                    statusDisplay.classList.add("breathing");
+
+                    // 给图标添加脉动效果
+                    const statusIcon = statusDisplay.querySelector(".status-icon");
+                    if (statusIcon) {
+                        statusIcon.classList.add("pulsing");
+                    }
                 }
                 // 容器改为左对齐
                 if (buttonContainer) {
@@ -2340,6 +2400,13 @@
                 // 显示状态框
                 if (statusDisplay) {
                     statusDisplay.classList.remove("hidden");
+                    // 暂停状态：移除呼吸动画
+                    statusDisplay.classList.remove("breathing");
+
+                    const statusIcon = statusDisplay.querySelector(".status-icon");
+                    if (statusIcon) {
+                        statusIcon.classList.remove("pulsing");
+                    }
                 }
                 // 容器保持左对齐
                 if (buttonContainer) {
@@ -2353,15 +2420,22 @@
                 break;
 
             case "success":
-                // 显示状态框
+                // 隐藏状态框（填充完成后自动隐藏）
                 if (statusDisplay) {
-                    statusDisplay.classList.remove("hidden");
+                    statusDisplay.classList.add("hidden");
+                    // 完成状态：移除呼吸动画
+                    statusDisplay.classList.remove("breathing");
+
+                    const statusIcon = statusDisplay.querySelector(".status-icon");
+                    if (statusIcon) {
+                        statusIcon.classList.remove("pulsing");
+                    }
                 }
-                // 容器保持左对齐
+                // 容器恢复居中对齐
                 if (buttonContainer) {
-                    buttonContainer.classList.add("running");
+                    buttonContainer.classList.remove("running");
                 }
-                // 按钮恢复完整模式
+                // 按钮恢复完整模式并居中显示
                 startButton.innerHTML = '<i class="fas fa-check-circle"></i><span class="btn-text">填充完成</span>';
                 startButton.classList.remove("icon-mode");
                 startButton.classList.remove("paused");
@@ -2370,15 +2444,22 @@
                 break;
 
             case "error":
-                // 显示状态框
+                // 隐藏状态框（错误发生后自动隐藏）
                 if (statusDisplay) {
-                    statusDisplay.classList.remove("hidden");
+                    statusDisplay.classList.add("hidden");
+                    // 错误状态：移除呼吸动画
+                    statusDisplay.classList.remove("breathing");
+
+                    const statusIcon = statusDisplay.querySelector(".status-icon");
+                    if (statusIcon) {
+                        statusIcon.classList.remove("pulsing");
+                    }
                 }
-                // 容器保持左对齐
+                // 容器恢复居中对齐
                 if (buttonContainer) {
-                    buttonContainer.classList.add("running");
+                    buttonContainer.classList.remove("running");
                 }
-                // 按钮恢复完整模式
+                // 按钮恢复完整模式并居中显示
                 startButton.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="btn-text">填充错误</span>';
                 startButton.classList.remove("icon-mode");
                 startButton.classList.remove("paused");
@@ -2387,15 +2468,22 @@
                 break;
 
             case "quota":
-                // 显示状态框
+                // 隐藏状态框（配额用完后自动隐藏）
                 if (statusDisplay) {
-                    statusDisplay.classList.remove("hidden");
+                    statusDisplay.classList.add("hidden");
+                    // 配额用完：移除呼吸动画
+                    statusDisplay.classList.remove("breathing");
+
+                    const statusIcon = statusDisplay.querySelector(".status-icon");
+                    if (statusIcon) {
+                        statusIcon.classList.remove("pulsing");
+                    }
                 }
-                // 容器保持左对齐
+                // 容器恢复居中对齐
                 if (buttonContainer) {
-                    buttonContainer.classList.add("running");
+                    buttonContainer.classList.remove("running");
                 }
-                // 按钮恢复完整模式
+                // 按钮恢复完整模式并居中显示
                 startButton.innerHTML = '<i class="fas fa-battery-empty"></i><span class="btn-text">配额已用完</span>';
                 startButton.classList.remove("icon-mode");
                 startButton.classList.remove("paused");
@@ -2407,6 +2495,13 @@
                 // 显示状态框
                 if (statusDisplay) {
                     statusDisplay.classList.remove("hidden");
+                    // 学习状态：添加呼吸动画（学习中也是运行状态）
+                    statusDisplay.classList.add("breathing");
+
+                    const statusIcon = statusDisplay.querySelector(".status-icon");
+                    if (statusIcon) {
+                        statusIcon.classList.add("pulsing");
+                    }
                 }
                 // 容器改为左对齐
                 if (buttonContainer) {
@@ -2423,6 +2518,13 @@
                 // 隐藏状态框
                 if (statusDisplay) {
                     statusDisplay.classList.add("hidden");
+                    // 移除所有动画
+                    statusDisplay.classList.remove("breathing");
+
+                    const statusIcon = statusDisplay.querySelector(".status-icon");
+                    if (statusIcon) {
+                        statusIcon.classList.remove("pulsing");
+                    }
                 }
                 // 容器恢复居中
                 if (buttonContainer) {
@@ -2509,13 +2611,12 @@
         else if (/(等待|准备中)/.test(text)) {
             statusType = 'idle';
         }
-        // 更新状态弹窗（如果存在）
+        // 更新状态展示（如果存在）
         // 直接使用 window.updateStatusPopup，因为它在 initStatusPopup 中被暴露
         if (typeof window.updateStatusPopup === 'function') {
             window.updateStatusPopup(text, statusType);
-        } else {
-            console.error('  ✗ window.updateStatusPopup 函数不存在！');
         }
+        // 不存在时静默处理 - 状态更新由 changeState() 函数处理
 
         // 更新 #status-message 元素（保留原有功能）
         const stateTextEl = resumeWindow?.querySelector("#status-message");
@@ -4158,10 +4259,10 @@
         await init();
 
         // 非Edge浏览器检查版本更新
-        if (!navigator.userAgent.includes("Edg/")) {
-            setTimeout(() => {
-                checkVersion();
-            }, 3000);
-        }
+        // if (!navigator.userAgent.includes("Edg/")) {
+        //     setTimeout(() => {
+        //         checkVersion();
+        //     }, 3000);
+        // }
     })();
 })();
