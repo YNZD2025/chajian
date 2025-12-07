@@ -2974,8 +2974,10 @@
      */
     async function loadQuota() {
         try {
-            // 获取额度值元素
+            // 获取额度值元素和容器
             const quotaValueEl = resumeWindowContainer?.querySelector('#quota-value');
+            const quotaDisplay = resumeWindowContainer?.querySelector('.quota-display');
+
             if (!quotaValueEl) {
                 console.warn('⚠ 未找到额度显示元素 #quota-value');
                 return;
@@ -2984,6 +2986,11 @@
             // 显示加载状态
             quotaValueEl.textContent = '加载中...';
             quotaValueEl.className = 'quota-value';
+
+            // 先显示容器（以防之前被隐藏）
+            if (quotaDisplay) {
+                quotaDisplay.style.display = 'flex';
+            }
 
             // 调用接口获取额度
             const quotaResult = await apiRequestForGet("quota", {}, false);
@@ -3002,16 +3009,34 @@
                     quotaValueEl.classList.add('low');
                 }
 
-                console.log(`✅ 额度加载成功: ${quotaValue}`);
+                // 当额度在 4-10 之间时，隐藏整个额度显示容器
+                if (quotaDisplay) {
+                    if (quotaValue >= 4 && quotaValue <= 10) {
+                        quotaDisplay.style.display = 'none';
+                        console.log(`✅ 额度为 ${quotaValue}，已隐藏额度显示`);
+                    } else {
+                        quotaDisplay.style.display = 'flex';
+                        console.log(`✅ 额度加载成功: ${quotaValue}`);
+                    }
+                } else {
+                    console.log(`✅ 额度加载成功: ${quotaValue}`);
+                }
             } else {
                 throw new Error('额度数据格式错误');
             }
         } catch (error) {
             console.error('❌ 加载额度失败:', error);
             const quotaValueEl = resumeWindowContainer?.querySelector('#quota-value');
+            const quotaDisplay = resumeWindowContainer?.querySelector('.quota-display');
+
             if (quotaValueEl) {
                 quotaValueEl.textContent = '获取失败';
                 quotaValueEl.className = 'quota-value';
+            }
+
+            // 出错时显示容器
+            if (quotaDisplay) {
+                quotaDisplay.style.display = 'flex';
             }
         }
     }
