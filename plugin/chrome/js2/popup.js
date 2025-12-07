@@ -16,7 +16,7 @@
  * @version 基于 Manifest V3 规范
  */
 
-import { WEB_URL, LOGIN_URL } from "./config.js";
+import { WEB_URL, LOGIN_URL } from "./configContent.js";
 
 // ============================================================================
 // DOM 加载完成后初始化

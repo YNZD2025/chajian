@@ -73,4 +73,24 @@
         } else {
         }
     });
+
+    /**
+     * 监听来自 background.js 的消息
+     * 处理清空 localStorage 等操作
+     */
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'clearLocalStorage') {
+            try {
+                // 清空网站的 localStorage
+                localStorage.clear();
+                sendResponse({ success: true });
+            } catch (error) {
+                console.error('[消息桥接] 清空 localStorage 失败:', error);
+                sendResponse({ success: false, error: error.message });
+            }
+        }
+
+        // 返回 true 表示异步响应
+        return true;
+    });
 })();

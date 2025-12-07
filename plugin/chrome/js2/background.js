@@ -36,7 +36,7 @@ import {
     WELCOME_URL,            // 欢迎页面 URL
     PRICING_URL,            // 定价页面 URL
     ALL_WEB_URLS            // 所有网站 URL 列表
-} from "./config.js";
+} from "./configBackground.js";
 
 // ============================================================================
 // Chrome 扩展生命周期事件监听
@@ -71,10 +71,21 @@ chrome.runtime.onStartup.addListener((event) => {
  * 根据消息类型路由到对应的处理模块
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
     // 消息类型到处理函数的映射表
     const messageHandlers = {
         // 带 JWT 的 API 请求
-        fetchWithJwt: () => AuthModule.handleMessage(message, sender, sendResponse),
+        fetchWithJwt: () => {
+            // 使用立即执行的异步函数，确保错误被捕获
+            (async () => {
+                try {
+                    await AuthModule.handleMessage(message, sender, sendResponse);
+                } catch (error) {
+                    console.error('[Background] fetchWithJwt 处理失败:', error);
+                    sendResponse({ error: error.message });
+                }
+            })();
+        },
 
         // 学习字段相关
         learnField: () => LearningFieldModule.handleMessage(message, sender, sendResponse),
@@ -126,6 +137,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 console.error("✗ 缺少 URL 参数");
                 sendResponse({ success: false, error: "缺少 URL 参数" });
             }
+        },
+
+        // 清空网站 localStorage
+        clearWebsiteLocalStorage: () => {
+            (async () => {
+                try {
+
+                    // 查找所有官网标签页
+                    const tabs = await chrome.tabs.query({ url: `${WEB_DOMAIN}/*` });
+
+                    // 向每个标签页发送清空 localStorage 的消息
+                    const promises = tabs.map(tab =>
+                        chrome.tabs.sendMessage(tab.id, {
+                            type: 'clearLocalStorage'
+                        }).catch(error => {
+                            console.warn(`[Background] 向标签页 ${tab.id} 发送消息失败:`, error);
+                            return null;
+                        })
+                    );
+
+                    await Promise.all(promises);
+                    sendResponse({ success: true });
+                } catch (error) {
+                    console.error('[Background] 清空网站 localStorage 失败:', error);
+                    sendResponse({ success: false, error: error.message });
+                }
+            })();
         }
     };
 
@@ -280,14 +318,12 @@ const AuthModule = {
      */
     async handleMessage(message, sender, sendResponse) {
         try {
-
             const response = await this.fetchWithJwt(message.url, message.options);
-
             const jsonData = await response.json();
-
             sendResponse(jsonData);
         } catch (error) {
-            console.error("[AuthModule] 请求失败:", error.message);
+            console.error("[AuthModule] 请求失败:", error);
+            console.error("[AuthModule] 错误堆栈:", error.stack);
             sendResponse({ error: error.message });
         }
     },
@@ -341,6 +377,7 @@ const AuthModule = {
 
         // 获取存储的认证信息
         const { auth } = await chrome.storage.local.get(["auth"]);
+
 
         if (!auth?.token) {
             console.error("[AuthModule.fetchWithJwt] 未登录");

@@ -102,10 +102,12 @@
      */
     async function initButtonMode() {
         try {
-            const { arcButtonMode = "auto" } = await chrome.storage.local.get(["arcButtonMode"]);
+            const { arcButtonMode = "always" } = await chrome.storage.local.get(["arcButtonMode"]);
             setButtonMode(arcButtonMode);
         } catch (error) {
-            // 使用默认设置
+            console.warn('[initButtonMode] 读取按钮模式失败，使用默认值 always:', error);
+            // 使用默认设置：常驻显示
+            setButtonMode("always");
         }
     }
 
@@ -1933,24 +1935,33 @@
 
     /**
      * 设置按钮显示模式
-     * @param {string|boolean} mode - 显示模式：show/auto/hidden 或 布尔值
+     * @param {string|boolean} mode - 显示模式：always/smart/hidden 或 show/auto/hidden（兼容旧版） 或 布尔值
      */
     function setButtonMode(mode) {
         const hostElement = document.getElementById("ark-ai");
-        if (!hostElement) return;
+        if (!hostElement) {
+            console.warn('[setButtonMode] ark-ai 元素不存在，可能是在官网页面或UI未初始化');
+            return;
+        }
 
         if (typeof mode === "boolean") {
             hostElement.style.display = mode ? "block" : "none";
         } else {
             switch (mode) {
-                case "show":
+                case "always":  // 新模式名称：常驻显示
+                case "show":    // 兼容旧模式名称
                     hostElement.style.display = "block";
                     break;
-                case "auto":
-                    // 自动模式，不做处理
+                case "smart":   // 新模式名称：智能显示（根据条件自动显示/隐藏）
+                case "auto":    // 兼容旧模式名称
+                    // 智能模式：暂时保持显示，后续可以根据页面类型等条件控制
+                    hostElement.style.display = "block";
                     break;
-                case "hidden":
+                case "hidden":  // 隐藏按钮
                     hostElement.style.display = "none";
+                    break;
+                default:
+                    console.warn('[setButtonMode] 未知的按钮模式:', mode);
                     break;
             }
         }
@@ -3200,17 +3211,13 @@
                 }
 
                 // 当额度在 4-10 之间时，隐藏整个额度显示容器
-                // if (quotaDisplay) {
-                //     if (quotaValue >= 4 && quotaValue <= 10) {
-                //         quotaDisplay.style.display = 'none';
-                //         console.log(`✅ 额度为 ${quotaValue}，已隐藏额度显示`);
-                //     } else {
-                //         quotaDisplay.style.display = 'flex';
-                //         console.log(`✅ 额度加载成功: ${quotaValue}`);
-                //     }
-                // } else {
-                //     console.log(`✅ 额度加载成功: ${quotaValue}`);
-                // }
+                if (quotaDisplay) {
+                    if (quotaValue >= 4 && quotaValue <= 10) {
+                        quotaDisplay.style.display = 'none';
+                    } else {
+                        quotaDisplay.style.display = 'flex';
+                    }
+                }
             } else {
                 throw new Error('额度数据格式错误');
             }
@@ -3325,7 +3332,6 @@
 
             if (!cachedList || !Array.isArray(cachedList) || cachedList.length === 0) {
                 console.warn("[loadResumeDataFromStorage] storage 中没有简历数据");
-                console.info("[loadResumeDataFromStorage] 提示：请先访问智能填充页面以加载简历数据");
                 showNoResumeMessage();
                 resumeList = [];
                 return;
@@ -3766,22 +3772,26 @@
      * 监听来自popup的消息
      */
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === "toggleArcButtonMode") {
-            setButtonMode(message.state);
-            sendResponse({ success: true });
-            return true;
-        }
+        // 监听来自 profileMini.js 的按钮模式更新消息
+        if (message.type === "updateButtonMode") {
 
-        if (message.action === "toggleHighlight") {
-            const enabled = message.state;
-            document.documentElement.style.setProperty(
-                "--highlight-enabled",
-                enabled ? "1" : "0"
-            );
-            sendResponse({ success: true });
-            return true;
-        }
+            // 先保存到 chrome.storage，确保设置被持久化
+            chrome.storage.local.set({ arcButtonMode: message.mode }).then(() => {
 
+                // 检查 ark-ai 元素是否存在，只有存在时才更新显示
+                const hostElement = document.getElementById("ark-ai");
+                if (hostElement) {
+                    setButtonMode(message.mode);
+                }
+
+                sendResponse({ success: true });
+            }).catch(error => {
+                console.error('[resumeInterfaceTwo] 保存按钮模式失败:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+
+            return true; // 保持消息通道打开以支持异步 sendResponse
+        }
     });
 
     // ============================================================================
@@ -4163,14 +4173,9 @@
             return window.config.ALL_WEB_URLS.some((url) => currentUrl.href.startsWith(url));
         }
 
-        // 如果是官网，不显示填充UI
-        if (isOfficialWebsite()) {
-            // 监听校招页面的点击事件
-            setupCampusClickHandler();
-            // 监听历史记录消息
-            setupHistoryMessageHandler();
-            return;
-        }
+        // 无论是否为官网，都设置校招相关的监听器
+        setupCampusClickHandler();
+        setupHistoryMessageHandler();
 
         /**
          * 设置校招点击处理
@@ -4228,22 +4233,31 @@
 
             // 检测页面内容
             const checkContent = async () => {
-                const { arcButtonMode = "auto" } = await chrome.storage.local.get(["arcButtonMode"]);
+                const { arcButtonMode = "always" } = await chrome.storage.local.get(["arcButtonMode"]);
 
-                // 强制显示模式
-                if (arcButtonMode === "show") {
+                // 常驻模式或强制显示模式：直接显示，无需检测
+                if (arcButtonMode === "always" || arcButtonMode === "show") {
                     clearInterval(checkInterval);
                     resolve(true);
                     return;
                 }
 
-                // 检测简历相关关键词
-                const bodyText = document.body.innerText;
-                const hasResumeKeyword = /(?:^|[^\u4e00-\u9fa5])(简历|姓名)|(简历|姓名)(?:[^\u4e00-\u9fa5]|$)/.test(bodyText);
-
-                if (hasResumeKeyword) {
+                // 隐藏模式：也需要初始化UI（只是不显示），方便后续切换模式
+                if (arcButtonMode === "hidden") {
                     clearInterval(checkInterval);
                     resolve(true);
+                    return;
+                }
+
+                // 智能模式：检测简历相关关键词
+                if (arcButtonMode === "smart" || arcButtonMode === "auto") {
+                    const bodyText = document.body.innerText;
+                    const hasResumeKeyword = /(?:^|[^\u4e00-\u9fa5])(简历|姓名)|(简历|姓名)(?:[^\u4e00-\u9fa5]|$)/.test(bodyText);
+
+                    if (hasResumeKeyword) {
+                        clearInterval(checkInterval);
+                        resolve(true);
+                    }
                 }
             };
 

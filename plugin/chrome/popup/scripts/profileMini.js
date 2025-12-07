@@ -26,11 +26,11 @@
         // 环境配置
         environments: {
             development: {
-                API_RESUME_URL: "http://192.168.1.144:8080/api/resume/",
+                API_RESUME_URL: "http://192.168.1.144:8080/api/",
                 WEB_URL: "http://192.168.1.144:3000"
             },
             production: {
-                API_RESUME_URL: "https://test.applymind.cn/api/resume/",
+                API_RESUME_URL: "https://test.applymind.cn/api/",
                 WEB_URL: "https://test.applymind.cn"
             }
         }
@@ -65,9 +65,6 @@
         try {
             const config = getConfig();
             const url = `${config.API_RESUME_URL}${endpoint}`;
-
-            console.log(`[profileMini] 发送 API 请求: ${method} ${url}`);
-
             const options = {
                 method
             };
@@ -87,15 +84,15 @@
                 options: options
             });
 
-            console.log('[profileMini] API 响应:', response);
-
             if (response && response.error) {
+                console.error('[profileMini] 响应包含错误:', response.error);
                 throw new Error(response.error);
             }
 
             return response;
         } catch (error) {
             console.error('[profileMini] API 请求失败:', error);
+            console.error('[profileMini] 错误堆栈:', error.stack);
             throw error;
         }
     }
@@ -106,8 +103,6 @@
      */
     async function getResumeList() {
         try {
-            console.log('[profileMini] 开始从 storage 获取简历列表...');
-
             // 从 chrome.storage.local 读取简历列表
             const { resumeList, resumeListUpdateTime } = await chrome.storage.local.get(['resumeList', 'resumeListUpdateTime']);
 
@@ -115,11 +110,6 @@
                 console.warn('[profileMini] storage 中没有简历列表数据');
                 return [];
             }
-
-            console.log('[profileMini] 从 storage 获取到简历列表:', {
-                count: resumeList.length,
-                updateTime: resumeListUpdateTime ? new Date(resumeListUpdateTime).toLocaleString() : '未知'
-            });
 
             // 数据已经在智能填充页面处理过了，直接返回
             return resumeList;
@@ -143,9 +133,7 @@
      * 加载用户信息（昵称和头像）
      */
     function loadUserInfo() {
-        console.log('[profileMini] 开始加载用户信息...');
         chrome.storage.local.get(['auth'], function(result) {
-            console.log('[profileMini] 获取到的 auth 数据:', result.auth);
 
             // 先检查是否有 auth 和 token
             if (!result.auth || !result.auth.token) {
@@ -168,21 +156,16 @@
                 const nickname = userInfo.nickname || '未设置昵称';
                 const avatar = userInfo.avatar || 'logo-small.png';
 
-                console.log('[profileMini] 用户昵称:', nickname);
-                console.log('[profileMini] 用户头像:', avatar);
-
                 // 更新个人信息头像下方的昵称
                 const userNickname = document.querySelector('#user-nickname');
                 if (userNickname) {
                     userNickname.textContent = nickname;
-                    console.log('[profileMini] 用户昵称已更新');
                 }
 
                 // 更新简历卡片中的昵称
                 const resumeNickname = document.querySelector('#resume-nickname');
                 if (resumeNickname) {
                     resumeNickname.textContent = nickname;
-                    console.log('[profileMini] 简历昵称已更新');
                 }
 
                 // 更新头像
@@ -190,7 +173,6 @@
                 if (userAvatar) {
                     userAvatar.src = avatar;
                     userAvatar.style.display = 'block';
-                    console.log('[profileMini] 用户头像已更新');
                 }
             } else {
                 console.warn('[profileMini] 未找到用户信息');
@@ -202,7 +184,6 @@
      * 渲染简历数据
      */
     function renderResumeData() {
-        console.log('[profileMini] renderResumeData 被调用');
 
         if (resumeList.length === 0) {
             console.warn('[profileMini] 简历列表为空，显示提示信息');
@@ -211,7 +192,6 @@
         }
 
         const resume = resumeList[currentResumeIndex];
-        console.log('[profileMini] 当前渲染的简历:', resume);
 
         if (!resume) {
             console.error('[profileMini] 当前索引的简历不存在');
@@ -223,7 +203,6 @@
         if (resumeTypeElement) {
             resumeTypeElement.textContent = resume.resumeName || '简历名称';
             resumeTypeElement.style.color = ''; // 清除错误提示的颜色
-            console.log('[profileMini] 简历名称已更新:', resume.resumeName);
         }
 
         // 更新各个字段
@@ -233,7 +212,6 @@
                 const value = resume[field];
                 if (value && value !== '' && value !== 'null' && value !== null) {
                     element.textContent = value;
-                    console.log(`[profileMini] 字段 ${field} 已更新:`, value);
                 } else {
                     element.textContent = '-';
                 }
@@ -244,7 +222,6 @@
 
         // 更新下一个简历的预览
         updateNextResumePreview();
-        console.log('[profileMini] 简历数据渲染完成');
     }
 
     /**
@@ -323,23 +300,83 @@
     }
 
     /**
-     * 切换到下一份简历
+     * 从接口获取简历列表
      */
-    function switchToNextResume() {
-        if (resumeList.length <= 1) return;
+    async function fetchResumeListFromAPI() {
+        try {
+            const response = await apiRequest('autofill/resume/list', 'GET');
 
-        currentResumeIndex = (currentResumeIndex + 1) % resumeList.length;
-        renderResumeData();
+            if (!response || !response.success) {
+                console.error('[profileMini] 接口返回数据格式错误:', response);
+                return [];
+            }
+
+            const data = response;
+
+            // 处理简历数据，确保字段完整
+            const processedList = processResumeList(data.list);
+
+            // 保存到 storage，供下次使用
+            await chrome.storage.local.set({
+                resumeList: processedList,
+                resumeListUpdateTime: Date.now()
+            });
+
+            return processedList;
+        } catch (error) {
+            console.error('[profileMini] 从接口获取简历列表失败:', error);
+            return [];
+        }
+    }
+
+    function processResumeList(list) {
+        return list.map((resume, index) => {
+            // 处理coreSkills - 从JSON字符串转换为逗号分隔的字符串
+            let coreSkillsText = '';
+            if (resume.coreSkills) {
+                try {
+                    const skillsArray = JSON.parse(resume.coreSkills);
+                    if (Array.isArray(skillsArray)) {
+                        coreSkillsText = skillsArray.join(', ');
+                    }
+                } catch (e) {
+                    coreSkillsText = resume.coreSkills;
+                }
+            }
+
+            // 处理毕业年份 - 只显示年份
+            let graduationYearText = '';
+            if (resume.graduationYear) {
+                const year = resume.graduationYear.split('-')[0];
+                graduationYearText = year;
+            }
+
+            // 如果没有resumeName，生成一个默认名称
+            const resumeName = resume.resumeName || `简历 ${index + 1}`;
+
+            return {
+                id: resume.id,
+                name: resume.name || '未命名',
+                resumeName: resumeName,
+                school: resume.school || '',
+                educationDegreeText: resume.educationDegreeText || '',
+                major: resume.major || '',
+                graduationYear: graduationYearText,
+                phone: resume.phone || '',
+                email: resume.email || '',
+                jobIntention: resume.jobIntention || '',
+                expectedCity: resume.expectedCity || '',
+                coreSkills: coreSkillsText
+            };
+        });
     }
 
     /**
-     * 初始化简历数据（从 storage 读取）
-     * 注意：此页面不调用接口，而是从 chrome.storage.local 读取
-     * 数据由智能填充页面（resumeInterfaceTwo.js）负责更新
+     * 初始化简历数据
+     * 优先从 storage 读取，如果没有则调用接口获取
      */
     async function initResumeData() {
         try {
-            console.log('[profileMini] 开始初始化简历数据（从 storage 读取）...');
 
             // 先检查 auth 是否存在
             const { auth } = await chrome.storage.local.get(['auth']);
@@ -350,48 +387,64 @@
                 return;
             }
 
-            console.log('[profileMini] 认证信息已验证，开始从 storage 获取简历列表');
 
-            // 从 storage 获取简历列表（不调用接口）
+            // 从 storage 获取简历列表
             resumeList = await getResumeList();
-            console.log('[profileMini] 从 storage 获取到的简历列表数量:', resumeList.length);
+            // 如果 storage 中没有数据，则调用接口获取
+            if (!resumeList || resumeList.length === 0) {
+                resumeList = await fetchResumeListFromAPI();
 
-            if (resumeList.length === 0) {
-                console.warn('[profileMini] storage 中没有可用的简历数据');
-                console.info('[profileMini] 提示：请先访问智能填充页面以加载简历数据');
-                showNoResumeMessage();
-                return;
+                if (resumeList.length === 0) {
+                    console.warn('[profileMini] 接口也没有返回简历数据');
+                    showNoResumeMessage();
+                    return;
+                }
             }
 
             // 重置索引
             currentResumeIndex = 0;
 
             // 渲染简历数据
-            console.log('[profileMini] 开始渲染简历数据...');
             renderResumeData();
 
             // 绑定简历切换事件
             bindResumeSwitchEvents();
 
-            console.log('[profileMini] ✓ 简历数据初始化完成');
         } catch (error) {
             console.error('[profileMini] 初始化简历数据失败:', error);
         }
     }
 
     /**
-     * 绑定简历切换事件
+     * 绑定简历卡片点击事件 - 跳转到简历页面
      */
     function bindResumeSwitchEvents() {
         const bookWrapper = document.querySelector('.book-wrapper');
         if (bookWrapper) {
-            bookWrapper.addEventListener('click', () => {
-                // 只有在有多份简历时才切换
-                if (resumeList.length > 1) {
-                    switchToNextResume();
+            bookWrapper.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                try {
+                    const config = getConfig();
+                    const resumeUrl = `${config.WEB_URL}/resume`;
+
+                    // 在新标签页打开简历页面
+                    await chrome.tabs.create({
+                        url: resumeUrl,
+                        active: true
+                    });
+
+
+                    // 关闭弹窗
+                    window.close();
+                } catch (error) {
+                    console.error('[profileMini] 打开简历页面失败:', error);
+                    alert('打开简历页面失败，请重试');
                 }
             });
         }
+
     }
 
     /**
@@ -406,7 +459,6 @@
             window.close();
         });
 
-        console.log('[profileMini] 关闭按钮已初始化');
     }
 
     /**
@@ -432,7 +484,6 @@
                         url: loginUrl,
                         active: true
                     });
-                    console.log('[profileMini] 用户未登录，已打开登录页面:', loginUrl);
                 } else {
                     // 已登录，打开官网首页
                     const webUrl = config.WEB_URL;
@@ -440,7 +491,6 @@
                         url: webUrl,
                         active: true
                     });
-                    console.log('[profileMini] 已打开官网:', webUrl);
                 }
 
                 // 关闭弹窗
@@ -451,7 +501,6 @@
             }
         });
 
-        console.log('[profileMini] 设置按钮已初始化');
     }
 
     /**
@@ -466,18 +515,42 @@
             e.stopPropagation();
 
             // 确认对话框
-            if (!confirm('确定要退出登录吗？')) {
+            if (!confirm('确定要退出登录吗？退出登录后，您的投递记录也将会被清除！')) {
                 return;
             }
 
             try {
                 // 发送退出登录消息到 background.js
-                const response = await chrome.runtime.sendMessage({
-                    type: 'logout'
-                });
+                const response = await apiRequest('auth/logout', 'POST');
 
-                if (response?.status === 'success') {
+                if (response?.success) {
+
+
                     alert('已成功退出登录');
+                    // 清空本地存储中的 auth 数据
+                    await chrome.storage.local.remove('auth');
+                    // 清空本地存储中的 token 和 userInfo 数据
+                    localStorage.removeItem('auth');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userInfo');
+                    // 清空本地存储中的数据
+                    await chrome.storage.local.remove('resumeList');
+                    await chrome.storage.local.remove('applicationRecords');
+                    await chrome.storage.local.remove('currentResumeIndex');
+                    await chrome.storage.local.remove('historyTabs');
+                    await chrome.storage.local.remove('lastResumeListLength');
+                    await chrome.storage.local.remove('resumeListUpdateTime');
+                    await chrome.storage.local.remove('tabSourceMap');
+                    await chrome.storage.local.remove('config');
+
+                    // 发送消息到 background.js，清空所有官网页面的 localStorage
+                    try {
+                        await chrome.runtime.sendMessage({
+                            type: 'clearWebsiteLocalStorage'
+                        });
+                    } catch (error) {
+                        console.error('[profileMini] 清空网站 localStorage 失败:', error);
+                    }
 
                     // 关闭弹窗
                     window.close();
@@ -491,7 +564,6 @@
             }
         });
 
-        console.log('[profileMini] 退出登录按钮已初始化');
     }
 
     /**
@@ -515,7 +587,6 @@
                     active: true
                 });
 
-                console.log('[profileMini] 已打开登录页面:', loginUrl);
 
                 // 关闭弹窗
                 window.close();
@@ -525,7 +596,87 @@
             }
         });
 
-        console.log('[profileMini] 登录按钮已初始化');
+    }
+
+    /**
+     * 初始化常驻设置按钮
+     */
+    async function initResidentSettingButtons() {
+        const buttons = document.querySelectorAll('.resident-btn');
+        if (!buttons || buttons.length === 0) {
+            console.warn('[profileMini] 未找到常驻设置按钮');
+            return;
+        }
+
+
+        // 从 storage 读取当前设置
+        const { arcButtonMode = 'always' } = await chrome.storage.local.get(['arcButtonMode']);
+
+        // 更新按钮的 active 状态
+        updateResidentButtonsState(arcButtonMode);
+
+        // 为每个按钮绑定点击事件
+        buttons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const mode = button.getAttribute('data-mode');
+
+                // 更新按钮状态
+                updateResidentButtonsState(mode);
+
+                // 保存到 storage
+                await chrome.storage.local.set({ arcButtonMode: mode });
+
+                // 通知所有标签页更新按钮显示
+                await notifyButtonModeChange(mode);
+            });
+        });
+
+    }
+
+    /**
+     * 更新常驻设置按钮的状态
+     * @param {string} mode - 当前模式 (always/smart/hidden)
+     */
+    function updateResidentButtonsState(mode) {
+        const buttons = document.querySelectorAll('.resident-btn');
+        buttons.forEach(button => {
+            const buttonMode = button.getAttribute('data-mode');
+            if (buttonMode === mode) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * 通知所有标签页更新按钮显示模式
+     * @param {string} mode - 新的显示模式
+     */
+    async function notifyButtonModeChange(mode) {
+        try {
+
+            // 查询所有标签页
+            const tabs = await chrome.tabs.query({});
+
+            // 向每个标签页发送消息
+            const promises = tabs.map(tab =>
+                chrome.tabs.sendMessage(tab.id, {
+                    type: 'updateButtonMode',
+                    mode: mode
+                }).catch(error => {
+                    // 某些标签页可能没有 content script，忽略错误
+                    return null;
+                })
+            );
+
+            await Promise.all(promises);
+        } catch (error) {
+            console.error('[profileMini] 通知标签页更新按钮模式失败:', error);
+        }
     }
 
     /**
@@ -538,7 +689,6 @@
         const loggedInUI = document.getElementById('logged-in');
 
         if (!auth || !auth.token) {
-            console.log('[profileMini] 用户未登录，显示登录提示');
 
             // 显示未登录UI，隐藏已登录UI
             if (notLoggedInUI) {
@@ -555,7 +705,6 @@
                 logoutBtn.title = '请先登录';
             }
         } else {
-            console.log('[profileMini] 用户已登录，显示个人信息');
 
             // 隐藏未登录UI，显示已登录UI
             if (notLoggedInUI) {
@@ -579,38 +728,26 @@
      */
     async function initialize() {
         try {
-            console.log('[profileMini] 页面加载完成，开始初始化...');
-            console.log('[profileMini] Chrome API 可用性检查:', {
-                storage: typeof chrome !== 'undefined' && typeof chrome.storage !== 'undefined',
-                runtime: typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined',
-                tabs: typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined'
-            });
 
             // 初始化各个组件
-            console.log('[profileMini] 初始化关闭按钮...');
             initCloseButton();
 
-            console.log('[profileMini] 初始化设置按钮...');
             initSettingsButton();
 
-            console.log('[profileMini] 初始化退出登录按钮...');
             initLogoutButton();
 
-            console.log('[profileMini] 初始化登录按钮...');
             initLoginButton();
 
+            await initResidentSettingButtons();
+
             // 根据登录状态更新UI
-            console.log('[profileMini] 根据登录状态更新UI...');
             await updateUIByAuthStatus();
 
             // 加载数据
-            console.log('[profileMini] 加载用户信息...');
             loadUserInfo();
 
-            console.log('[profileMini] 初始化简历数据...');
             await initResumeData();
 
-            console.log('[profileMini] ✓ 初始化完成');
         } catch (error) {
             console.error('[profileMini] ✗ 初始化失败:', error);
             console.error('[profileMini] 错误堆栈:', error.stack);
@@ -630,20 +767,16 @@
      */
     if (document.readyState === 'loading') {
         // DOM 还在加载中，等待 DOMContentLoaded 事件
-        console.log('[profileMini] DOM 正在加载，等待 DOMContentLoaded 事件...');
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('[profileMini] DOMContentLoaded 事件触发');
             initialize();
         });
     } else {
         // DOM 已经加载完成，直接执行初始化
-        console.log('[profileMini] DOM 已就绪 (readyState:', document.readyState, ')，立即执行初始化');
         initialize();
     }
 
     // 添加窗口加载完成事件，作为备用
-    window.addEventListener('load', () => {
-        console.log('[profileMini] window.onload 事件触发（作为备用检查）');
-    });
+    // window.addEventListener('load', () => {
+    // });
 
 })();
