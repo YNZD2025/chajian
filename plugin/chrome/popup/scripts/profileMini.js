@@ -599,12 +599,12 @@
     }
 
     /**
-     * 初始化常驻设置按钮
+     * 初始化常驻设置按钮（滑钮组件）
      */
     async function initResidentSettingButtons() {
-        const buttons = document.querySelectorAll('.resident-btn');
-        if (!buttons || buttons.length === 0) {
-            console.warn('[profileMini] 未找到常驻设置按钮');
+        const toggleOptions = document.querySelectorAll('.toggle-option');
+        if (!toggleOptions || toggleOptions.length === 0) {
+            console.warn('[profileMini] 未找到常驻设置滑钮选项');
             return;
         }
 
@@ -612,18 +612,18 @@
         // 从 storage 读取当前设置
         const { arcButtonMode = 'always' } = await chrome.storage.local.get(['arcButtonMode']);
 
-        // 更新按钮的 active 状态
+        // 更新滑钮的状态和位置
         updateResidentButtonsState(arcButtonMode);
 
-        // 为每个按钮绑定点击事件
-        buttons.forEach(button => {
-            button.addEventListener('click', async (e) => {
+        // 为每个选项绑定点击事件
+        toggleOptions.forEach(option => {
+            option.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const mode = button.getAttribute('data-mode');
+                const mode = option.getAttribute('data-mode');
 
-                // 更新按钮状态
+                // 更新滑钮状态
                 updateResidentButtonsState(mode);
 
                 // 保存到 storage
@@ -637,17 +637,32 @@
     }
 
     /**
-     * 更新常驻设置按钮的状态
+     * 更新常驻设置滑钮的状态
      * @param {string} mode - 当前模式 (always/smart/hidden)
      */
     function updateResidentButtonsState(mode) {
-        const buttons = document.querySelectorAll('.resident-btn');
-        buttons.forEach(button => {
-            const buttonMode = button.getAttribute('data-mode');
-            if (buttonMode === mode) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
+        const container = document.getElementById('modeToggle');
+        if (!container) {
+            console.warn('[profileMini] 滑钮容器未找到');
+            return;
+        }
+
+        const options = container.querySelectorAll('.toggle-option');
+        if (!options || options.length === 0) {
+            console.warn('[profileMini] 滑钮选项未找到');
+            return;
+        }
+
+        // 移除所有 active 状态
+        options.forEach(opt => opt.classList.remove('active'));
+
+        // 找到对应 mode 的选项并添加 active，同时更新滑块位置
+        options.forEach(opt => {
+            if (opt.getAttribute('data-mode') === mode) {
+                opt.classList.add('active');
+                // 更新滑块位置
+                const index = parseInt(opt.getAttribute('data-index'));
+                container.style.setProperty('--current-pos', index);
             }
         });
     }

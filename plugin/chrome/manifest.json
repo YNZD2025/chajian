@@ -38,8 +38,10 @@
         "popup/settings.html",
         "popup/profileMini.html",
         "popup/edit-resume.html",
+        "popup/privacy-settings.html",
         "popup/help.html",
         "popup/feedback.html",
+        "popup/about.html",
         "popup/logo-small.png",
         "popup/beian-icon.png",
         "popup/styles/common.css",
@@ -52,7 +54,6 @@
         "popup/webfonts/fa-solid-900.woff2",
         "popup/webfonts/fa-regular-400.woff2",
         "popup/webfonts/fa-brands-400.woff2",
-        "case/css/resumeInterface.css",
         "icons/icon128.png"
       ]
     }

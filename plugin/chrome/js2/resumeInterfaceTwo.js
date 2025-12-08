@@ -119,9 +119,103 @@
         const button = document.createElement("button");
         button.id = "logo-button";
 
-        const img = document.createElement("img");
-        img.src = chrome.runtime.getURL("popup/logo-small.png");
-        button.appendChild(img);
+        // 创建 SVG 动画容器
+        const animationContainer = document.createElement("div");
+        animationContainer.className = "character-container";
+
+        const character = document.createElement("div");
+        character.className = "character";
+
+        // 插入 SVG 动画
+        character.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1008 1024">
+                <!-- 定义渐变和滤镜 -->
+                <defs>
+                    <!-- 主体颜色渐变 -->
+                    <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#8FD9C6;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#6EC5B2;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#5AB09D;stop-opacity:1" />
+                    </linearGradient>
+                    <radialGradient id="shadowGradient" cx="50%" cy="5%">
+                        <stop offset="0%" style="stop-color:#BFBFBE;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#A7A7A7;stop-opacity:1" />
+                    </radialGradient>
+                    <radialGradient id="lightGradient" cx="50%" cy="20%">
+                        <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.5" />
+                        <stop offset="40%" style="stop-color:#F5F5F5;stop-opacity:0.3" />
+                        <stop offset="70%" style="stop-color:#E8E8E7;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#D8D8D7;stop-opacity:1" />
+                    </radialGradient>
+                    <radialGradient id="eyeGradient" cx="40%" cy="40%">
+                        <stop offset="0%" style="stop-color:#54998c;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#54998c;stop-opacity:1" />
+                    </radialGradient>
+                    <linearGradient id="mouthGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#E84A3D;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#D43022;stop-opacity:1" />
+                    </linearGradient>
+                    <radialGradient id="starGradient">
+                        <stop offset="0%" style="stop-color:#FFF44F;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FFD700;stop-opacity:1" />
+                    </radialGradient>
+                    <filter id="shadow3d">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                        <feOffset dx="2" dy="4" result="offsetblur"/>
+                        <feComponentTransfer>
+                            <feFuncA type="linear" slope="0.5"/>
+                        </feComponentTransfer>
+                        <feMerge>
+                            <feMergeNode/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <filter id="innerShadow">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                        <feOffset dx="0" dy="2" result="offsetblur"/>
+                        <feFlood flood-color="#000000" flood-opacity="0.2"/>
+                        <feComposite in2="offsetblur" operator="in"/>
+                        <feMerge>
+                            <feMergeNode/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <!-- 身体主体 -->
+                <path fill="url(#bodyGradient)" filter="url(#shadow3d)" d="M196.709 442.047C205.565 422.21 217.462 399.957 228.194 380.982C277.435 293.915 342.079 212.862 423.366 153.691C492.836 103.121 580.161 64.9773 667.685 78.8524C714.966 86.3477 778.018 120.667 806.202 159.683C807.225 159.074 808.268 158.498 809.327 157.955C788.162 223.71 779.837 201.053 788.262 178.587C768.94 153.17 732.111 132.178 701.067 149.129C668.274 167.035 666.796 207.938 680.723 238.697C690.925 261.23 706.287 282.107 720.455 302.267C727.97 313.096 735.33 324.032 742.532 335.072C764.66 368.91 780.727 399.014 799.444 434.417L800.115 434.83C801.721 435.801 806.097 437.683 808.012 438.563C818.632 443.446 827.281 449.98 831.114 461.594C836.018 465.09 844.38 471.534 847.418 477.291C862.545 505.963 865.584 542.676 871.927 574.111C874.562 587.172 872.376 597.179 865.557 607.672C873.519 626.055 864.512 631.22 850.492 640.071C850.559 650.891 850.728 661.111 849.902 671.917C844.282 748.679 811.63 820.963 757.747 875.923C690.048 944.475 597.968 976.274 502.788 976.453C403.987 976.638 313.045 948.214 241.917 877.584C184.209 819.774 150.462 742.303 147.432 660.676C146.665 657.205 147 647.996 147.059 644.077C132.121 637.353 123.916 627.739 133.758 611.597C133.271 611.01 132.799 610.411 132.342 609.8C126.207 601.512 125.495 592.005 127.365 581.765C133.074 550.505 135.972 514.904 150.485 486.38C153.837 479.792 162.519 473.184 168.19 468.911C170.809 458.974 180.246 451.85 188.637 446.891C191.25 445.346 194.369 443.907 196.709 442.047Z"/>
+                <!-- 触角 -->
+                <g class="antenna">
+                    <path fill="url(#bodyGradient)" filter="url(#shadow3d)" d="M809.327 157.955C817.956 153.479 829.519 152.404 838.754 155.417C848.817 158.786 857.12 166.03 861.824 175.542C866.752 185.507 867.134 196.869 863.498 207.316C859.959 217.663 852.365 226.125 842.46 230.758C832.699 235.446 821.457 235.988 811.291 232.262C788.162 223.71 779.837 201.053 788.262 178.587C793.5 168.5 800.5 162.5 809.327 157.955Z"/>
+                </g>
+                <!-- 底部阴影 -->
+                <path fill="url(#shadowGradient)" filter="url(#innerShadow)" d="M147.502 644.425C152.839 646.83 158.221 649.137 163.644 651.344C210.312 669.825 265.547 685.02 314.507 696.364C341.192 702.186 368.665 707.441 395.932 707.799C424.309 708.172 437.089 697.298 456.611 678.723C465.845 669.937 479.767 660.586 491.519 655.339C536.057 635.451 558.571 687.872 593.623 701.893C608.478 707.85 624.347 706.438 640.066 704.62C679.411 700.068 719.062 690.773 756.884 678.943C773.407 673.648 789.754 667.822 805.901 661.472C816.07 657.358 826.057 652.807 835.833 647.833C838.586 646.418 847.901 641.124 849.915 640.301L850.492 640.071C850.559 650.891 850.728 661.111 849.902 671.917C844.282 748.679 811.63 820.963 757.747 875.923C690.048 944.475 597.968 976.274 502.788 976.453C403.987 976.638 313.045 948.214 241.917 877.584C184.209 819.774 150.462 742.303 147.432 660.676C147.614 655.574 147.488 649.592 147.502 644.425Z"/>
+                <!-- 嘴巴 -->
+                <path class="mouth" fill="url(#mouthGradient)" filter="url(#shadow3d)" d="M566.503 709.565C569.322 709.508 574.163 710.13 576.014 712.368C582.445 720.144 570.565 731.719 565.945 736.413C551.211 751.288 531.133 759.642 510.196 759.609C484.501 759.766 465.111 750.624 447.126 732.843C444.164 729.567 437.762 722.263 439.701 718.33C447.626 702.257 456.671 715.975 461.252 721.266C483.47 746.768 528.578 748.83 552.41 724.509C557.158 719.663 560.593 712.77 566.503 709.565Z"/>
+                <!-- 中间阴影层 -->
+                <path fill="url(#shadowGradient)" d="M196.709 442.047C205.565 422.21 217.462 399.957 228.194 380.982C277.435 293.915 342.079 212.862 423.366 153.691C492.836 103.121 580.161 64.9773 667.685 78.8524C714.966 86.3477 778.018 120.667 806.202 159.683C807.225 159.074 808.268 158.498 809.327 157.955C817.956 153.479 829.519 152.404 838.754 155.417C848.817 158.786 857.12 166.03 861.824 175.542C866.752 185.507 867.134 196.869 863.498 207.316C859.959 217.663 852.365 226.125 842.46 230.758C832.699 235.446 821.457 235.988 811.291 232.262C788.162 223.71 779.837 201.053 788.262 178.587C768.94 153.17 732.111 132.178 701.067 149.129C668.274 167.035 666.796 207.938 680.723 238.697C690.925 261.23 706.287 282.107 720.455 302.267C727.97 313.096 735.33 324.032 742.532 335.072C764.66 368.91 780.727 399.014 799.444 434.417C793.267 433.63 782.986 429.132 776.184 427.428C758.097 423 739.747 419.725 721.245 417.621C675.446 412.142 625.886 410.798 579.868 410.375L487.5 410.251C418.271 410.831 347.58 410.935 278.826 420.386C259.23 423.08 239.916 427.562 220.896 432.959C215.573 434.47 199.634 441.557 196.709 442.047Z"/>
+                <!-- 亮部高光层 -->
+                <path fill="url(#lightGradient)" d="M133.758 611.597C148.258 623.831 168.96 630.398 186.561 637.034C235.587 655.518 371.536 697.026 419.672 681.259C426.648 678.974 432.472 674.559 438.202 670.107C459.01 653.939 479.5 629.213 507.792 627.759C531.892 626.52 548.703 642.902 565.285 657.942C587.371 677.973 599.737 683.504 630.067 682.009C694.077 678.854 775.666 656.133 833.239 627.493C844.734 621.775 856.753 617.39 865.557 607.672C873.519 626.055 864.512 631.22 850.492 640.071L849.915 640.301C847.901 641.124 838.586 646.418 835.833 647.833C826.057 652.807 816.07 657.358 805.901 661.472C789.754 667.822 773.407 673.648 756.884 678.943C719.062 690.773 679.411 700.068 640.066 704.62C624.347 706.438 608.478 707.85 593.623 701.893C558.571 687.872 536.057 635.451 491.519 655.339C479.767 660.586 465.845 669.937 456.611 678.723C437.089 697.298 424.309 708.172 395.932 707.799C368.665 707.441 341.192 702.186 314.507 696.364C265.547 685.02 210.312 669.825 163.644 651.344C158.221 649.137 152.839 646.83 147.502 644.425C147.488 649.592 147.614 655.574 147.432 660.676C146.665 657.205 147 647.996 147.059 644.077C132.121 637.353 123.916 627.739 133.758 611.597Z"/>
+                <!-- 亮部装饰层 -->
+                <path fill="url(#lightGradient)" d="M196.709 442.047C199.634 441.557 215.573 434.47 220.896 432.959C239.916 427.562 259.23 423.08 278.826 420.386C347.58 410.935 418.271 410.831 487.5 410.251L579.868 410.375C625.886 410.798 675.446 412.142 721.245 417.621C739.747 419.725 758.097 423 776.184 427.428C782.986 429.132 793.267 433.63 799.444 434.417L800.115 434.83C801.721 435.801 806.097 437.683 808.012 438.563C818.632 443.446 827.281 449.98 831.114 461.594C820.179 456.902 808.94 452.014 797.395 449.066C758.078 439.028 716.584 436.548 676.173 434.764C629.055 433.153 581.908 432.524 534.763 432.878C522.679 432.958 510.588 433.385 498.502 433.457C429.193 433.868 359.239 432.51 290.118 438.391C252.547 441.587 200.667 448.116 168.19 468.911C170.809 458.974 180.246 451.85 188.637 446.891C191.25 445.346 194.369 443.907 196.709 442.047Z"/>
+                <!-- 眼睛腮红区域 -->
+                <path fill="url(#eyeGradient)" filter="url(#shadow3d)" d="M516.729 456.264C557.699 455.631 601.857 457.135 642.926 458.603C671.512 459.624 716.843 461.294 743.986 467.878C749.118 469.137 754.031 471.163 758.559 473.887C777.734 485.278 784.544 503.972 790.081 524.998C798.068 555.331 801.203 600.534 773.217 621.801C756.499 634.506 728.874 641.949 708.318 646.935C715.014 637.471 719.516 626.633 721.495 615.21C724.786 595.327 720.001 574.953 708.203 558.614C686.176 527.619 647.825 521.798 617.043 543.819C601.31 555.182 590.65 572.252 587.345 591.375C582.897 618.693 594.19 635.03 609.067 655.746C564.849 634.556 549.706 593.086 492.891 604.921C481.217 608.156 467.805 613.753 458.145 621.053C437.055 636.993 432.335 647.685 406.38 657.539C415.949 647.369 425.114 630.779 427.697 616.967C431.203 597.485 426.7 577.413 415.207 561.297C393.274 529.971 352.42 523.925 322.125 546.368C288.847 571.02 283.458 617.667 307.658 650.315C302.012 648.639 295.56 647.637 289.801 646.052C270.154 640.645 247.754 634.067 232.85 619.635C220.596 607.771 213.64 584.864 213.902 567.897C214.291 542.61 221.993 502.919 239.667 484.166C244.442 479.099 258.579 471.018 265.222 469.464C299.295 461.497 339.045 460.576 373.852 459.356C421.458 457.553 469.09 456.522 516.729 456.264Z"/>
+                <!-- 左眼 -->
+                <g class="eye-left">
+                    <path class="eye-circle-left" fill="url(#eyeGradient)" filter="url(#shadow3d)" d="M361.31 561.203C369.854 560.652 378.872 563.646 385.565 569.037C410.05 588.762 407.618 632.159 379.328 647.272C374.158 650.034 369.675 650.962 363.874 651.522C354.15 651.595 345.18 649.329 337.55 643.114C328.506 635.63 322.739 624.913 321.476 613.243C319.01 588.253 335.192 563.374 361.31 561.203Z"/>
+                    <path class="eye-wink-left" fill="none" stroke="url(#eyeGradient)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" d="M340 575 L370 605 L340 635"/>
+                </g>
+                
+                <polygon class="star star-left" fill="url(#starGradient)" filter="url(#shadow3d)" points="320,540 325,555 340,555 328,565 333,580 320,570 307,580 312,565 300,555 315,555"/>
+                <!-- 右眼 -->
+                <g class="eye-right">
+                    <path fill="url(#eyeGradient)" filter="url(#shadow3d)" d="M651.151 558.644C672.884 556.213 689.776 574.256 693.175 594.525C695.425 607.887 692.196 621.592 684.217 632.543C677.361 641.969 668.693 647.188 657.258 648.982C634.535 649.961 618.159 634.913 614.584 612.797C612.419 599.965 615.485 586.8 623.097 576.245C630.08 566.612 639.387 560.474 651.151 558.644Z"/>
+                </g>
+                
+            </svg>
+        `;
+
+        animationContainer.appendChild(character);
+        button.appendChild(animationContainer);
 
         shadowRoot.appendChild(button);
 
@@ -214,7 +308,8 @@
 
         // 监听鼠标按下事件
         element.addEventListener("mousedown", (event) => {
-            if (event.target === element || event.target === element.querySelector("img")) {
+            // 允许在按钮元素、SVG 或其子元素上拖拽
+            if (event.target === element || element.contains(event.target)) {
                 isDragging = true;
                 hasMoved = false;
 
@@ -1023,15 +1118,22 @@
 
         // settings.html - 设置页面
         if (pageHtml === 'settings.html') {
-            // 绑定"修改简历信息"按钮
-            // 先尝试多种选择器
-            let editResumeLink = resumeWindowContainer.querySelector('a[href="edit-resume.html"]');
-            if (!editResumeLink) {
-                editResumeLink = resumeWindowContainer.querySelector('.settings-item');
+            // 绑定"修改简历信息"按钮 - 使用文本内容精确查找
+            let editResumeLink = null;
+            const allSettingsItems = resumeWindowContainer.querySelectorAll('.settings-item');
+            for (const item of allSettingsItems) {
+                const label = item.querySelector('.settings-item-label');
+                if (label && label.textContent.trim() === '修改简历信息') {
+                    editResumeLink = item;
+                    break;
+                }
             }
+
             if (editResumeLink) {
+                console.log('[settings] 找到修改简历信息按钮');
                 // 移除原有的href属性，防止页面跳转
                 editResumeLink.removeAttribute('href');
+                editResumeLink.removeAttribute('data-href');
                 editResumeLink.setAttribute('href', 'javascript:void(0)');
 
                 // 使用克隆节点移除旧的事件监听器，防止重复绑定
@@ -1041,6 +1143,7 @@
                 newEditResumeLink.addEventListener('click', async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    console.log('[settings] 修改简历信息按钮被点击');
                     // 使用配置文件中的 WEB_URL（已经包含 /resume 路径）
                     const resumeUrl = window.config?.WEB_URL || 'http://localhost:3000/resume';
                     // 方式1: 通过 background script 打开新标签页
@@ -1051,7 +1154,7 @@
                         });
 
                         if (response?.success) {
-
+                            console.log('[settings] 成功打开简历编辑页面');
                         } else {
                             throw new Error('background 返回失败');
                         }
@@ -1062,7 +1165,7 @@
                         try {
                             const newWindow = window.open(resumeUrl, '_blank');
                             if (newWindow) {
-
+                                console.log('[settings] 通过 window.open 打开成功');
                             } else {
                                 console.error('✗ 新标签页被阻止');
                                 alert('请允许浏览器弹出窗口以打开简历编辑页面');
@@ -1076,6 +1179,71 @@
             } else {
                 console.error('✗ 未找到修改简历信息按钮');
             }
+
+            // 绑定所有设置页面的导航链接（不包括 edit-resume.html，它由上面专门处理）
+            const settingsLinks = [
+                { selector: 'a[data-href="privacy-settings.html"]', page: 'privacy-settings.html' },
+                { selector: 'a[data-href="feedback.html"]', page: 'feedback.html' },
+                { selector: 'a[data-href="help.html"]', page: 'help.html' },
+                { selector: 'a[data-href="about.html"]', page: 'about.html' }
+            ];
+
+            settingsLinks.forEach(({ selector, page }) => {
+                const link = resumeWindowContainer.querySelector(selector);
+                if (link) {
+                    // 使用克隆节点移除旧的事件监听器
+                    const newLink = link.cloneNode(true);
+                    link.parentNode.replaceChild(newLink, link);
+
+                    newLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('[settings] Navigation link clicked:', page);
+                        navigateToPage(page);
+                    });
+                }
+            });
+
+            // 绑定"清理缓存"按钮 - 使用文本内容查找
+            const settingsItems = resumeWindowContainer.querySelectorAll('.settings-item');
+            settingsItems.forEach(item => {
+                // 跳过包含 toggle-switch 的 item
+                if (item.querySelector('.toggle-switch')) {
+                    return;
+                }
+
+                const label = item.querySelector('.settings-item-label');
+                if (label && label.textContent.includes('清理缓存')) {
+                    item.removeAttribute('onclick');
+                    const newItem = item.cloneNode(true);
+                    item.parentNode.replaceChild(newItem, item);
+
+                    newItem.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('缓存已清理');
+                    });
+                }
+            });
+
+            // 最后绑定 toggle-switch 切换功能
+            const toggleSwitches = resumeWindowContainer.querySelectorAll('.toggle-switch');
+            toggleSwitches.forEach(toggle => {
+                // 移除 onclick 属性
+                toggle.removeAttribute('onclick');
+
+                // 使用克隆节点移除旧的事件监听器
+                const newToggle = toggle.cloneNode(true);
+                toggle.parentNode.replaceChild(newToggle, toggle);
+
+                // 绑定新的事件监听器
+                newToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.classList.toggle('active');
+                    console.log('[settings] Toggle switch clicked, active:', this.classList.contains('active'));
+                });
+            });
 
             // 绑定退出登录按钮
             const logoutBtn = resumeWindowContainer.querySelector('.btn-danger');
@@ -1117,24 +1285,155 @@
             }
         }
 
-        // 绑定右上角设置按钮（或关闭按钮）
-        const settingsBtn = resumeWindowContainer.querySelector(".liquid-close");
-        if (settingsBtn) {
-            // 移除原有的内联事件属性，防止页面跳转
-            settingsBtn.removeAttribute('onclick');
-            settingsBtn.removeAttribute('href');
-            settingsBtn.setAttribute('href', 'javascript:void(0)');
+        // privacy-settings.html - 隐私设置页面
+        if (pageHtml === 'privacy-settings.html') {
+            // 先绑定"清除填充记录"和"删除所有数据"按钮 - 使用文本内容查找
+            // 注意：只处理不包含 toggle-switch 的 settings-item
+            const privacyItems = resumeWindowContainer.querySelectorAll('.settings-item');
+            privacyItems.forEach(item => {
+                // 跳过包含 toggle-switch 的 item
+                if (item.querySelector('.toggle-switch')) {
+                    return;
+                }
 
-            settingsBtn.addEventListener("click", (e) => {
+                const label = item.querySelector('.settings-item-label');
+                if (label) {
+                    item.removeAttribute('onclick');
+                    const newItem = item.cloneNode(true);
+                    item.parentNode.replaceChild(newItem, item);
+
+                    if (label.textContent.includes('清除填充记录')) {
+                        newItem.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            alert('填充记录已清除');
+                        });
+                    } else if (label.textContent.includes('删除所有数据')) {
+                        newItem.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (confirm('确定要删除所有数据吗？')) {
+                                alert('数据已删除');
+                            }
+                        });
+                    }
+                }
+            });
+
+            // 然后绑定 toggle-switch 切换功能
+            const toggleSwitches = resumeWindowContainer.querySelectorAll('.toggle-switch');
+            toggleSwitches.forEach(toggle => {
+                // 移除 onclick 属性
+                toggle.removeAttribute('onclick');
+
+                // 使用克隆节点移除旧的事件监听器
+                const newToggle = toggle.cloneNode(true);
+                toggle.parentNode.replaceChild(newToggle, toggle);
+
+                // 绑定新的事件监听器
+                newToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.classList.toggle('active');
+                    console.log('[privacy-settings] Toggle switch clicked, active:', this.classList.contains('active'));
+                });
+            });
+        }
+
+        // feedback.html - 反馈页面
+        if (pageHtml === 'feedback.html') {
+            // 绑定反馈类型按钮
+            const feedbackTypeBtns = resumeWindowContainer.querySelectorAll('.feedback-type-btn');
+            feedbackTypeBtns.forEach(btn => {
+                btn.removeAttribute('onclick');
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // 移除所有按钮的 active 类
+                    feedbackTypeBtns.forEach(b => b.classList.remove('active'));
+                    // 给当前按钮添加 active 类
+                    this.classList.add('active');
+                });
+            });
+
+            // 绑定提交反馈按钮
+            const submitBtn = resumeWindowContainer.querySelector('.btn-primary');
+            if (submitBtn) {
+                submitBtn.removeAttribute('onclick');
+                const newSubmitBtn = submitBtn.cloneNode(true);
+                submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+                newSubmitBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('反馈已提交！');
+                });
+            }
+        }
+
+        // help.html - 帮助中心页面
+        if (pageHtml === 'help.html') {
+            // 绑定手风琴展开/收起功能
+            const helpItems = resumeWindowContainer.querySelectorAll('.help-item');
+            helpItems.forEach(item => {
+                item.removeAttribute('onclick');
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.classList.toggle('expanded');
+                });
+            });
+
+            // 绑定"提交反馈"按钮（跳转到反馈页面）
+            // 在 help.html 中是 <a href="feedback.html"><button>...</button></a>
+            const feedbackLinks = resumeWindowContainer.querySelectorAll('a');
+            feedbackLinks.forEach(link => {
+                const dataHref = link.getAttribute('data-href');
+                if (dataHref === 'feedback.html') {
+                    const newLink = link.cloneNode(true);
+                    link.parentNode.replaceChild(newLink, link);
+
+                    newLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigateToPage('feedback.html');
+                    });
+                }
+            });
+        }
+
+        // 绑定右上角按钮（关闭/返回/设置按钮）
+        const topRightBtn = resumeWindowContainer.querySelector(".liquid-close");
+        if (topRightBtn) {
+            // 移除原有的内联事件属性，防止页面跳转
+            topRightBtn.removeAttribute('onclick');
+
+            // 检查是否有 data-href 属性（在 HTML 清理时保存的原始 href）
+            const dataHref = topRightBtn.getAttribute('data-href');
+            topRightBtn.setAttribute('href', 'javascript:void(0)');
+
+            // 使用克隆节点移除旧的事件监听器，防止重复绑定
+            const newTopRightBtn = topRightBtn.cloneNode(true);
+            topRightBtn.parentNode.replaceChild(newTopRightBtn, topRightBtn);
+
+            newTopRightBtn.addEventListener("click", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // 判断按钮图标类型
-                const icon = settingsBtn.querySelector('i');
+
+                // 判断按钮功能
+                const icon = newTopRightBtn.querySelector('i');
+
                 if (icon && icon.classList.contains('fa-times')) {
-                    // 关闭图标 - 关闭整个窗口
-                    toggleWindow(false);
+                    // 关闭图标 (×)
+                    if (dataHref && dataHref !== 'javascript:void(0)' && dataHref !== '#') {
+                        // 如果有 data-href，说明是子页面的返回按钮，跳转到对应页面
+                        navigateToPage(dataHref);
+                    } else {
+                        // 否则关闭整个窗口
+                        toggleWindow(false);
+                    }
                 } else {
-                    // 设置图标 - 跳转到设置页面
+                    // 设置图标 (⚙) - 跳转到设置页面
                     navigateToPage('settings.html');
                 }
             });
@@ -1431,38 +1730,192 @@
                     bottom: 40px;
                     right: 40px;
                     z-index: 100000000;
-                    background-color: #111;
-                    border: 1px solid #222;
-                    border-radius: 20px;
+                    background-color: transparent;
+                    border: none;
+                    border-radius: 50%;
                     cursor: pointer !important;
-                    width: 50px;
-                    height: 50px;
+                    width: 80px;
+                    height: 80px;
                     padding: 0;
-                    overflow: hidden;
-                    transition: display 0.2s ease;
-                    animation: logo-button-breathe 3s ease-in-out infinite;
+                    overflow: visible;
+                    transition: transform 0.3s ease;
                 }
 
                 #logo-button:hover {
                     cursor: pointer !important;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                    transform: scale(1.05);
                 }
 
-                #logo-button img {
+                #logo-button .character-container {
                     width: 100%;
                     height: 100%;
-                    vertical-align: initial;
+                    position: relative;
                 }
 
-                @keyframes logo-button-breathe {
-                    0% { transform: scale(1); }
-                    10% { transform: scale(1.02); }
-                    15% { transform: scale(1.1); }
-                    20% { transform: scale(1.05); }
-                    25% { transform: scale(1.1); }
-                    30% { transform: scale(1.02); }
-                    40% { transform: scale(1); }
-                    100% { transform: scale(1); }
+                #logo-button .character {
+                    width: 100%;
+                    height: 100%;
+                    animation: wiggle 3s ease-in-out infinite;
+                    transform-origin: bottom center;
+                }
+
+                #logo-button .character svg {
+                    width: 100%;
+                    height: 100%;
+                }
+
+                /* 身体扭动动画 */
+                @keyframes wiggle {
+                    0%, 100% {
+                        transform: rotate(-1deg) translateY(0);
+                    }
+                    25% {
+                        transform: rotate(0deg) translateY(-3px);
+                    }
+                    50% {
+                        transform: rotate(1deg) translateY(0);
+                    }
+                    75% {
+                        transform: rotate(0deg) translateY(-3px);
+                    }
+                }
+
+                /* 眼睛动画 - 左右移动 */
+                #logo-button .eye-left, #logo-button .eye-right {
+                    transform-origin: center;
+                    animation: eyeMove 10s ease-in-out infinite;
+                }
+
+                /* 左眼圆形 - wink时隐藏 */
+                #logo-button .eye-circle-left {
+                    animation: eyeCircleAnim 10s ease-in-out infinite;
+                }
+
+                /* 左眼高光 - wink时隐藏 */
+                #logo-button .eye-highlight-left {
+                    animation: eyeCircleAnim 10s ease-in-out infinite;
+                }
+
+                /* 左眼 > 形状 - wink时显示 */
+                #logo-button .eye-wink-left {
+                    opacity: 0;
+                    animation: eyeWinkAnim 10s ease-in-out infinite;
+                }
+
+                @keyframes eyeMove {
+                    0%, 100% {
+                        transform: translateX(0);
+                    }
+                    12% {
+                        transform: translateX(6px);
+                    }
+                    25% {
+                        transform: translateX(-6px);
+                    }
+                    37%, 100% {
+                        transform: translateX(0);
+                    }
+                }
+
+                @keyframes eyeCircleAnim {
+                    0%, 40% {
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                    42%, 67% {
+                        opacity: 0;
+                        visibility: hidden;
+                    }
+                    69%, 100% {
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                }
+
+                @keyframes eyeWinkAnim {
+                    0%, 40% {
+                        opacity: 0;
+                    }
+                    42%, 67% {
+                        opacity: 1;
+                    }
+                    69%, 100% {
+                        opacity: 0;
+                    }
+                }
+
+                /* 星星动画 */
+                #logo-button .star {
+                    opacity: 0;
+                    transform-origin: center;
+                    animation: starPop 10s ease-in-out infinite;
+                }
+
+                #logo-button .star-left {
+                    animation-delay: 0s;
+                }
+
+                @keyframes starPop {
+                    0%, 40% {
+                        opacity: 0;
+                        transform: scale(0) rotate(0deg);
+                    }
+                    44% {
+                        opacity: 1;
+                        transform: scale(1.3) rotate(20deg);
+                    }
+                    50% {
+                        opacity: 1;
+                        transform: scale(1) rotate(0deg);
+                    }
+                    65% {
+                        opacity: 1;
+                        transform: scale(1) rotate(5deg);
+                    }
+                    70% {
+                        opacity: 0;
+                        transform: scale(0.3) rotate(-20deg);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: scale(0) rotate(0deg);
+                    }
+                }
+
+                /* 嘴巴表情动画 */
+                #logo-button .mouth {
+                    transform-origin: center;
+                    animation: mouthExpression 8s ease-in-out infinite;
+                }
+
+                @keyframes mouthExpression {
+                    0%, 100% {
+                        transform: scaleX(1) scaleY(1.07);
+                    }
+                    25% {
+                        transform: scaleX(1.1) scaleY(1.03);
+                    }
+                    50% {
+                        transform: scaleX(0.95) scaleY(1.07);
+                    }
+                    75% {
+                        transform: scaleX(1.05) scaleY(1.05);
+                    }
+                }
+
+                /* 触角动画 */
+                #logo-button .antenna {
+                    transform-origin: 810px 180px;
+                    animation: antennaWiggle 3s ease-in-out infinite;
+                }
+
+                @keyframes antennaWiggle {
+                    0%, 100% {
+                        transform: rotate(-8deg);
+                    }
+                    50% {
+                        transform: rotate(8deg);
+                    }
                 }
 
                 /* 简历窗口容器样式 - 用于外部网站注入 */
