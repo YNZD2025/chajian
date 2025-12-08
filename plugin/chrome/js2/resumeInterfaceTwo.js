@@ -703,14 +703,17 @@
             // 更新导航按钮的active状态
             updateActiveNav(pageHtml);
 
-            // 应用页面切换动画（只对内容区域应用动画，背景保持固定）
-            const pluginContent = resumeWindowContainer.querySelector('.plugin-content');
+            // 应用页面切换动画（对标题和内容区域都应用动画）
+            const pluginContent = resumeWindowContainer.querySelector('.plugin-content, .plugin-content-centered');
+            const liquidTitle = resumeWindowContainer.querySelector('.liquid-title');
+
+            // 确定动画方向
+            const animationClass = getPageAnimationDirection(leavingPage, pageHtml);
+
+            // 对内容区域应用动画
             if (pluginContent) {
                 // 移除所有旧的动画类
                 pluginContent.classList.remove('animate-from-bottom', 'animate-from-top', 'animate-from-right', 'animate-from-left');
-
-                // 确定动画方向
-                const animationClass = getPageAnimationDirection(leavingPage, pageHtml);
 
                 // 强制重绘，确保动画类被移除
                 void pluginContent.offsetHeight;
@@ -721,6 +724,23 @@
                 // 动画结束后移除动画类，避免影响后续交互
                 setTimeout(() => {
                     pluginContent.classList.remove(animationClass);
+                }, 400); // 与 CSS 动画时长一致
+            }
+
+            // 对标题也应用动画
+            if (liquidTitle) {
+                // 移除所有旧的动画类
+                liquidTitle.classList.remove('animate-from-bottom', 'animate-from-top', 'animate-from-right', 'animate-from-left');
+
+                // 强制重绘，确保动画类被移除
+                void liquidTitle.offsetHeight;
+
+                // 添加新的动画类
+                liquidTitle.classList.add(animationClass);
+
+                // 动画结束后移除动画类，避免影响后续交互
+                setTimeout(() => {
+                    liquidTitle.classList.remove(animationClass);
                 }, 400); // 与 CSS 动画时长一致
             }
 
@@ -1519,7 +1539,7 @@
                 }
 
                 /* 排除动画元素和简历框，允许它们使用transform */
-                .plugin-container *:not(.status-icon):not(.status-display):not(.resume-page-current):not(.resume-page-next):not(.plugin-content) {
+                .plugin-container *:not(.status-icon):not(.status-display):not(.resume-page-current):not(.resume-page-next):not(.plugin-content):not(.plugin-content-centered):not(.liquid-title) {
                     transform: none !important;
                 }
 
