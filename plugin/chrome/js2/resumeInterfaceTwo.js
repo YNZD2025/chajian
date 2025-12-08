@@ -937,7 +937,7 @@
                     // idle 状态：保持隐藏（不移除 hidden 类）
                     statusIcon.className = 'status-icon fas fa-info-circle';
                     statusText.textContent = text || '准备就绪';
-                    // 不移除 hidden 类，保持隐藏状态
+                // 不移除 hidden 类，保持隐藏状态
             }
         }
 
@@ -1237,7 +1237,7 @@
                 toggle.parentNode.replaceChild(newToggle, toggle);
 
                 // 绑定新的事件监听器
-                newToggle.addEventListener('click', function(e) {
+                newToggle.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
                     this.classList.toggle('active');
@@ -1331,7 +1331,7 @@
                 toggle.parentNode.replaceChild(newToggle, toggle);
 
                 // 绑定新的事件监听器
-                newToggle.addEventListener('click', function(e) {
+                newToggle.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
                     this.classList.toggle('active');
@@ -1346,7 +1346,7 @@
             const feedbackTypeBtns = resumeWindowContainer.querySelectorAll('.feedback-type-btn');
             feedbackTypeBtns.forEach(btn => {
                 btn.removeAttribute('onclick');
-                btn.addEventListener('click', function(e) {
+                btn.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
                     // 移除所有按钮的 active 类
@@ -1377,7 +1377,7 @@
             const helpItems = resumeWindowContainer.querySelectorAll('.help-item');
             helpItems.forEach(item => {
                 item.removeAttribute('onclick');
-                item.addEventListener('click', function(e) {
+                item.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
                     this.classList.toggle('expanded');
@@ -1519,8 +1519,74 @@
                 }
 
                 /* 排除动画元素和简历框，允许它们使用transform */
-                .plugin-container *:not(.status-icon):not(.status-display):not(.resume-page-current):not(.resume-page-next) {
+                .plugin-container *:not(.status-icon):not(.status-display):not(.resume-page-current):not(.resume-page-next):not(.plugin-content) {
                     transform: none !important;
+                }
+
+                /* --- 页面切换动画 --- */
+                /* 从上往下（导航栏从上到下） */
+                @keyframes slideFromBottom {
+                    from {
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                /* 从下往上（导航栏从下到上） */
+                @keyframes slideFromTop {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                /* 从右往左（进入子页面） */
+                @keyframes slideFromRight {
+                    from {
+                        opacity: 0;
+                        transform: translateX(30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+
+                /* 从左往右（返回上级页面） */
+                @keyframes slideFromLeft {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+
+                /* 应用动画的类 */
+                .animate-from-bottom {
+                    animation: slideFromBottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+                }
+
+                .animate-from-top {
+                    animation: slideFromTop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+                }
+
+                .animate-from-right {
+                    animation: slideFromRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+                }
+
+                .animate-from-left {
+                    animation: slideFromLeft 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
                 }
 
                 /* ========== 呼吸动画效果 ========== */
@@ -3402,35 +3468,35 @@
      */
     async function switchToNextResume() {
 
-            if (resumeList.length === 0) return;
+        if (resumeList.length === 0) return;
 
-            // 检查简历是否被锁定
-            if (isResumeLocked) {
-                console.warn("[switchToNextResume] 简历已锁定，无法切换");
-                alert("填充正在进行中，无法切换简历！\n请等待填充完成或取消填充后再切换。");
-                return;
-            }
+        // 检查简历是否被锁定
+        if (isResumeLocked) {
+            console.warn("[switchToNextResume] 简历已锁定，无法切换");
+            alert("填充正在进行中，无法切换简历！\n请等待填充完成或取消填充后再切换。");
+            return;
+        }
 
-            // 确认是否切换
-            if (!confirm("确定要切换到下一份简历吗？\n切换后将刷新当前页面。")) {
-                return;
-            }
+        // 确认是否切换
+        if (!confirm("确定要切换到下一份简历吗？\n切换后将刷新当前页面。")) {
+            return;
+        }
 
-            // 计算下一个索引
-            const nextIndex = (currentResumeIndex + 1) % resumeList.length;
+        // 计算下一个索引
+        const nextIndex = (currentResumeIndex + 1) % resumeList.length;
 
-            // 存储切换后的索引和当前列表长度到 storage
-            try {
-                await chrome.storage.local.set({
-                    currentResumeIndex: nextIndex,
-                    lastResumeListLength: resumeList.length  // 保存当前列表长度
-                });
+        // 存储切换后的索引和当前列表长度到 storage
+        try {
+            await chrome.storage.local.set({
+                currentResumeIndex: nextIndex,
+                lastResumeListLength: resumeList.length  // 保存当前列表长度
+            });
 
-                // 刷新当前页面
-                window.location.reload();
-            } catch (error) {
-                console.error("[switchToNextResume] 切换失败:", error);
-            }
+            // 刷新当前页面
+            window.location.reload();
+        } catch (error) {
+            console.error("[switchToNextResume] 切换失败:", error);
+        }
     }
 
     /**
@@ -3638,7 +3704,7 @@
             }
 
             // 显示加载状态
-            quotaValueEl.textContent = '加载中...';
+            quotaValueEl.textContent = '0';
             quotaValueEl.className = 'quota-value';
 
             // 先显示容器（以防之前被隐藏）
