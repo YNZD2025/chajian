@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,52 @@
     <link rel="stylesheet" href="styles/simple-icons.css">
     <link rel="stylesheet" href="styles/common.css">
     <style>
+        /* 页脚备案信息 */
+        .page-footer {
+            text-align: center;
+            padding: 5px 20px;
+            margin-top: -10px;
+        }
+
+        .footer-copyright {
+            font-size: 10px;
+            color: var(--text-gray);
+            margin-bottom: 5px;
+        }
+
+        .footer-beian {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0px;
+            flex-wrap: wrap;
+            font-size: 10px;
+            color: var(--text-gray);
+        }
+
+        .footer-beian a {
+            color: var(--text-gray);
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .footer-beian a:hover {
+            color: var(--primary);
+        }
+
+        .beian-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .beian-icon {
             width: 14px;
             height: 14px;
         }
     </style>
 </head>
+
 <body>
     <div class="plugin-container">
         <div class="sidebar">
@@ -75,9 +116,10 @@
                     </div>
                 </div>
                 <div class="plugin-footer">
+                    <!-- 页脚备案信息 -->
                     <div class="page-footer">
                         <div class="footer-copyright">
-                            Copyright © 2025 应念科技（深圳）有限公司 All Rights Reserved
+                            Copyright © 2025 应念科技（深圳）有限公司 <br/>All Rights Reserved
                         </div>
                         <div class="footer-beian">
                             <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank" rel="noreferrer">
@@ -85,7 +127,7 @@
                             </a>
                             <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44030002008708" target="_blank"
                                 rel="noreferrer" class="beian-item">
-                                <img src="beian-icon.png" alt="公安备案" class="beian-icon">
+                                <img src="beian-icon.png" alt="公安备案" class="beian-icon" />
                                 粤公网安备44030002008708号
                             </a>
                         </div>
@@ -96,4 +138,5 @@
     </div>
     <script src="scripts/transitions.js"></script>
 </body>
+
 </html>

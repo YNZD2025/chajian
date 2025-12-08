@@ -84,15 +84,34 @@ img {
     box-shadow: 5px 0 20px rgba(87, 197, 182, 0.2);
 }
 
+.sidebar-spacer {
+    flex: 1;
+}
+
+.sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+}
+
+/* 确保底部菜单项高度固定，防止选中时位置变化 */
+.sidebar-bottom .nav-item {
+    height: 45px; /* 固定高度，而非 min-height（此文件的 margin-top 是 -2px，所以高度是 45px） */
+}
+
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
     gap: 0;
     cursor: pointer;
     transition: 0.3s;
     width: 100%;
     text-decoration: none;
+    min-height: 45px; /* 固定最小高度：38px(icon) + 7px(label: 9px - 2px margin) = 45px */
 }
 
 .nav-icon-box {
@@ -120,6 +139,7 @@ img {
     color: var(--primary);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     transform: scale(1.1);
+    transform-origin: center center; /* 确保从中心缩放，避免视觉偏移 */
 }
 
 .nav-item.active .nav-label {

@@ -703,9 +703,10 @@
             // 更新导航按钮的active状态
             updateActiveNav(pageHtml);
 
-            // 应用页面切换动画（对标题和内容区域都应用动画）
+            // 应用页面切换动画（对标题、额度显示和内容区域都应用动画）
             const pluginContent = resumeWindowContainer.querySelector('.plugin-content, .plugin-content-centered');
             const liquidTitle = resumeWindowContainer.querySelector('.liquid-title');
+            const headerRightContainer = resumeWindowContainer.querySelector('.header-right-container');
 
             // 确定动画方向
             const animationClass = getPageAnimationDirection(leavingPage, pageHtml);
@@ -727,7 +728,7 @@
                 }, 400); // 与 CSS 动画时长一致
             }
 
-            // 对标题也应用动画
+            // 对标题应用动画
             if (liquidTitle) {
                 // 移除所有旧的动画类
                 liquidTitle.classList.remove('animate-from-bottom', 'animate-from-top', 'animate-from-right', 'animate-from-left');
@@ -741,6 +742,42 @@
                 // 动画结束后移除动画类，避免影响后续交互
                 setTimeout(() => {
                     liquidTitle.classList.remove(animationClass);
+                }, 400); // 与 CSS 动画时长一致
+            }
+
+            // 对右上角容器（额度显示 + 关闭按钮）应用动画
+            if (headerRightContainer) {
+                // 移除所有旧的动画类
+                headerRightContainer.classList.remove('animate-from-bottom', 'animate-from-top', 'animate-from-right', 'animate-from-left');
+
+                // 强制重绘，确保动画类被移除
+                void headerRightContainer.offsetHeight;
+
+                // 添加新的动画类
+                headerRightContainer.classList.add(animationClass);
+
+                // 动画结束后移除动画类，避免影响后续交互
+                setTimeout(() => {
+                    headerRightContainer.classList.remove(animationClass);
+                }, 400); // 与 CSS 动画时长一致
+            }
+
+            // 对独立的关闭按钮应用动画（针对没有 header-right-container 的页面）
+            const liquidClose = resumeWindowContainer.querySelector('.liquid-close');
+            if (liquidClose && !headerRightContainer) {
+                // 只有当页面没有 headerRightContainer 时才单独处理 liquidClose
+                // 移除所有旧的动画类
+                liquidClose.classList.remove('animate-from-bottom', 'animate-from-top', 'animate-from-right', 'animate-from-left');
+
+                // 强制重绘，确保动画类被移除
+                void liquidClose.offsetHeight;
+
+                // 添加新的动画类
+                liquidClose.classList.add(animationClass);
+
+                // 动画结束后移除动画类，避免影响后续交互
+                setTimeout(() => {
+                    liquidClose.classList.remove(animationClass);
                 }, 400); // 与 CSS 动画时长一致
             }
 
@@ -1539,7 +1576,7 @@
                 }
 
                 /* 排除动画元素和简历框，允许它们使用transform */
-                .plugin-container *:not(.status-icon):not(.status-display):not(.resume-page-current):not(.resume-page-next):not(.plugin-content):not(.plugin-content-centered):not(.liquid-title) {
+                .plugin-container *:not(.status-icon):not(.status-display):not(.resume-page-current):not(.resume-page-next):not(.plugin-content):not(.plugin-content-centered):not(.liquid-title):not(.nav-icon-box):not(.header-right-container):not(.liquid-close)  {
                     transform: none !important;
                 }
 
@@ -2112,7 +2149,7 @@
                     display: flex !important;
                     align-items: center !important;
                     padding: 12px !important;
-                    margin: 0 0 10px 0 !important;
+                    margin: 7 0 -6px 0 !important;
                     line-height: 1.4 !important;
                     height: auto !important;
                     min-height: auto !important;
@@ -2140,14 +2177,14 @@
                 /* 卡片样式保护 */
                 .content-card,
                 .task-card {
-                    margin: 0 0 15px 0 !important;
+                    margin: 0 0 0px 0 !important;
                     padding: 15px !important;
                     line-height: 1.4 !important;
                 }
 
                 .task-card {
                     padding: 12px !important;
-                    height: 110px !important;
+                    height: 120px !important;
                     flex-shrink: 0 !important;
                 }
 
@@ -3571,13 +3608,13 @@
         // 更新姓名 (resume-name)
         const resumeNameEl = resumeWindowContainer.querySelector('.resume-name');
         if (resumeNameEl) {
-            resumeNameEl.textContent = resume.name || '未命名';
+            resumeNameEl.textContent = `${resume.name || '未命名'}`;
         }
 
         // 更新简历名称 (resume-type)
         const resumeType = resumeWindowContainer.querySelector('.resume-type');
         if (resumeType) {
-            resumeType.textContent = resume.resumeName || '未命名简历';
+            resumeType.textContent = `简历源：${resume.resumeName || '未命名简历'}.pdf`;
         }
 
         // 更新简历字段映射（根据真实API数据）
@@ -3714,6 +3751,9 @@
      */
     async function loadQuota() {
         try {
+
+            let quotaValue = await chrome.storage.local.get('myQuota') ;
+
             // 获取额度值元素和容器
             const quotaValueEl = resumeWindowContainer?.querySelector('#quota-value');
             const quotaDisplay = resumeWindowContainer?.querySelector('.quota-display');
@@ -3724,7 +3764,7 @@
             }
 
             // 显示加载状态
-            quotaValueEl.textContent = '0';
+            quotaValueEl.textContent = 0;
             quotaValueEl.className = 'quota-value';
 
             // 先显示容器（以防之前被隐藏）
@@ -3732,11 +3772,15 @@
                 quotaDisplay.style.display = 'flex';
             }
 
+            quotaValueEl.textContent = quotaValue;
+
             // 调用接口获取额度
             const quotaResult = await apiRequestForGet("quota", {}, false);
 
             if (quotaResult && typeof quotaResult.quota !== 'undefined') {
                 const quotaValue = quotaResult.quota;
+
+                await chrome.storage.local.set({ myQuota: quotaResult.quota });
 
                 // 更新显示
                 quotaValueEl.textContent = quotaValue;
@@ -3749,9 +3793,9 @@
                     quotaValueEl.classList.add('low');
                 }
 
-                // 当额度在 4-10 之间时，隐藏整个额度显示容器
+                // 当额度在 3-10 之间时，隐藏整个额度显示容器
                 if (quotaDisplay) {
-                    if (quotaValue >= 4 && quotaValue <= 10) {
+                    if (quotaValue >= 3 && quotaValue <= 10) {
                         quotaDisplay.style.display = 'none';
                     } else {
                         quotaDisplay.style.display = 'flex';
@@ -4063,7 +4107,7 @@
 
         const resumeTypeEl = resumeWindowContainer.querySelector('.resume-type');
         if (resumeTypeEl) {
-            resumeTypeEl.textContent = currentResume.resumeName || '简历';
+            resumeTypeEl.textContent =  `简历源：${currentResume.resumeName || '未命名简历'}.pdf`;
         }
 
         // 更新简历详细信息 - 使用更精确的选择器
