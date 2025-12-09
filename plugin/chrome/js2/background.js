@@ -190,7 +190,11 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         // 处理登录同步
         AuthModule.handleExternalLogin(message, sendResponse)
             .catch((error) => sendResponse({ error: error.message }));
-    } else if (message.type === "logout") {
+    } else if (message.type === "home") {
+        // 处理登录同步
+        AuthModule.handleExternalLogin(message, sendResponse)
+            .catch((error) => sendResponse({ error: error.message }));
+    }else if (message.type === "logout") {
         // 处理登出同步
         AuthModule.handleExternalLogout(sendResponse)
             .catch((error) => sendResponse({ error: error.message }));
