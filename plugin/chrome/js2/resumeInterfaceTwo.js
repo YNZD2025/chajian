@@ -488,6 +488,24 @@
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+
+                    // 检查填充状态，如果正在运行则阻止导航
+                    if (fillState === 'running') {
+                        alert('智能填充正在进行中，无法切换菜单！\n\n您可以点击"暂停填充"按钮暂停后再切换。');
+                        return;
+                    }
+
+                    // 如果是暂停状态，允许切换但重置填充状态
+                    if (fillState === 'pause') {
+                        // 重置填充状态到 ready
+                        changeState('ready');
+                        // 解锁简历
+                        isResumeLocked = false;
+                        // 解锁任务背景输入框
+                        unlockTaskInput();
+                        console.log('[createResumeWindow] 暂停状态下切换菜单，已重置填充状态');
+                    }
+
                     navigateToPage(targetPage);
                 });
             }
@@ -829,6 +847,31 @@
     }
 
     /**
+     * 更新菜单锁定状态的视觉反馈
+     */
+    function updateMenuLockState() {
+        if (!resumeWindowContainer) return;
+
+        const navItems = resumeWindowContainer.querySelectorAll(".nav-item");
+        // 只有 running 状态才锁定菜单，pause 状态允许切换
+        const isLocked = fillState === 'running';
+
+        navItems.forEach(item => {
+            if (isLocked) {
+                // 锁定状态：降低透明度，添加禁用样式
+                item.style.opacity = '0.5';
+                item.style.cursor = 'not-allowed';
+                item.style.pointerEvents = 'auto'; // 保持可点击以便显示提示
+            } else {
+                // 解锁状态：恢复正常样式
+                item.style.opacity = '1';
+                item.style.cursor = 'pointer';
+                item.style.pointerEvents = 'auto';
+            }
+        });
+    }
+
+    /**
      * 重新绑定导航按钮事件
      */
     function rebindNavigationEvents() {
@@ -857,6 +900,24 @@
                 newItem.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+
+                    // 检查填充状态，如果正在运行则阻止导航
+                    if (fillState === 'running') {
+                        alert('智能填充正在进行中，无法切换菜单！\n\n您可以点击"暂停填充"按钮暂停后再切换。');
+                        return;
+                    }
+
+                    // 如果是暂停状态，允许切换但重置填充状态
+                    if (fillState === 'pause') {
+                        // 重置填充状态到 ready
+                        changeState('ready');
+                        // 解锁简历
+                        isResumeLocked = false;
+                        // 解锁任务背景输入框
+                        unlockTaskInput();
+                        console.log('[rebindNavigationEvents] 暂停状态下切换菜单，已重置填充状态');
+                    }
+
                     const labelText = newItem.querySelector(".nav-label")?.textContent || '无标签';
                     navigateToPage(targetPage);
                 });
@@ -1360,18 +1421,16 @@
                     item.parentNode.replaceChild(newItem, item);
 
                     if (label.textContent.includes('清除填充记录')) {
-                        newItem.addEventListener('click', (e) => {
+                        newItem.addEventListener('click', async (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            alert('填充记录已清除');
+                            await clearDeliveryRecords("确定要清除所有填充记录吗？此操作不可恢复。");
                         });
                     } else if (label.textContent.includes('删除所有数据')) {
-                        newItem.addEventListener('click', (e) => {
+                        newItem.addEventListener('click', async (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (confirm('确定要删除所有数据吗？')) {
-                                alert('数据已删除');
-                            }
+                            await clearDeliveryRecords("确定要删除所有数据吗？此操作不可恢复。");
                         });
                     }
                 }
@@ -1456,6 +1515,55 @@
                         navigateToPage('feedback.html');
                     });
                 }
+            });
+        }
+
+        // about.html - 关于页面
+        if (pageHtml === 'about.html') {
+            // 绑定三个外部链接：官方网站、用户协议、隐私政策
+            const aboutLinks = resumeWindowContainer.querySelectorAll('.about-link');
+            aboutLinks.forEach(link => {
+                const linkType = link.getAttribute('data-link-type');
+
+                // 移除原有的 href 属性，防止页面跳转
+                link.setAttribute('href', 'javascript:void(0)');
+
+                // 使用克隆节点移除旧的事件监听器
+                const newLink = link.cloneNode(true);
+                link.parentNode.replaceChild(newLink, link);
+
+                newLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // 获取官网 URL
+                    const webUrl = window.config?.HOME_URL;
+
+                    if (!webUrl) {
+                        console.error('[about.html] 未找到官网 URL 配置');
+                        alert('配置错误，无法打开链接');
+                        return;
+                    }
+
+                    // 根据链接类型跳转到官网不同页面
+                    let targetUrl = webUrl;
+
+                    // if (linkType === 'website') {
+                    //     // 官方网站 - 跳转到官网首页
+                    //     targetUrl = webUrl;
+                    // } else if (linkType === 'agreement') {
+                    //     // 用户协议 - 跳转到官网用户协议页面
+                    //     targetUrl = webUrl + '/';
+                    // } else if (linkType === 'privacy') {
+                    //     // 隐私政策 - 跳转到官网隐私政策页面
+                    //     targetUrl = webUrl + '/';
+                    // }
+
+                    // 在新标签页中打开
+                    window.open(targetUrl, '_blank');
+
+                    console.log(`[about.html] 打开链接: ${linkType} -> ${targetUrl}`);
+                });
             });
         }
 
@@ -2180,6 +2288,10 @@
                     margin: 0 0 0px 0 !important;
                     padding: 15px !important;
                     line-height: 1.4 !important;
+                }
+
+                .privacy-card {
+                    margin: 0 0 15px 0 !important;
                 }
 
                 .task-card {
@@ -2951,6 +3063,7 @@
         fillState = state;
 
         // 在结束状态时解锁简历和任务背景输入框
+        // 注意：暂停状态不解锁，只有在切换菜单时才解锁并重置
         if (["ready", "success", "error", "quota"].includes(state)) {
             if (isResumeLocked) {
                 isResumeLocked = false;
@@ -2958,6 +3071,9 @@
             // 解锁任务背景输入框
             unlockTaskInput();
         }
+
+        // 更新菜单锁定状态的视觉反馈
+        updateMenuLockState();
 
         // TODO: 根据fill.html的按钮实现状态变化
         const startButton = resumeWindowContainer?.querySelector(".liquid-cta-btn");
@@ -3751,9 +3867,6 @@
      */
     async function loadQuota() {
         try {
-
-            let quotaValue = await chrome.storage.local.get('myQuota') ;
-
             // 获取额度值元素和容器
             const quotaValueEl = resumeWindowContainer?.querySelector('#quota-value');
             const quotaDisplay = resumeWindowContainer?.querySelector('.quota-display');
@@ -3763,23 +3876,43 @@
                 return;
             }
 
-            // 显示加载状态
-            quotaValueEl.textContent = 0;
-            quotaValueEl.className = 'quota-value';
-
-            // 先显示容器（以防之前被隐藏）
+            // 默认隐藏容器
             if (quotaDisplay) {
-                quotaDisplay.style.display = 'flex';
+                quotaDisplay.style.display = 'none';
             }
 
-            quotaValueEl.textContent = quotaValue;
+            // 先从 chrome.storage.local 读取缓存的额度
+            const { myQuota } = await chrome.storage.local.get('myQuota');
 
-            // 调用接口获取额度
+            // 如果有缓存数据，先显示缓存值
+            if (typeof myQuota !== 'undefined' && myQuota !== null) {
+                quotaValueEl.textContent = myQuota;
+                quotaValueEl.className = 'quota-value';
+
+                // 根据缓存值添加样式类
+                if (myQuota <= 0) {
+                    quotaValueEl.classList.add('empty');
+                } else if (myQuota <= 10) {
+                    quotaValueEl.classList.add('low');
+                }
+
+                // 根据缓存值决定是否显示
+                if (quotaDisplay) {
+                    if (myQuota >= 3 && myQuota <= 10) {
+                        quotaDisplay.style.display = 'none';
+                    } else {
+                        quotaDisplay.style.display = 'flex';
+                    }
+                }
+            }
+
+            // 调用接口获取最新额度
             const quotaResult = await apiRequestForGet("quota", {}, false);
 
             if (quotaResult && typeof quotaResult.quota !== 'undefined') {
                 const quotaValue = quotaResult.quota;
 
+                // 保存到 chrome.storage.local
                 await chrome.storage.local.set({ myQuota: quotaResult.quota });
 
                 // 更新显示
@@ -3801,6 +3934,8 @@
                         quotaDisplay.style.display = 'flex';
                     }
                 }
+
+                console.log(`[loadQuota] 额度加载成功: ${quotaValue}`);
             } else {
                 throw new Error('额度数据格式错误');
             }
@@ -3809,14 +3944,27 @@
             const quotaValueEl = resumeWindowContainer?.querySelector('#quota-value');
             const quotaDisplay = resumeWindowContainer?.querySelector('.quota-display');
 
-            if (quotaValueEl) {
-                quotaValueEl.textContent = '获取失败';
-                quotaValueEl.className = 'quota-value';
-            }
+            // 出错时，如果有缓存数据就保持显示，没有就隐藏
+            const { myQuota } = await chrome.storage.local.get('myQuota');
 
-            // 出错时显示容器
-            if (quotaDisplay) {
-                quotaDisplay.style.display = 'flex';
+            if (typeof myQuota !== 'undefined' && myQuota !== null) {
+                // 有缓存，保持显示缓存值
+                if (quotaValueEl) {
+                    quotaValueEl.textContent = myQuota;
+                    quotaValueEl.className = 'quota-value';
+                }
+                if (quotaDisplay && !(myQuota >= 3 && myQuota <= 10)) {
+                    quotaDisplay.style.display = 'flex';
+                }
+            } else {
+                // 没有缓存，显示错误信息
+                if (quotaValueEl) {
+                    quotaValueEl.textContent = '获取失败';
+                    quotaValueEl.className = 'quota-value';
+                }
+                if (quotaDisplay) {
+                    quotaDisplay.style.display = 'flex';
+                }
             }
         }
     }
@@ -4236,6 +4384,37 @@
         } catch (error) {
             console.error("[getApplicationRecords] 读取投递记录失败:", error);
             return [];
+        }
+    }
+
+    /**
+     * 清除投递记录
+     * 清空所有投递历史记录和导航历史
+     */
+    async function clearDeliveryRecords(confirmMessage) {
+        try {
+            // 确认对话框
+            const confirmed = confirm(confirmMessage || '确定要清除所有数据吗？此操作不可恢复。');
+
+            if (!confirmed) {
+                return;
+            }
+
+            // 清除 chrome.storage.local 中的投递历史相关数据
+            await chrome.storage.local.remove([
+                'historyTabs',           // 待处理的投递记录
+                'applicationRecords',    // 已保存的投递记录
+                'navigationHistory'      // 导航历史
+            ]);
+
+            // 显示成功提示
+            alert('投递记录已成功清除！');
+
+            console.log('[clearDeliveryRecords] 投递记录已清除');
+
+        } catch (error) {
+            console.error('[clearDeliveryRecords] 清除投递记录失败:', error);
+            alert('清除失败，请重试。错误信息：' + error.message);
         }
     }
 

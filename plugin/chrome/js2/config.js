@@ -175,6 +175,13 @@ export const WELCOME_URL = buildUrl("/welcome", "WEB");
 export const PRICING_URL = buildUrl("/pricing", "WEB");
 
 /**
+ * 首页 URL
+ */
+export const HOME_URL = buildUrl("/home", "WEB");
+
+
+
+/**
  * 所有官网 URL 列表
  * 用于判断当前页面是否为官网（官网不显示填充UI）
  */

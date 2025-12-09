@@ -95,6 +95,9 @@ export const AUTOFILL_URL = buildUrl("/autofill", "WEB");
 export const VERSION_URL = buildUrl("/crx/version.txt", "WEB");
 export const WELCOME_URL = buildUrl("/welcome", "WEB");
 export const PRICING_URL = buildUrl("/vip", "WEB");
+export const HOME_URL = buildUrl("/home", "WEB");
+
+
 
 // 所有官网 URL 列表
 export const ALL_WEB_URLS = [

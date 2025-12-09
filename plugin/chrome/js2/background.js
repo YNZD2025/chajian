@@ -35,7 +35,8 @@ import {
     VERSION_URL,            // 版本信息 URL
     WELCOME_URL,            // 欢迎页面 URL
     PRICING_URL,            // 定价页面 URL
-    ALL_WEB_URLS            // 所有网站 URL 列表
+    ALL_WEB_URLS,           // 所有网站 URL 列表
+    HOME_URL                // 首页 URL
 } from "./configBackground.js";
 
 // ============================================================================

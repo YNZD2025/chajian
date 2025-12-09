@@ -51,6 +51,7 @@
         "popup/scripts/transitions.js",
         "popup/scripts/statusPopup.js",
         "popup/scripts/profileMini.js",
+        "popup/scripts/privacy.js",
         "popup/webfonts/fa-solid-900.woff2",
         "popup/webfonts/fa-regular-400.woff2",
         "popup/webfonts/fa-brands-400.woff2",
