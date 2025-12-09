@@ -3,44 +3,44 @@
 (async () => {
     // ==================== 注入高亮样式 ====================
     (() => {
-        if (document.getElementById('ark-highlight-styles')) return;
+        if (document.getElementById('yn-highlight-styles')) return;
 
         const style = document.createElement('style');
-        style.id = 'ark-highlight-styles';
+        style.id = 'yn-highlight-styles';
         style.textContent = `
             /* 使用class控制高亮，更简单可靠 */
-            html.ark-highlight-enabled .ark-color-green {
+            html.yn-highlight-enabled .yn-color-green {
                 background-color: #ebfeef99 !important;
             }
-            html.ark-highlight-enabled .ark-color-green * {
+            html.yn-highlight-enabled .yn-color-green * {
                 background-color: transparent !important;
             }
 
-            html.ark-highlight-enabled .ark-color-yellow {
+            html.yn-highlight-enabled .yn-color-yellow {
                 background-color: #feffaf99 !important;
             }
-            html.ark-highlight-enabled .ark-color-yellow * {
+            html.yn-highlight-enabled .yn-color-yellow * {
                 background-color: transparent !important;
             }
 
-            html.ark-highlight-enabled .ark-color-red {
+            html.yn-highlight-enabled .yn-color-red {
                 background-color: #ffe6e199 !important;
             }
-            html.ark-highlight-enabled .ark-color-red * {
+            html.yn-highlight-enabled .yn-color-red * {
                 background-color: transparent !important;
             }
 
-            html.ark-highlight-enabled .ark-color-blue {
+            html.yn-highlight-enabled .yn-color-blue {
                 background-color: #e8f2ff99 !important;
             }
-            html.ark-highlight-enabled .ark-color-blue * {
+            html.yn-highlight-enabled .yn-color-blue * {
                 background-color: transparent !important;
             }
 
-            html.ark-highlight-enabled .ark-color-purple {
+            html.yn-highlight-enabled .yn-color-purple {
                 background-color: #e1e1ff99 !important;
             }
-            html.ark-highlight-enabled .ark-color-purple * {
+            html.yn-highlight-enabled .yn-color-purple * {
                 background-color: transparent !important;
             }
         `;
@@ -110,12 +110,12 @@
 
         // 清除所有高亮样式
         try {
-            const highlightedElements = document.querySelectorAll('[class*="ark-color-"]');
+            const highlightedElements = document.querySelectorAll('[class*="yn-color-"]');
             for (const el of highlightedElements) {
                 setElementColor(el, "");
             }
             // 移除高亮启用标志
-            document.documentElement.classList.remove('ark-highlight-enabled');
+            document.documentElement.classList.remove('yn-highlight-enabled');
         } catch (error) { }
     }
 
@@ -182,7 +182,7 @@
      * 获取所有DOM元素（排除扩展UI）
      */
     function getAllElements() {
-        let elements = document.body.querySelectorAll("*:not(#ark-ai)");
+        let elements = document.body.querySelectorAll("*:not(#yn-ai)");
         return Array.from(elements);
     }
 
@@ -337,7 +337,7 @@
         let elements = [];
 
         // 移除扩展UI元素
-        const excludeIds = ["ark-ai"];
+        const excludeIds = ["yn-ai"];
         for (const id of excludeIds) {
             const el = clonedBody.querySelector(`#${id}`);
             if (el && el.parentNode) {
@@ -472,10 +472,10 @@
      * 获取元素当前的高亮颜色
      */
     function getElementColor(element) {
-        const colors = ["ark-color-yellow", "ark-color-green", "ark-color-red", "ark-color-blue", "ark-color-purple"];
+        const colors = ["yn-color-yellow", "yn-color-green", "yn-color-red", "yn-color-blue", "yn-color-purple"];
         for (const color of colors) {
             if (element.classList.contains(color)) {
-                return color.replace("ark-color-", "");
+                return color.replace("yn-color-", "");
             }
         }
         return null;
@@ -489,7 +489,7 @@
             return;
         }
 
-        const colors = ["ark-color-yellow", "ark-color-green", "ark-color-red", "ark-color-blue", "ark-color-purple"];
+        const colors = ["yn-color-yellow", "yn-color-green", "yn-color-red", "yn-color-blue", "yn-color-purple"];
 
         // 移除所有颜色类
         for (const c of colors) {
@@ -500,7 +500,7 @@
         if (!color) return;
 
         // 添加新的颜色类
-        const colorClass = `ark-color-${color}`;
+        const colorClass = `yn-color-${color}`;
         if (colors.includes(colorClass)) {
             element.classList.add(colorClass);
         } else {
@@ -2885,8 +2885,8 @@
                 continue;
             }
 
-            const elClass = el.className.replace(/\s*ark-color-\w+/g, "");
-            const targetClass = targetDom.className.replace(/\s*ark-color-\w+/g, "");
+            const elClass = el.className.replace(/\s*yn-color-\w+/g, "");
+            const targetClass = targetDom.className.replace(/\s*yn-color-\w+/g, "");
             if (elClass !== targetClass) continue;
 
             // 检查文本内容匹配
@@ -2913,8 +2913,8 @@
                     break;
                 }
 
-                const targetParentClass = targetParent.className.replace(/\s*ark-color-\w+/g, "");
-                const elParentClass = elParent.className.replace(/\s*ark-color-\w+/g, "");
+                const targetParentClass = targetParent.className.replace(/\s*yn-color-\w+/g, "");
+                const elParentClass = elParent.className.replace(/\s*yn-color-\w+/g, "");
 
                 if (targetParentClass === elParentClass) {
                     targetParent = targetParent.parentElement;
@@ -3496,7 +3496,7 @@
         try {
 
             // 启用高亮样式 - 使用class
-            document.documentElement.classList.add('ark-highlight-enabled');
+            document.documentElement.classList.add('yn-highlight-enabled');
 
             await scrollToTop();
 

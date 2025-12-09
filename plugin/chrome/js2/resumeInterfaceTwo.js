@@ -8,7 +8,7 @@
  * 此文件是 Chrome 扩展的简历窗口界面模块
  * 负责处理以下核心功能：
  * - Shadow DOM 隔离的UI界面
- * - SimpleMDE Markdown编辑器集成
+ * - SimpleMDE Myndown编辑器集成
  * - 用户交互和状态管理
  * - 填充流程控制
  * - 评分弹窗功能
@@ -76,7 +76,7 @@
         try {
             // 创建宿主元素
             const hostElement = document.createElement("div");
-            hostElement.id = "ark-ai";
+            hostElement.id = "yn-ai";
 
             // 附加Shadow DOM - 使用 open 模式
             shadowRoot = hostElement.attachShadow({ mode: "open" });
@@ -2626,9 +2626,9 @@
      * @param {string|boolean} mode - 显示模式：always/smart/hidden 或 show/auto/hidden（兼容旧版） 或 布尔值
      */
     function setButtonMode(mode) {
-        const hostElement = document.getElementById("ark-ai");
+        const hostElement = document.getElementById("yn-ai");
         if (!hostElement) {
-            console.warn('[setButtonMode] ark-ai 元素不存在，可能是在官网页面或UI未初始化');
+            console.warn('[setButtonMode] yn-ai 元素不存在，可能是在官网页面或UI未初始化');
             return;
         }
 
@@ -4540,8 +4540,8 @@
             // 先保存到 chrome.storage，确保设置被持久化
             chrome.storage.local.set({ arcButtonMode: message.mode }).then(() => {
 
-                // 检查 ark-ai 元素是否存在，只有存在时才更新显示
-                const hostElement = document.getElementById("ark-ai");
+                // 检查 yn-ai 元素是否存在，只有存在时才更新显示
+                const hostElement = document.getElementById("yn-ai");
                 if (hostElement) {
                     setButtonMode(message.mode);
                 }
@@ -4876,19 +4876,19 @@
 
         // 清除所有高亮样式
         try {
-            const highlightedElements = document.querySelectorAll('[class*="ark-color-"]');
+            const highlightedElements = document.querySelectorAll('[class*="yn-color-"]');
             for (const el of highlightedElements) {
-                // 移除所有 ark-color-* 类
+                // 移除所有 yn-color-* 类
                 const classes = Array.from(el.classList);
                 classes.forEach(className => {
-                    if (className.startsWith('ark-color-')) {
+                    if (className.startsWith('yn-color-')) {
                         el.classList.remove(className);
                     }
                 });
             }
 
             // 移除高亮启用标志
-            document.documentElement.classList.remove('ark-highlight-enabled');
+            document.documentElement.classList.remove('yn-highlight-enabled');
 
             // 同时也设置 CSS 变量为 0（向后兼容）
             document.documentElement.style.setProperty("--highlight-enabled", "0");
