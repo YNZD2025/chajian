@@ -3650,13 +3650,11 @@
             return;
         }
 
-        // 确认是否切换
-        if (!confirm("确定要切换到下一份简历吗？\n切换后将刷新当前页面。")) {
-            return;
-        }
-
         // 计算下一个索引
         const nextIndex = (currentResumeIndex + 1) % resumeList.length;
+
+        // 更新当前简历索引
+        currentResumeIndex = nextIndex;
 
         // 存储切换后的索引和当前列表长度到 storage
         try {
@@ -3665,8 +3663,10 @@
                 lastResumeListLength: resumeList.length  // 保存当前列表长度
             });
 
-            // 刷新当前页面
-            window.location.reload();
+            // 重新渲染简历数据（这会更新UI和简历ID）
+            renderResumeData();
+
+            console.log(`[switchToNextResume] 已切换到简历索引: ${nextIndex}`);
         } catch (error) {
             console.error("[switchToNextResume] 切换失败:", error);
         }
@@ -3685,13 +3685,11 @@
             return;
         }
 
-        // 确认是否切换
-        if (!confirm("确定要切换到上一份简历吗？\n切换后将刷新当前页面。")) {
-            return;
-        }
-
         // 计算上一个索引
         const prevIndex = (currentResumeIndex - 1 + resumeList.length) % resumeList.length;
+
+        // 更新当前简历索引
+        currentResumeIndex = prevIndex;
 
         // 存储切换后的索引和当前列表长度到 storage
         try {
@@ -3700,8 +3698,10 @@
                 lastResumeListLength: resumeList.length  // 保存当前列表长度
             });
 
-            // 刷新当前页面
-            window.location.reload();
+            // 重新渲染简历数据（这会更新UI和简历ID）
+            renderResumeData();
+
+            console.log(`[switchToPrevResume] 已切换到简历索引: ${prevIndex}`);
         } catch (error) {
             console.error("[switchToPrevResume] 切换失败:", error);
         }
