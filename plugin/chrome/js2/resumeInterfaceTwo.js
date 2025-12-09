@@ -2690,7 +2690,7 @@
                 }
                 toggleWindow(true);
             } else {
-                if (confirm("尚未登录到一念职达，是否立即前往登录？")) {
+                if (confirm("当前插件尚未登录，请前往网页端登录或同步数据。")) {
                     window.open(`${window.config.LOGIN_URL}`, "_blank");
                 }
             }
