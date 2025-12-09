@@ -834,11 +834,23 @@
     function updateActiveNav(pageHtml) {
         if (!resumeWindowContainer) return;
 
+        // 定义子页面到主导航页面的映射关系
+        const pageMapping = {
+            'privacy-settings.html': 'settings.html',
+            'feedback.html': 'settings.html',
+            'help.html': 'settings.html',
+            'about.html': 'settings.html',
+            'edit-resume.html': 'settings.html'
+        };
+
+        // 获取对应的主导航页面（如果是子页面则映射到主页面）
+        const activePageHtml = pageMapping[pageHtml] || pageHtml;
+
         const navItems = resumeWindowContainer.querySelectorAll(".nav-item");
         navItems.forEach(item => {
             // 检查 data-href 或原始 href
             const href = item.getAttribute('data-href') || item.getAttribute('href');
-            if (href === pageHtml) {
+            if (href === activePageHtml) {
                 item.classList.add('active');
             } else {
                 item.classList.remove('active');
