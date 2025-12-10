@@ -578,20 +578,20 @@
     </div>
 
     <!-- 调试：立即执行的内联脚本，确认页面已加载 -->
-    <script>
+    <!-- <script>
         console.log('=== [DEBUG] profileMini.html 页面开始加载 ===');
         console.log('[DEBUG] 当前 URL:', window.location.href);
         console.log('[DEBUG] document.readyState:', document.readyState);
-    </script>
+    </script> -->
 
     <script src="scripts/transitions.js"></script>
     <script src="scripts/profileMini.js"></script>
 
     <!-- 调试：在脚本加载后执行 -->
-    <script>
+    <!-- <script>
         console.log('=== [DEBUG] 所有外部脚本已加载 ===');
         console.log('[DEBUG] 检查 chrome.storage 是否可用:', typeof chrome !== 'undefined' && typeof chrome.storage !== 'undefined');
         console.log('[DEBUG] 检查 chrome.runtime 是否可用:', typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined');
-    </script>
+    </script> -->
 </body>
 </html>

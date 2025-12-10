@@ -407,9 +407,6 @@
             // 渲染简历数据
             renderResumeData();
 
-            // 绑定简历切换事件
-            bindResumeSwitchEvents();
-
         } catch (error) {
             console.error('[profileMini] 初始化简历数据失败:', error);
         }
@@ -757,6 +754,9 @@
 
             // 根据登录状态更新UI
             await updateUIByAuthStatus();
+
+            // 绑定简历切换事件（无论是否有简历数据都需要绑定，以便点击跳转）
+            bindResumeSwitchEvents();
 
             // 加载数据
             loadUserInfo();
